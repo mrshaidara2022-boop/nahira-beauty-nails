@@ -1,0 +1,1409 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nahira Luxe Nails — Press On Nails faits main en France</title>
+<meta name="description" content="Press on nails de luxe faits main en France par une prothésiste diplômée. Collections limitées et numérotées. Drop 001 — Éclat Noir.">
+<link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --noir: #060406;
+    --noir-2: #0E090C;
+    --carte: #150E12;
+    --rose: #F06FA7;
+    --rose-vif: #FF7EB6;
+    --rose-pale: #F8C6DC;
+    --or: #E8C27A;
+    --or-vif: #F5D89A;
+    --blanc: #FFF7FA;
+    --texte: rgba(255,247,250,0.92);
+    --texte-doux: rgba(255,247,250,0.6);
+    --texte-faible: rgba(255,247,250,0.38);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--noir);
+    color: var(--texte);
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 300;
+    line-height: 1.65;
+    overflow-x: hidden;
+  }
+
+  .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+  /* ===== TEXTURE PAILLETTES GLOBALE ===== */
+  .glitter-bg {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      radial-gradient(1px 1px at 12% 25%, rgba(255,182,213,0.8), transparent),
+      radial-gradient(1px 1px at 78% 12%, rgba(232,194,122,0.9), transparent),
+      radial-gradient(1.5px 1.5px at 35% 65%, rgba(255,126,182,0.6), transparent),
+      radial-gradient(1px 1px at 88% 45%, rgba(255,247,250,0.7), transparent),
+      radial-gradient(1px 1px at 55% 88%, rgba(232,194,122,0.7), transparent),
+      radial-gradient(1.5px 1.5px at 8% 80%, rgba(255,182,213,0.5), transparent),
+      radial-gradient(1px 1px at 65% 35%, rgba(255,247,250,0.5), transparent),
+      radial-gradient(1px 1px at 25% 45%, rgba(232,194,122,0.6), transparent);
+    background-size: 550px 550px;
+    animation: scintille 6s ease-in-out infinite alternate;
+  }
+
+  @keyframes scintille {
+    0% { opacity: 0.5; }
+    100% { opacity: 1; }
+  }
+
+  main, header, nav, footer, .announce { position: relative; z-index: 1; }
+
+  /* ===== TYPO ===== */
+  .eyebrow {
+    font-size: 10px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--rose);
+    font-weight: 500;
+    margin-bottom: 18px;
+  }
+
+  .titre-section {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(34px, 5.5vw, 56px);
+    font-weight: 300;
+    line-height: 1.12;
+    letter-spacing: 1px;
+    color: var(--blanc);
+  }
+
+  .titre-section .script {
+    font-family: 'Parisienne', cursive;
+    font-size: 1.15em;
+    background: linear-gradient(120deg, #F5D89A 0%, #E8C27A 30%, #FF9EC6 60%, #F06FA7 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    display: inline-block;
+    padding-right: 0.15em;
+  }
+
+  .ornement {
+    width: 70px;
+    height: 1px;
+    margin: 26px 0;
+    background: linear-gradient(to right, transparent, var(--rose), var(--or), transparent);
+    position: relative;
+  }
+
+  .ornement::after {
+    content: '✦';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--or);
+    font-size: 9px;
+    background: inherit;
+  }
+
+  .ornement.centre { margin-left: auto; margin-right: auto; }
+
+  /* ===== MEDIA PLACEHOLDER ===== */
+  .media-placeholder {
+    background:
+      radial-gradient(ellipse 70% 60% at 50% 40%, rgba(240,111,167,0.12), transparent),
+      linear-gradient(135deg, #17101480 0%, #1D131A 50%, #171014 100%);
+    border: 1px dashed rgba(240,111,167,0.35);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: rgba(240,111,167,0.65);
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .media-placeholder::before {
+    content: '✦';
+    font-size: 22px;
+    color: var(--or);
+    opacity: 0.7;
+  }
+
+  /* ===== BANDEAU ANNONCE ===== */
+  .announce {
+    position: relative;
+    z-index: 101;
+    background: linear-gradient(90deg, #C2185B, #F06FA7, #E8C27A, #F06FA7, #C2185B);
+    background-size: 300% 100%;
+    animation: glisse-or 8s linear infinite;
+    color: #1A050E;
+    text-align: center;
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+    padding: 9px 14px;
+    line-height: 1.7;
+  }
+
+  @keyframes glisse-or {
+    0% { background-position: 0% 0; }
+    100% { background-position: 300% 0; }
+  }
+
+  /* ===== NAV ===== */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(6,4,6,0.82);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(240,111,167,0.18);
+  }
+
+  .nav-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 14px 24px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .nav-links { display: flex; gap: 26px; list-style: none; }
+  .nav-links.gauche { justify-content: flex-start; }
+  .nav-links.droite { justify-content: flex-end; }
+
+  .nav-links a {
+    color: var(--texte-doux);
+    text-decoration: none;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    transition: color 0.3s;
+    white-space: nowrap;
+  }
+
+  .nav-links a:hover, .nav-links a:focus { color: var(--rose); }
+
+  .nav-logo {
+    text-align: center;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1;
+    gap: 3px;
+  }
+
+  .nav-logo .ligne-nb {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--blanc);
+    font-weight: 400;
+    white-space: nowrap;
+  }
+
+  .nav-logo .ligne-nb span {
+    background: linear-gradient(120deg, var(--or-vif), var(--rose-vif));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .nav-logo .ligne-nails {
+    font-size: 7px;
+    letter-spacing: 7px;
+    text-transform: uppercase;
+    color: var(--rose);
+    font-weight: 500;
+  }
+
+  @media (max-width: 760px) {
+    .nav-links { display: none; }
+    .nav-inner { grid-template-columns: 1fr; }
+  }
+
+  /* ===== HERO ===== */
+  .hero {
+    min-height: calc(100vh - 110px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 90px 24px 90px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Fumée rose comme le logo */
+  .hero::before {
+    content: '';
+    position: absolute;
+    width: 130vw; height: 80vh;
+    top: 5%; left: 50%;
+    transform: translateX(-50%);
+    background:
+      radial-gradient(ellipse 45% 38% at 50% 42%, rgba(240,111,167,0.32), transparent 70%),
+      radial-gradient(ellipse 30% 26% at 38% 36%, rgba(255,126,182,0.22), transparent 70%),
+      radial-gradient(ellipse 28% 24% at 64% 50%, rgba(194,24,91,0.25), transparent 70%),
+      radial-gradient(ellipse 20% 16% at 50% 30%, rgba(232,194,122,0.14), transparent 70%);
+    filter: blur(30px);
+    animation: fumee 9s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+
+  @keyframes fumee {
+    0% { transform: translateX(-50%) scale(1); opacity: 0.85; }
+    100% { transform: translateX(-50%) scale(1.08); opacity: 1; }
+  }
+
+  .hero > * { position: relative; }
+
+  .hero-drop-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid rgba(240,111,167,0.5);
+    background: rgba(240,111,167,0.08);
+    backdrop-filter: blur(6px);
+    border-radius: 100px;
+    padding: 9px 24px;
+    font-size: 9px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--rose-pale);
+    margin-bottom: 40px;
+    font-weight: 500;
+  }
+
+  .pulse {
+    width: 7px; height: 7px;
+    background: var(--rose-vif);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--rose-vif);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
+
+  .hero h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(46px, 9vw, 100px);
+    font-weight: 300;
+    line-height: 1;
+    letter-spacing: 3px;
+    color: var(--blanc);
+    text-transform: uppercase;
+  }
+
+  .hero h1 .ligne-script {
+    display: block;
+    font-family: 'Parisienne', cursive;
+    text-transform: none;
+    font-size: clamp(58px, 11vw, 130px);
+    margin-top: 6px;
+    letter-spacing: 0;
+    background: linear-gradient(115deg, #F5D89A 0%, #E8C27A 25%, #FF9EC6 55%, #F06FA7 80%, #E8C27A 100%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: reflet-or 5s linear infinite;
+    padding: 0 0.2em 0.18em;
+    filter: drop-shadow(0 0 24px rgba(240,111,167,0.45));
+  }
+
+  @keyframes reflet-or {
+    to { background-position: 200% center; }
+  }
+
+  .hero-sub {
+    font-size: 13px;
+    color: var(--texte-doux);
+    max-width: 460px;
+    margin: 30px auto 0;
+    letter-spacing: 0.4px;
+    line-height: 2.1;
+  }
+
+  .hero-cta-group {
+    display: flex;
+    gap: 16px;
+    margin-top: 46px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 17px 42px;
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.35s;
+    cursor: pointer;
+    border: none;
+    border-radius: 100px;
+    font-family: 'Montserrat', sans-serif;
+  }
+
+  .btn-rose {
+    background: linear-gradient(120deg, #C2185B, #F06FA7, #FF9EC6);
+    background-size: 180% auto;
+    color: #FFF7FA;
+    box-shadow: 0 8px 28px rgba(240,111,167,0.35);
+  }
+
+  .btn-rose:hover, .btn-rose:focus {
+    background-position: right center;
+    transform: translateY(-2px);
+    box-shadow: 0 14px 36px rgba(240,111,167,0.5);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--or);
+    border: 1px solid rgba(232,194,122,0.5);
+  }
+
+  .btn-ghost:hover, .btn-ghost:focus {
+    border-color: var(--or);
+    background: rgba(232,194,122,0.08);
+    color: var(--or-vif);
+  }
+
+  .hero-counter {
+    margin-top: 64px;
+    display: flex;
+    gap: 44px;
+    justify-content: center;
+  }
+
+  .counter-item { text-align: center; }
+
+  .counter-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 38px;
+    font-weight: 300;
+    line-height: 1;
+    background: linear-gradient(120deg, var(--or-vif), var(--rose-vif));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .counter-label {
+    font-size: 8px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--texte-faible);
+    margin-top: 10px;
+  }
+
+  /* ===== MARQUEE ===== */
+  .marquee {
+    overflow: hidden;
+    border-top: 1px solid rgba(240,111,167,0.2);
+    border-bottom: 1px solid rgba(240,111,167,0.2);
+    padding: 18px 0;
+    background: linear-gradient(90deg, rgba(240,111,167,0.05), rgba(232,194,122,0.05), rgba(240,111,167,0.05));
+  }
+
+  .marquee-track {
+    display: flex;
+    gap: 56px;
+    white-space: nowrap;
+    animation: scroll 26s linear infinite;
+    width: max-content;
+  }
+
+  @keyframes scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  .marquee-item {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 15px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--rose-pale);
+    display: flex;
+    align-items: center;
+    gap: 56px;
+    opacity: 0.75;
+  }
+
+  .marquee-item::after { content: '✦'; color: var(--or); font-size: 11px; }
+
+  /* ===== COLLECTION ===== */
+  .collection { padding: 110px 0; }
+
+  .collection-head {
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto 70px;
+  }
+
+  .grille-produits {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: 30px;
+  }
+
+  .carte-produit {
+    background: linear-gradient(170deg, var(--carte), #100A0E);
+    border: 1px solid rgba(240,111,167,0.22);
+    border-radius: 18px;
+    overflow: hidden;
+    transition: all 0.4s;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .carte-produit:hover {
+    border-color: rgba(240,111,167,0.6);
+    transform: translateY(-8px);
+    box-shadow: 0 24px 50px rgba(240,111,167,0.18);
+  }
+
+  .carte-produit.signature {
+    border-color: rgba(232,194,122,0.55);
+  }
+
+  .carte-produit.signature:hover {
+    box-shadow: 0 24px 50px rgba(232,194,122,0.2);
+  }
+
+  .badge-signature {
+    position: absolute;
+    top: 16px; right: 16px;
+    z-index: 2;
+    background: linear-gradient(120deg, #E8C27A, #F5D89A);
+    color: #2A1505;
+    font-size: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 7px 15px;
+    border-radius: 100px;
+  }
+
+  .badge-rarete {
+    position: absolute;
+    top: 16px; left: 16px;
+    z-index: 2;
+    background: rgba(6,4,6,0.75);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(240,111,167,0.5);
+    color: var(--rose-pale);
+    font-size: 8px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 7px 15px;
+    border-radius: 100px;
+    font-weight: 500;
+  }
+
+  .produit-img { aspect-ratio: 4 / 5; width: 100%; }
+
+  .produit-infos {
+    padding: 28px 26px 30px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .produit-nom {
+    font-family: 'Parisienne', cursive;
+    font-size: 34px;
+    font-weight: 400;
+    margin-bottom: 8px;
+    background: linear-gradient(120deg, var(--or-vif), var(--rose-vif));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    padding-bottom: 0.1em;
+  }
+
+  .produit-desc {
+    font-size: 11.5px;
+    color: var(--texte-doux);
+    line-height: 1.95;
+    margin-bottom: 18px;
+    flex: 1;
+  }
+
+  .produit-detail {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--texte-faible);
+    margin-bottom: 20px;
+  }
+
+  .produit-bas {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+  }
+
+  .produit-prix {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 30px;
+    font-weight: 400;
+    color: var(--blanc);
+  }
+
+  .btn-acheter {
+    flex: 1;
+    text-align: center;
+    padding: 14px 20px;
+    background: linear-gradient(120deg, #C2185B, #F06FA7);
+    color: #FFF7FA;
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: all 0.3s;
+    font-weight: 600;
+    border-radius: 100px;
+  }
+
+  .btn-acheter:hover, .btn-acheter:focus {
+    box-shadow: 0 8px 24px rgba(240,111,167,0.4);
+    transform: translateY(-1px);
+  }
+
+  /* ===== CONCEPT ===== */
+  .concept {
+    padding: 110px 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 50% 0%, rgba(240,111,167,0.08), transparent),
+      var(--noir-2);
+    border-top: 1px solid rgba(240,111,167,0.12);
+    border-bottom: 1px solid rgba(240,111,167,0.12);
+  }
+
+  .concept-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 44px;
+    margin-top: 64px;
+  }
+
+  .concept-item { text-align: center; padding: 0 10px; }
+
+  .concept-num {
+    font-family: 'Parisienne', cursive;
+    font-size: 54px;
+    line-height: 1;
+    margin-bottom: 20px;
+    background: linear-gradient(120deg, var(--or-vif), var(--rose-vif));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .concept-item h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 21px;
+    font-weight: 400;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    color: var(--blanc);
+  }
+
+  .concept-item p {
+    font-size: 11.5px;
+    color: var(--texte-doux);
+    line-height: 1.95;
+  }
+
+  /* ===== RITUEL ===== */
+  .rituel { padding: 110px 0; }
+
+  .rituel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 24px;
+    margin-top: 64px;
+  }
+
+  .rituel-etape {
+    background: linear-gradient(170deg, var(--carte), #100A0E);
+    border: 1px solid rgba(240,111,167,0.18);
+    border-radius: 18px;
+    overflow: hidden;
+  }
+
+  .rituel-img { aspect-ratio: 1; width: 100%; }
+
+  .rituel-contenu { padding: 22px; }
+
+  .rituel-step {
+    font-size: 8px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--rose);
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+
+  .rituel-contenu h4 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 19px;
+    font-weight: 400;
+    margin-bottom: 8px;
+    color: var(--blanc);
+  }
+
+  .rituel-contenu p {
+    font-size: 11px;
+    color: var(--texte-doux);
+    line-height: 1.85;
+  }
+
+  /* ===== TAILLES ===== */
+  .tailles {
+    padding: 110px 0;
+    background:
+      radial-gradient(ellipse 50% 40% at 80% 20%, rgba(232,194,122,0.06), transparent),
+      var(--noir-2);
+    border-top: 1px solid rgba(240,111,167,0.12);
+  }
+
+  .tailles-flex {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+    margin-top: 50px;
+  }
+
+  @media (max-width: 800px) {
+    .tailles-flex { grid-template-columns: 1fr; }
+  }
+
+  .tailles-texte > p {
+    font-size: 12.5px;
+    color: var(--texte-doux);
+    line-height: 2.15;
+    margin-bottom: 20px;
+  }
+
+  .tailles-liste { list-style: none; margin-top: 10px; }
+
+  .tailles-liste li {
+    display: flex;
+    gap: 16px;
+    align-items: baseline;
+    font-size: 12px;
+    color: var(--texte-doux);
+    padding: 13px 0;
+    border-bottom: 1px solid rgba(240,111,167,0.15);
+  }
+
+  .tailles-liste li strong {
+    min-width: 26px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 19px;
+    font-weight: 500;
+    background: linear-gradient(120deg, var(--or-vif), var(--rose-vif));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .tailles-astuce {
+    margin-top: 26px;
+    font-size: 11px;
+    color: var(--rose-pale);
+    font-style: italic;
+    line-height: 1.9;
+    border-left: 2px solid var(--rose);
+    padding-left: 16px;
+    opacity: 0.85;
+  }
+
+  .tailles-visual { aspect-ratio: 4/5; border-radius: 18px; }
+
+  /* ===== ATELIER ===== */
+  .atelier {
+    padding: 110px 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .atelier::before {
+    content: '';
+    position: absolute;
+    width: 70vw; height: 70vw;
+    max-width: 800px; max-height: 800px;
+    bottom: -30%; right: -20%;
+    background: radial-gradient(circle, rgba(240,111,167,0.14), transparent 65%);
+    filter: blur(40px);
+    pointer-events: none;
+  }
+
+  .atelier-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 70px;
+    align-items: center;
+    position: relative;
+  }
+
+  @media (max-width: 800px) {
+    .atelier-grid { grid-template-columns: 1fr; gap: 40px; }
+  }
+
+  .atelier-visual { aspect-ratio: 4/5; border-radius: 18px; }
+
+  .atelier-texte p {
+    font-size: 13px;
+    color: var(--texte-doux);
+    line-height: 2.2;
+    margin-bottom: 22px;
+  }
+
+  .atelier-texte p strong {
+    color: var(--blanc);
+    font-weight: 400;
+  }
+
+  .atelier-signature {
+    font-family: 'Parisienne', cursive;
+    font-size: 30px;
+    margin-top: 14px;
+    background: linear-gradient(120deg, var(--or-vif), var(--rose-vif));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    padding-bottom: 0.15em;
+  }
+
+  /* ===== FAQ ===== */
+  .faq {
+    padding: 110px 0;
+    background: var(--noir-2);
+    border-top: 1px solid rgba(240,111,167,0.12);
+  }
+
+  .faq-liste { max-width: 720px; margin: 50px auto 0; }
+
+  details { border-bottom: 1px solid rgba(240,111,167,0.2); }
+
+  summary {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 21px;
+    font-weight: 300;
+    color: var(--blanc);
+    padding: 26px 44px 26px 0;
+    cursor: pointer;
+    list-style: none;
+    position: relative;
+    transition: color 0.3s;
+  }
+
+  summary::-webkit-details-marker { display: none; }
+
+  summary::after {
+    content: '+';
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--rose);
+    font-size: 24px;
+    font-weight: 200;
+    transition: transform 0.3s;
+  }
+
+  details[open] summary::after { transform: translateY(-50%) rotate(45deg); }
+
+  details[open] summary {
+    background: linear-gradient(120deg, var(--or-vif), var(--rose-vif));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .faq-reponse {
+    font-size: 12.5px;
+    color: var(--texte-doux);
+    line-height: 2.05;
+    padding: 0 0 26px;
+    max-width: 640px;
+  }
+
+  /* ===== ALERTE DROP ===== */
+  .alerte-drop { padding: 110px 0; text-align: center; }
+
+  .alerte-box {
+    max-width: 580px;
+    margin: 0 auto;
+    border: 1px solid rgba(240,111,167,0.35);
+    border-radius: 24px;
+    padding: 64px 40px;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 70% 60% at 50% 0%, rgba(240,111,167,0.14), transparent),
+      linear-gradient(170deg, var(--carte), #0D0810);
+  }
+
+  .alerte-box p {
+    font-size: 12px;
+    color: var(--texte-doux);
+    line-height: 2.05;
+    margin: 18px auto 32px;
+    max-width: 400px;
+  }
+
+  .alerte-note {
+    font-size: 11px !important;
+    margin-top: 18px !important;
+    margin-bottom: 0 !important;
+    font-family: 'Parisienne', cursive;
+    font-size: 19px !important;
+    background: linear-gradient(120deg, var(--or-vif), var(--rose-vif));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent !important;
+  }
+
+  /* ===== FOOTER ===== */
+  footer {
+    border-top: 1px solid rgba(240,111,167,0.18);
+    padding: 64px 0 40px;
+    background: #050305;
+  }
+
+  .footer-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 40px;
+    margin-bottom: 50px;
+  }
+
+  @media (max-width: 720px) {
+    .footer-grid { grid-template-columns: 1fr; gap: 34px; }
+  }
+
+  .footer-logo {
+    font-family: 'Parisienne', cursive;
+    font-size: 30px;
+    margin-bottom: 12px;
+    background: linear-gradient(120deg, var(--or-vif), var(--rose-vif));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    padding-bottom: 0.12em;
+  }
+
+  .footer-grid p, .footer-grid a {
+    font-size: 11px;
+    color: var(--texte-faible);
+    text-decoration: none;
+    line-height: 2.3;
+    display: block;
+    transition: color 0.3s;
+  }
+
+  .footer-grid a:hover { color: var(--rose); }
+
+  .footer-col-titre {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--rose);
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+
+  .footer-bas {
+    border-top: 1px solid rgba(240,111,167,0.12);
+    padding-top: 28px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--texte-faible);
+  }
+
+  .footer-bas a { color: inherit; }
+
+
+  .produit-prix-groupe {
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+    gap: 5px;
+  }
+
+  .prix-barre {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    color: var(--texte-faible);
+    text-decoration: line-through;
+    text-decoration-color: rgba(240,111,167,0.6);
+  }
+
+  .prix-lancement-label {
+    font-size: 7px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--rose);
+    font-weight: 600;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="glitter-bg" aria-hidden="true"></div>
+
+<!-- BANDEAU ANNONCE -->
+<div class="announce">Drop 001 · Offre de lancement −20% · 15 sets numérotés · Fait main en France</div>
+
+<!-- NAVIGATION : logo centré -->
+<nav>
+  <div class="nav-inner">
+    <ul class="nav-links gauche">
+      <li><a href="#collection">Collection</a></li>
+      <li><a href="#rituel">La pose</a></li>
+    </ul>
+    <a href="#" class="nav-logo">
+      <span class="ligne-nb">Nahira <span>Luxe</span></span>
+      <span class="ligne-nails">Nails</span>
+    </a>
+    <ul class="nav-links droite">
+      <li><a href="#atelier">L'atelier</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-drop-tag"><span class="pulse"></span> Drop 001 — La première collection</div>
+  <h1>Éclat<span class="ligne-script">Noir</span></h1>
+  <p class="hero-sub">
+    La toute première collection Nahira Luxe Nails : des press on nails
+    sculptés à la main, en édition limitée et numérotée. Quinze sets,
+    chacun unique — le début d'une histoire.
+  </p>
+  <div class="hero-cta-group">
+    <a href="#collection" class="btn btn-rose">Découvrir le drop</a>
+    <a href="#atelier" class="btn btn-ghost">L'atelier</a>
+  </div>
+  <div class="hero-counter">
+    <div class="counter-item">
+      <div class="counter-num">15</div>
+      <div class="counter-label">Sets au total</div>
+    </div>
+    <div class="counter-item">
+      <div class="counter-num">3</div>
+      <div class="counter-label">Designs</div>
+    </div>
+    <div class="counter-item">
+      <div class="counter-num">5</div>
+      <div class="counter-label">Par design</div>
+    </div>
+  </div>
+</header>
+
+<!-- MARQUEE -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track">
+    <span class="marquee-item">Fait main en France</span>
+    <span class="marquee-item">Édition numérotée</span>
+    <span class="marquee-item">Sculpté par une prothésiste</span>
+    <span class="marquee-item">Réutilisable</span>
+    <span class="marquee-item">Sans lampe UV</span>
+    <span class="marquee-item">Fait main en France</span>
+    <span class="marquee-item">Édition numérotée</span>
+    <span class="marquee-item">Sculpté par une prothésiste</span>
+    <span class="marquee-item">Réutilisable</span>
+    <span class="marquee-item">Sans lampe UV</span>
+  </div>
+</div>
+
+<main>
+
+<!-- COLLECTION -->
+<section class="collection" id="collection">
+  <div class="container">
+    <div class="collection-head">
+      <div class="eyebrow">La collection</div>
+      <h2 class="titre-section">Trois designs.<br><span class="script">Quinze exemplaires.</span></h2>
+      <div class="ornement centre"></div>
+    </div>
+
+    <div class="grille-produits">
+
+      <!-- PRODUIT 1 -->
+      <article class="carte-produit">
+        <div class="badge-rarete">5 / 5 disponibles</div>
+        <img class="produit-img" src="lait-de-lune.jpg" alt="Set Lait de Lune — press on nails nude laiteux avec ligne or" style="object-fit: cover; display: block;">
+        <div class="produit-infos">
+          <h3 class="produit-nom">Lait de Lune</h3>
+          <p class="produit-desc">
+            Amande courte, nude laiteux à la finition verre, traversé d'une micro-ligne
+            d'or sur la capsule accent. La manucure du quotidien, élevée au rang de bijou.
+          </p>
+          <div class="produit-detail">12 capsules · Gel pads inclus · N° 1/5 à 5/5<br>Livraison France 4,90€ · Offerte dès 2 sets</div>
+          <div class="produit-bas">
+            <div class="produit-prix-groupe">
+              <span class="prix-barre">35€</span>
+              <div class="produit-prix">28€</div>
+              <span class="prix-lancement-label">Prix de lancement</span>
+            </div>
+            <!-- Remplacer # par ton lien Stripe -->
+            <a href="#" class="btn-acheter">Ajouter</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- PRODUIT 2 -->
+      <article class="carte-produit">
+        <div class="badge-rarete">5 / 5 disponibles</div>
+        <img class="produit-img" src="french-or-fin.jpg" alt="Set French Or Fin — press on nails french dorée pailletée" style="object-fit: cover; display: block;">
+        <div class="produit-infos">
+          <h3 class="produit-nom">French Or Fin</h3>
+          <p class="produit-desc">
+            La french réinventée : une pointe dorée tracée au pinceau le plus fin,
+            sur une base nude transparente. Discrète au bureau, remarquée partout ailleurs.
+          </p>
+          <div class="produit-detail">12 capsules · Gel pads inclus · N° 1/5 à 5/5<br>Livraison France 4,90€ · Offerte dès 2 sets</div>
+          <div class="produit-bas">
+            <div class="produit-prix-groupe">
+              <span class="prix-barre">38€</span>
+              <div class="produit-prix">30€</div>
+              <span class="prix-lancement-label">Prix de lancement</span>
+            </div>
+            <!-- Remplacer # par ton lien Stripe -->
+            <a href="#" class="btn-acheter">Ajouter</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- PRODUIT 3 - SIGNATURE -->
+      <article class="carte-produit signature">
+        <div class="badge-rarete">5 / 5 disponibles</div>
+        <div class="badge-signature">Pièce signature</div>
+        <img class="produit-img" src="orage-dor.jpg" alt="Set Orage d'Or — press on nails noir mat coulures or 3D" style="object-fit: cover; display: block;">
+        <div class="produit-infos">
+          <h3 class="produit-nom">Orage d'Or</h3>
+          <p class="produit-desc">
+            Noir mat profond, coulures d'or sculptées en relief — comme du métal en fusion
+            figé sur l'ongle. Chaque coulure est modelée à la main. Aucun set n'est identique.
+          </p>
+          <div class="produit-detail">12 capsules · Relief 3D · Gel pads inclus · N° 1/5 à 5/5<br>Livraison France 4,90€ · Offerte dès 2 sets</div>
+          <div class="produit-bas">
+            <div class="produit-prix-groupe">
+              <span class="prix-barre">55€</span>
+              <div class="produit-prix">44€</div>
+              <span class="prix-lancement-label">Prix de lancement</span>
+            </div>
+            <!-- Remplacer # par ton lien Stripe -->
+            <a href="#" class="btn-acheter">Ajouter</a>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- CONCEPT -->
+<section class="concept">
+  <div class="container">
+    <div class="collection-head">
+      <div class="eyebrow">Le concept</div>
+      <h2 class="titre-section">Pourquoi des<br><span class="script">éditions limitées ?</span></h2>
+      <div class="ornement centre"></div>
+    </div>
+    <div class="concept-grid">
+      <div class="concept-item">
+        <div class="concept-num">1</div>
+        <h3>Chaque set est numéroté</h3>
+        <p>1/5, 2/5, 3/5… Votre numéro est inscrit à la main au dos du coffret. Quand un design est épuisé, il ne revient jamais à l'identique.</p>
+      </div>
+      <div class="concept-item">
+        <div class="concept-num">2</div>
+        <h3>Sculpté, jamais imprimé</h3>
+        <p>Pas d'usine, pas de série. Chaque capsule est travaillée individuellement au gel professionnel, comme une pose en salon haut de gamme.</p>
+      </div>
+      <div class="concept-item">
+        <div class="concept-num">3</div>
+        <h3>Réutilisable des années</h3>
+        <p>Posés avec gel pads, vos ongles se retirent sans dommage et se reposent à l'infini. Un bijou d'ongles, pas un consommable.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- RITUEL -->
+<section class="rituel" id="rituel">
+  <div class="container">
+    <div class="collection-head">
+      <div class="eyebrow">Le rituel</div>
+      <h2 class="titre-section">Une pose parfaite<br>en <span class="script">10 minutes</span></h2>
+      <div class="ornement centre"></div>
+    </div>
+
+    <div class="rituel-grid">
+      <div class="rituel-etape">
+        <div class="rituel-img media-placeholder">Photo / vidéo<br>Étape 1</div>
+        <div class="rituel-contenu">
+          <div class="rituel-step">Étape 01</div>
+          <h4>Préparer</h4>
+          <p>Nettoyez vos ongles, repoussez les cuticules avec le bâtonnet inclus, dégraissez à la lingette.</p>
+        </div>
+      </div>
+      <div class="rituel-etape">
+        <div class="rituel-img media-placeholder">Photo / vidéo<br>Étape 2</div>
+        <div class="rituel-contenu">
+          <div class="rituel-step">Étape 02</div>
+          <h4>Choisir</h4>
+          <p>Sélectionnez la capsule adaptée à chaque doigt. En cas de doute, prenez la taille au-dessus et ajustez à la lime.</p>
+        </div>
+      </div>
+      <div class="rituel-etape">
+        <div class="rituel-img media-placeholder">Photo / vidéo<br>Étape 3</div>
+        <div class="rituel-contenu">
+          <div class="rituel-step">Étape 03</div>
+          <h4>Poser</h4>
+          <p>Appliquez le gel pad sur l'ongle naturel, puis pressez la capsule fermement pendant 10 secondes.</p>
+        </div>
+      </div>
+      <div class="rituel-etape">
+        <div class="rituel-img media-placeholder">Photo / vidéo<br>Étape 4</div>
+        <div class="rituel-contenu">
+          <div class="rituel-step">Étape 04</div>
+          <h4>Sublimer</h4>
+          <p>Évitez l'eau pendant 2 heures. Profitez d'une tenue jusqu'à 10 jours — et retirez sans aucun dommage.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TAILLES -->
+<section class="tailles" id="tailles">
+  <div class="container">
+    <div class="eyebrow">Guide des tailles</div>
+    <h2 class="titre-section">Trouvez votre taille<br><span class="script">sans vous tromper</span></h2>
+    <div class="ornement"></div>
+
+    <div class="tailles-flex">
+      <div class="tailles-texte">
+        <p>
+          Chaque set contient 12 capsules couvrant les largeurs d'ongles les plus courantes,
+          du plus fin au plus large. Pour vérifier votre taille avant de commander,
+          mesurez la largeur de votre ongle au point le plus large avec un mètre ruban souple
+          ou une bande de papier.
+        </p>
+        <ul class="tailles-liste">
+          <li><strong>XS</strong> Largeur 10 – 12 mm · auriculaire fin</li>
+          <li><strong>S</strong> Largeur 12 – 14 mm · auriculaire, annulaire</li>
+          <li><strong>M</strong> Largeur 14 – 16 mm · majeur, index</li>
+          <li><strong>L</strong> Largeur 16 – 18 mm · pouce fin, index large</li>
+          <li><strong>XL</strong> Largeur 18 – 19 mm · pouce</li>
+        </ul>
+        <p class="tailles-astuce">
+          Astuce de prothésiste : une capsule légèrement trop large se lime sur les côtés
+          en 30 secondes. Trop étroite, elle se soulèvera. Dans le doute, prenez plus large.
+        </p>
+      </div>
+      <div class="tailles-visual media-placeholder">Photo guide des tailles<br>ou schéma des capsules<br>(800 × 1000)</div>
+    </div>
+  </div>
+</section>
+
+<!-- ATELIER -->
+<section class="atelier" id="atelier">
+  <div class="container">
+    <div class="atelier-grid">
+      <div class="atelier-visual media-placeholder">Photo de l'atelier<br>ou des mains au travail<br>(800 × 1000)</div>
+      <div class="atelier-texte">
+        <div class="eyebrow">L'atelier</div>
+        <h2 class="titre-section">Une prothésiste.<br><span class="script">Des pièces uniques.</span></h2>
+        <div class="ornement"></div>
+        <p>
+          Derrière Nahira Luxe Nails, il y a <strong>une seule paire de mains</strong> :
+          celles d'une prothésiste ongulaire diplômée, formée aux techniques de salon
+          les plus exigeantes.
+        </p>
+        <p>
+          Chaque capsule est construite au gel professionnel, sculptée, limée et polie
+          individuellement — exactement comme une pose en institut. C'est ce qui rend
+          chaque set <strong>impossible à reproduire en usine</strong> : la cambrure,
+          la finesse des bords, la profondeur des reliefs.
+        </p>
+        <p>
+          Les collections naissent en édition limitée parce que le fait main
+          ne se précipite pas. Quinze sets, pas un de plus.
+        </p>
+        <div class="atelier-signature">Nahira Beauty Studio</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq" id="faq">
+  <div class="container">
+    <div class="collection-head">
+      <div class="eyebrow">Questions fréquentes</div>
+      <h2 class="titre-section">Tout ce que vous<br><span class="script">voulez savoir</span></h2>
+      <div class="ornement centre"></div>
+    </div>
+
+    <div class="faq-liste">
+      <details>
+        <summary>Combien de temps tiennent-ils ?</summary>
+        <p class="faq-reponse">
+          Avec les gel pads inclus : 7 à 10 jours en utilisation quotidienne normale.
+          Avec de la colle à ongles (non incluse) : jusqu'à 3 semaines.
+          Les pads sont parfaits pour alterner vos sets au gré de vos envies.
+        </p>
+      </details>
+      <details>
+        <summary>Sont-ils vraiment réutilisables ?</summary>
+        <p class="faq-reponse">
+          Oui. Posés aux gel pads et retirés correctement (trempage 10 minutes dans
+          l'eau tiède savonneuse, jamais en forçant), vos capsules se reposent
+          de nombreuses fois. Nettoyez délicatement le dos de la capsule entre deux poses.
+        </p>
+      </details>
+      <details>
+        <summary>Vais-je trouver ma taille ?</summary>
+        <p class="faq-reponse">
+          Chaque set contient 12 capsules couvrant les morphologies les plus courantes.
+          Et comme nos capsules sont en gel professionnel, elles s'ajustent à la lime
+          en quelques secondes — consultez le guide des tailles ci-dessus avant de commander.
+        </p>
+      </details>
+      <details>
+        <summary>Est-ce que ça abîme mes ongles naturels ?</summary>
+        <p class="faq-reponse">
+          Non. La pose aux gel pads ne nécessite ni limage de l'ongle naturel,
+          ni lampe UV, ni colle agressive. Vos ongles poussent tranquillement en dessous.
+          Important : ne jamais arracher une capsule — toujours la décoller en douceur après trempage.
+        </p>
+      </details>
+      <details>
+        <summary>Quand a lieu le prochain drop ?</summary>
+        <p class="faq-reponse">
+          Chaque collection est annoncée en exclusivité sur notre Instagram, où nous
+          partageons aussi les coulisses de fabrication. Les éditions étant limitées
+          et numérotées, un design épuisé ne revient jamais à l'identique —
+          suivez l'atelier pour découvrir les prochaines créations en avant-première.
+        </p>
+      </details>
+      <details>
+        <summary>Pourquoi un prix de lancement ?</summary>
+        <p class="faq-reponse">
+          Le Drop 001 est notre toute première collection : les 15 sets fondateurs
+          bénéficient de −20% pour célébrer ce lancement. Dès le Drop 002,
+          les créations retrouveront leur prix normal — les premières clientes
+          resteront les seules à avoir eu ce privilège.
+        </p>
+      </details>
+      <details>
+        <summary>Quels sont les délais de livraison ?</summary>
+        <p class="faq-reponse">
+          Vos sets étant déjà fabriqués au moment du drop, l'expédition se fait
+          sous 24 à 48h en lettre suivie avec numéro de tracking.
+          Livraison France métropolitaine : 4,90€ (2 à 4 jours ouvrés) ·
+          Belgique, Suisse, Luxembourg : 8,90€ (4 à 8 jours) ·
+          DOM-TOM : 6,90€ — et la livraison est offerte dès 2 sets commandés.
+        </p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ALERTE DROP -->
+<section class="alerte-drop">
+  <div class="container">
+    <div class="alerte-box">
+      <div class="eyebrow" style="margin-bottom: 8px;">Entrez dans l'atelier</div>
+      <h2 class="titre-section" style="font-size: clamp(28px, 4.5vw, 40px);">Les coulisses<br><span class="script">de chaque création</span></h2>
+      <p>
+        Sculpture 3D, chrome, finitions… Suivez la fabrication de chaque set
+        en vidéo sur Instagram, et découvrez les prochaines collections
+        avant tout le monde.
+      </p>
+      <!-- Remplacer # par ton lien Instagram -->
+      <a href="#" class="btn btn-rose">Suivre sur Instagram</a>
+      <p class="alerte-note">@nahiraluxenails</p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-logo">Nahira Luxe Nails</div>
+        <p>Press on nails de luxe, sculptés à la main en France.<br>Éditions limitées et numérotées.</p>
+      </div>
+      <div>
+        <div class="footer-col-titre">Navigation</div>
+        <a href="#collection">Collection</a>
+        <a href="#rituel">La pose</a>
+        <a href="#tailles">Guide des tailles</a>
+        <a href="#faq">FAQ</a>
+      </div>
+      <div>
+        <div class="footer-col-titre">Contact</div>
+        <!-- Remplacer par tes vrais liens -->
+        <a href="#">Instagram</a>
+        <a href="#">TikTok</a>
+        <a href="mailto:contact@nahiraluxenails.fr">contact@nahiraluxenails.fr</a>
+      </div>
+    </div>
+    <div class="footer-bas">
+      <span>© 2026 Nahira Luxe Nails — Tous droits réservés</span>
+      <span><a href="#">Mentions légales</a> · <a href="#">CGV</a> · <a href="#">Confidentialité</a></span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
