@@ -178,6 +178,19 @@ h2.section-titre em { font-family:'Parisienne', cursive; font-style:normal; font
 .btn-danger { color:var(--alerte); border-color:rgba(255,140,140,0.3); }
 .note { font-size:14.5px; color:var(--texte-faible); line-height:1.5; margin-top:10px; }
 
+
+/* ===== visualiseur interne (boutique) ===== */
+.visionneuse { position:fixed; inset:0; z-index:60; background:var(--noir); display:none; flex-direction:column; }
+.visionneuse.ouvert { display:flex; }
+.visionneuse .barre { flex:none; display:flex; align-items:center; gap:12px;
+  padding:calc(10px + env(safe-area-inset-top, 0px)) 14px 10px; background:rgba(10,7,9,0.96);
+  border-bottom:1px solid var(--bordure); }
+.visionneuse .retour { background:var(--carte); border:1px solid var(--bordure); color:var(--rose-pale);
+  font-family:'Montserrat', sans-serif; font-size:9px; letter-spacing:2px; text-transform:uppercase;
+  border-radius:99px; padding:10px 16px; cursor:pointer; }
+.visionneuse .titre-v { font-family:'Parisienne', cursive; font-size:21px; color:var(--rose); }
+.visionneuse iframe { flex:1; border:none; width:100%; background:var(--noir); }
+
 /* ===== tab bar ===== */
 nav.tabs { position:fixed; left:0; right:0; bottom:0; z-index:30; background:rgba(10,7,9,0.92); backdrop-filter:blur(14px);
   border-top:1px solid var(--bordure); display:flex; justify-content:space-around; padding:8px 4px calc(8px + var(--safe-b)); }
@@ -269,7 +282,7 @@ nav.tabs button.actif .ic { filter:none; }
       <div class="eyebrow" style="margin-top:18px;">Raccourcis</div>
       <div class="raccourcis">
         <a href="https://dashboard.stripe.com" target="_blank" rel="noopener"><div class="t">Stripe</div><div class="s">Paiements</div></a>
-        <a href="https://mrshaidara2022-boop.github.io/nahira-beauty-nails/" target="_blank" rel="noopener"><div class="t">Boutique</div><div class="s">Site en ligne</div></a>
+        <a href="#" id="ouvrirBoutique"><div class="t">Boutique</div><div class="s">Site en ligne</div></a>
         <a href="https://github.com/mrshaidara2022-boop/nahira-beauty-nails" target="_blank" rel="noopener"><div class="t">GitHub</div><div class="s">Code du site</div></a>
         <a href="https://instagram.com/nahirabeautystudio" target="_blank" rel="noopener"><div class="t">Instagram</div><div class="s">@nahirabeautystudio</div></a>
       </div>
@@ -399,6 +412,16 @@ nav.tabs button.actif .ic { filter:none; }
   <input type="file" id="fichierImport" accept="application/json" style="display:none;">
   <button class="btn-secondaire btn-danger" id="btnReset">Tout remettre à zéro</button>
   <p class="note">Tes données vivent uniquement dans ce navigateur, sur cet appareil. Personne d'autre n'y a accès, même avec l'adresse de la page. Pense à exporter une sauvegarde de temps en temps.</p>
+</div>
+
+
+<!-- visualiseur boutique intégré -->
+<div class="visionneuse" id="visionneuse">
+  <div class="barre">
+    <button class="retour" id="fermerVisionneuse">← Atelier</button>
+    <span class="titre-v">Boutique</span>
+  </div>
+  <iframe id="cadreBoutique" title="Boutique Nahira Beauty Nails" loading="lazy"></iframe>
 </div>
 
 <script>
@@ -752,6 +775,19 @@ document.getElementById('fichierImport').addEventListener('change', function(ev)
 document.getElementById('btnReset').addEventListener('click', function(){
   if (!confirm('Tout effacer ? Cette action est définitive (pense à exporter avant).')) return;
   etat = etatInitial(); fermerFeuilles(); sauver();
+});
+
+
+/* ----- visualiseur boutique ----- */
+var visionneuse = document.getElementById('visionneuse');
+var cadre = document.getElementById('cadreBoutique');
+document.getElementById('ouvrirBoutique').addEventListener('click', function(ev){
+  ev.preventDefault();
+  if (!cadre.getAttribute('src')) cadre.setAttribute('src', 'https://mrshaidara2022-boop.github.io/nahira-beauty-nails/');
+  visionneuse.classList.add('ouvert');
+});
+document.getElementById('fermerVisionneuse').addEventListener('click', function(){
+  visionneuse.classList.remove('ouvert');
 });
 
 rendre();
