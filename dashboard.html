@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Atelier — Nahira Beauty Nails</title>
+<meta name="description" content="Tableau de bord privé Nahira Beauty Nails — éditions, commandes, finances, contenu.">
+<meta name="theme-color" content="#060406">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Atelier NBN">
+<link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+:root {
+  --noir:#060406; --noir-2:#0E090C; --carte:#150E12; --carte-2:#1C1318;
+  --rose:#F06FA7; --rose-vif:#FF7EB6; --rose-pale:#F8C6DC;
+  --or:#E8C27A; --or-vif:#F5D89A;
+  --blanc:#FFF7FA;
+  --texte:rgba(255,247,250,0.92); --texte-doux:rgba(255,247,250,0.6); --texte-faible:rgba(255,247,250,0.38);
+  --ok:#7FD8A4; --attente:#F5D89A; --alerte:#FF8C8C;
+  --bordure:rgba(240,111,167,0.16);
+  --safe-b:env(safe-area-inset-bottom, 0px);
+}
+
+html { background:var(--noir); }
+body {
+  background:var(--noir);
+  color:var(--texte);
+  font-family:'Cormorant Garamond', serif;
+  font-weight:400; line-height:1.55;
+  min-height:100vh; min-height:100dvh;
+  overflow-x:hidden;
+}
+
+/* ===== fond ===== */
+.fond { position:fixed; inset:0; z-index:0; pointer-events:none;
+  background:
+    radial-gradient(ellipse 80% 50% at 80% -10%, rgba(240,111,167,0.10), transparent 60%),
+    radial-gradient(ellipse 70% 45% at 10% 110%, rgba(232,194,122,0.07), transparent 60%);
+}
+
+/* ===== coquille ===== */
+.app { position:relative; z-index:1; display:flex; min-height:100dvh; }
+.cote { display:none; }
+main { flex:1; min-width:0; padding:18px 16px calc(86px + var(--safe-b)); max-width:760px; margin:0 auto; width:100%; }
+
+/* ===== entête ===== */
+.entete { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; margin-bottom:18px; }
+.entete .marque { line-height:1; }
+.entete .ligne-nb { font-family:'Cormorant Garamond', serif; font-weight:500; font-size:21px; letter-spacing:5px; text-transform:uppercase; color:var(--blanc); }
+.entete .ligne-nb span { background:linear-gradient(120deg, var(--or-vif), var(--rose-vif)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.entete .ligne-atelier { font-family:'Parisienne', cursive; font-size:24px; color:var(--rose); margin-top:2px; }
+.entete .date { font-family:'Montserrat', sans-serif; font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--texte-faible); text-align:right; }
+.bouton-reglages { background:var(--carte); border:1px solid var(--bordure); color:var(--rose-pale); width:38px; height:38px; border-radius:12px; font-size:16px; cursor:pointer; flex:none; }
+
+/* ===== titres ===== */
+.eyebrow { font-family:'Montserrat', sans-serif; font-size:9px; letter-spacing:3px; text-transform:uppercase; color:var(--or); margin-bottom:8px; }
+h2.section-titre { font-family:'Cormorant Garamond', serif; font-weight:500; font-size:26px; color:var(--blanc); margin-bottom:14px; }
+h2.section-titre em { font-family:'Parisienne', cursive; font-style:normal; font-size:28px; background:linear-gradient(120deg, var(--or-vif), var(--rose-vif)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+
+/* ===== cartes / KPI ===== */
+.grille-kpi { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
+.kpi { background:var(--carte); border:1px solid var(--bordure); border-radius:16px; padding:14px 14px 12px; position:relative; overflow:hidden; }
+.kpi::after { content:""; position:absolute; left:0; top:0; height:2px; width:46px; background:linear-gradient(90deg, var(--or), var(--rose)); border-radius:2px; }
+.kpi .v { font-family:'Cormorant Garamond', serif; font-size:27px; font-weight:600; color:var(--blanc); line-height:1.1; }
+.kpi .v small { font-size:16px; color:var(--texte-doux); font-weight:400; }
+.kpi .l { font-family:'Montserrat', sans-serif; font-size:8.5px; letter-spacing:2px; text-transform:uppercase; color:var(--texte-doux); margin-top:4px; }
+
+.carte { background:var(--carte); border:1px solid var(--bordure); border-radius:18px; padding:16px; margin-bottom:14px; }
+.carte h3 { font-family:'Cormorant Garamond', serif; font-weight:500; font-size:20px; color:var(--blanc); margin-bottom:10px; }
+
+/* barres de progression designs */
+.prog { margin-bottom:12px; }
+.prog:last-child { margin-bottom:0; }
+.prog .ligne { display:flex; justify-content:space-between; align-items:baseline; font-size:16px; }
+.prog .ligne b { font-weight:500; color:var(--texte); }
+.prog .ligne span { font-family:'Montserrat', sans-serif; font-size:10px; letter-spacing:1px; color:var(--texte-doux); }
+.prog .rail { height:6px; background:rgba(255,247,250,0.07); border-radius:6px; margin-top:6px; overflow:hidden; }
+.prog .jauge { height:100%; border-radius:6px; background:linear-gradient(90deg, var(--or), var(--rose)); transition:width .5s cubic-bezier(.22,1,.36,1); }
+
+/* raccourcis */
+.raccourcis { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.raccourcis a { display:block; text-decoration:none; background:var(--carte-2); border:1px solid var(--bordure); border-radius:14px; padding:12px 14px; color:var(--texte); transition:border-color .25s; }
+.raccourcis a:active { border-color:var(--rose); }
+.raccourcis a .t { font-size:17px; font-weight:500; }
+.raccourcis a .s { font-family:'Montserrat', sans-serif; font-size:8.5px; letter-spacing:1.6px; text-transform:uppercase; color:var(--texte-faible); margin-top:2px; }
+
+/* ===== éditions (signature) ===== */
+.design-bloc { background:var(--carte); border:1px solid var(--bordure); border-radius:18px; padding:16px; margin-bottom:14px; }
+.design-bloc .haut { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px; }
+.design-bloc .nom { font-family:'Parisienne', cursive; font-size:26px; background:linear-gradient(120deg, var(--or-vif), var(--rose-vif)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.design-bloc .prix { font-family:'Montserrat', sans-serif; font-size:11px; letter-spacing:1px; color:var(--texte-doux); }
+.design-bloc .dispo { font-family:'Montserrat', sans-serif; font-size:9px; letter-spacing:2px; text-transform:uppercase; color:var(--texte-faible); margin-bottom:10px; }
+.numeros { display:grid; grid-template-columns:repeat(5, 1fr); gap:8px; }
+.num { aspect-ratio:1; border-radius:14px; border:1px solid var(--bordure); background:var(--carte-2);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer;
+  font-family:'Cormorant Garamond', serif; user-select:none; transition:transform .12s, border-color .25s, background .25s; }
+.num:active { transform:scale(0.93); }
+.num .n { font-size:18px; font-weight:600; color:var(--texte); line-height:1; }
+.num .e { font-family:'Montserrat', sans-serif; font-size:6.5px; letter-spacing:1.2px; text-transform:uppercase; color:var(--texte-faible); }
+.num[data-etat="vendu"] { border-color:rgba(127,216,164,0.5); background:rgba(127,216,164,0.08); }
+.num[data-etat="vendu"] .e { color:var(--ok); }
+.num[data-etat="reserve"] { border-color:rgba(245,216,154,0.5); background:rgba(245,216,154,0.07); }
+.num[data-etat="reserve"] .e { color:var(--attente); }
+.num[data-etat="offert"] { border-color:rgba(240,111,167,0.55); background:rgba(240,111,167,0.08); }
+.num[data-etat="offert"] .e { color:var(--rose-vif); }
+.legende { display:flex; flex-wrap:wrap; gap:12px; font-family:'Montserrat', sans-serif; font-size:8.5px; letter-spacing:1.4px; text-transform:uppercase; color:var(--texte-faible); margin-top:4px; }
+.legende i { display:inline-block; width:8px; height:8px; border-radius:3px; margin-right:5px; vertical-align:middle; }
+
+/* ===== commandes ===== */
+.btn-principal { display:block; width:100%; text-align:center; font-family:'Montserrat', sans-serif; font-size:10px; letter-spacing:2.5px; text-transform:uppercase; font-weight:600;
+  background:linear-gradient(120deg, var(--or), var(--rose)); color:#1A0E14; border:none; border-radius:14px; padding:15px; cursor:pointer; margin-bottom:14px; }
+.btn-principal:active { opacity:.85; }
+.filtres { display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; margin-bottom:10px; scrollbar-width:none; }
+.filtres::-webkit-scrollbar { display:none; }
+.puce { flex:none; font-family:'Montserrat', sans-serif; font-size:9px; letter-spacing:1.6px; text-transform:uppercase; color:var(--texte-doux);
+  border:1px solid var(--bordure); background:var(--carte); border-radius:99px; padding:8px 14px; cursor:pointer; }
+.puce.active { color:#1A0E14; background:linear-gradient(120deg, var(--or), var(--rose)); border-color:transparent; }
+.cmd { background:var(--carte); border:1px solid var(--bordure); border-radius:16px; padding:14px; margin-bottom:10px; }
+.cmd .l1 { display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+.cmd .client { font-size:19px; font-weight:500; color:var(--blanc); }
+.cmd .montant { font-family:'Cormorant Garamond', serif; font-size:19px; font-weight:600; color:var(--or-vif); white-space:nowrap; }
+.cmd .l2 { font-size:15px; color:var(--texte-doux); margin-top:2px; }
+.cmd .l3 { display:flex; justify-content:space-between; align-items:center; margin-top:10px; gap:8px; flex-wrap:wrap; }
+.etat { font-family:'Montserrat', sans-serif; font-size:8.5px; letter-spacing:1.6px; text-transform:uppercase; border-radius:99px; padding:6px 12px; border:none; cursor:pointer; }
+.etat[data-s="a_preparer"] { background:rgba(255,140,140,0.12); color:var(--alerte); }
+.etat[data-s="expediee"] { background:rgba(245,216,154,0.12); color:var(--attente); }
+.etat[data-s="livree"] { background:rgba(127,216,164,0.12); color:var(--ok); }
+.cmd .actions { display:flex; gap:10px; }
+.lien-action { font-family:'Montserrat', sans-serif; font-size:8.5px; letter-spacing:1.4px; text-transform:uppercase; color:var(--rose-pale); background:none; border:none; cursor:pointer; padding:6px 0; }
+.vide { text-align:center; padding:34px 18px; color:var(--texte-doux); font-size:17px; border:1px dashed var(--bordure); border-radius:18px; }
+.vide .p { font-family:'Parisienne', cursive; font-size:26px; color:var(--rose); margin-bottom:4px; }
+
+/* ===== finances ===== */
+.ligne-fi { display:flex; justify-content:space-between; align-items:baseline; padding:9px 0; border-bottom:1px solid rgba(240,111,167,0.10); font-size:17px; }
+.ligne-fi:last-child { border-bottom:none; }
+.ligne-fi .lab { color:var(--texte-doux); }
+.ligne-fi .val { font-weight:600; color:var(--texte); }
+.ligne-fi.total .lab { color:var(--blanc); font-weight:500; }
+.ligne-fi.total .val { font-size:21px; background:linear-gradient(120deg, var(--or-vif), var(--rose-vif)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.barres { display:flex; align-items:flex-end; gap:14px; height:120px; margin:14px 4px 4px; }
+.barre-col { flex:1; display:flex; flex-direction:column; align-items:center; gap:6px; height:100%; justify-content:flex-end; }
+.barre { width:100%; max-width:54px; border-radius:8px 8px 3px 3px; background:linear-gradient(180deg, var(--rose), rgba(240,111,167,0.25)); min-height:3px; transition:height .5s cubic-bezier(.22,1,.36,1); }
+.barre.or { background:linear-gradient(180deg, var(--or), rgba(232,194,122,0.25)); }
+.barre-col .bl { font-family:'Montserrat', sans-serif; font-size:7.5px; letter-spacing:1px; text-transform:uppercase; color:var(--texte-faible); text-align:center; }
+.barre-col .bv { font-size:14px; color:var(--texte-doux); }
+
+/* ===== contenu ===== */
+.semaine-titre { font-family:'Parisienne', cursive; font-size:23px; color:var(--rose); margin:16px 0 8px; }
+.post { display:flex; gap:12px; align-items:flex-start; background:var(--carte); border:1px solid var(--bordure); border-radius:14px; padding:12px 14px; margin-bottom:8px; cursor:pointer; }
+.post .coche { flex:none; width:22px; height:22px; border-radius:8px; border:1.5px solid var(--bordure); margin-top:2px; display:flex; align-items:center; justify-content:center; font-size:12px; color:#1A0E14; }
+.post.fait .coche { background:linear-gradient(120deg, var(--or), var(--rose)); border-color:transparent; }
+.post .pt { font-size:16.5px; color:var(--texte); line-height:1.4; }
+.post.fait .pt { color:var(--texte-faible); text-decoration:line-through; }
+.post .pn { font-family:'Montserrat', sans-serif; font-size:8px; letter-spacing:1.6px; text-transform:uppercase; color:var(--or); }
+
+/* ===== feuille (modale) ===== */
+.voile { position:fixed; inset:0; background:rgba(6,4,6,0.7); backdrop-filter:blur(4px); z-index:40; opacity:0; pointer-events:none; transition:opacity .25s; }
+.voile.ouvert { opacity:1; pointer-events:auto; }
+.feuille { position:fixed; left:0; right:0; bottom:0; z-index:50; background:var(--noir-2); border:1px solid var(--bordure); border-bottom:none;
+  border-radius:24px 24px 0 0; padding:20px 18px calc(20px + var(--safe-b)); max-height:88dvh; overflow-y:auto;
+  transform:translateY(105%); transition:transform .32s cubic-bezier(.22,1,.36,1); max-width:560px; margin:0 auto; }
+.feuille.ouvert { transform:translateY(0); }
+.feuille .poignee { width:40px; height:4px; border-radius:4px; background:rgba(255,247,250,0.2); margin:0 auto 16px; }
+.feuille h3 { font-family:'Cormorant Garamond', serif; font-weight:500; font-size:23px; color:var(--blanc); margin-bottom:14px; }
+.champ { margin-bottom:12px; }
+.champ label { display:block; font-family:'Montserrat', sans-serif; font-size:8.5px; letter-spacing:2px; text-transform:uppercase; color:var(--texte-doux); margin-bottom:6px; }
+.champ input, .champ select, .champ textarea { width:100%; background:var(--carte); border:1px solid var(--bordure); border-radius:12px; color:var(--texte);
+  font-family:'Cormorant Garamond', serif; font-size:17px; padding:12px 13px; outline:none; appearance:none; }
+.champ input:focus, .champ select:focus { border-color:var(--rose); }
+.deux { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+.btn-secondaire { display:block; width:100%; text-align:center; font-family:'Montserrat', sans-serif; font-size:9.5px; letter-spacing:2px; text-transform:uppercase;
+  background:var(--carte); color:var(--rose-pale); border:1px solid var(--bordure); border-radius:14px; padding:13px; cursor:pointer; margin-top:10px; }
+.btn-danger { color:var(--alerte); border-color:rgba(255,140,140,0.3); }
+.note { font-size:14.5px; color:var(--texte-faible); line-height:1.5; margin-top:10px; }
+
+/* ===== tab bar ===== */
+nav.tabs { position:fixed; left:0; right:0; bottom:0; z-index:30; background:rgba(10,7,9,0.92); backdrop-filter:blur(14px);
+  border-top:1px solid var(--bordure); display:flex; justify-content:space-around; padding:8px 4px calc(8px + var(--safe-b)); }
+nav.tabs button { background:none; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px;
+  font-family:'Montserrat', sans-serif; font-size:7.5px; letter-spacing:1.4px; text-transform:uppercase; color:var(--texte-faible); padding:4px 8px; }
+nav.tabs button .ic { font-size:17px; line-height:1; filter:grayscale(1) opacity(.55); transition:filter .2s; }
+nav.tabs button.actif { color:var(--rose-pale); }
+nav.tabs button.actif .ic { filter:none; }
+
+.vue { display:none; animation:app .3s ease; }
+.vue.actif { display:block; }
+@keyframes app { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+
+/* ===== desktop ===== */
+@media (min-width:900px) {
+  nav.tabs { display:none; }
+  .cote { display:flex; flex-direction:column; gap:4px; width:230px; flex:none; padding:28px 18px; border-right:1px solid var(--bordure); position:sticky; top:0; height:100dvh; }
+  .cote .marque { margin-bottom:26px; padding:0 10px; }
+  .cote .ligne-nb { font-family:'Cormorant Garamond', serif; font-weight:500; font-size:18px; letter-spacing:4px; text-transform:uppercase; color:var(--blanc); }
+  .cote .ligne-nb span { background:linear-gradient(120deg, var(--or-vif), var(--rose-vif)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .cote .ligne-atelier { font-family:'Parisienne', cursive; font-size:22px; color:var(--rose); }
+  .cote button { display:flex; align-items:center; gap:12px; background:none; border:none; cursor:pointer; text-align:left;
+    font-family:'Montserrat', sans-serif; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--texte-doux);
+    padding:12px 14px; border-radius:12px; }
+  .cote button.actif { color:var(--blanc); background:var(--carte); border:1px solid var(--bordure); }
+  .cote .ic { font-size:15px; }
+  main { padding:30px 38px 60px; }
+  .entete .marque { display:none; }
+  .grille-kpi { grid-template-columns:repeat(4, 1fr); }
+  .raccourcis { grid-template-columns:repeat(4, 1fr); }
+  .feuille { left:50%; right:auto; bottom:auto; top:50%; transform:translate(-50%, -46%) scale(.97); opacity:0; width:520px; border-radius:22px; border-bottom:1px solid var(--bordure); }
+  .feuille.ouvert { transform:translate(-50%, -50%) scale(1); opacity:1; }
+  .feuille .poignee { display:none; }
+}
+@media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+</style>
+</head>
+<body>
+<div class="fond"></div>
+
+<div class="app">
+
+  <aside class="cote">
+    <div class="marque">
+      <div class="ligne-nb">Nahira <span>Beauty</span></div>
+      <div class="ligne-atelier">l'Atelier</div>
+    </div>
+    <button data-vue="apercu" class="actif"><span class="ic">✦</span> Aperçu</button>
+    <button data-vue="editions"><span class="ic">♛</span> Éditions</button>
+    <button data-vue="commandes"><span class="ic">⬩</span> Commandes</button>
+    <button data-vue="finances"><span class="ic">◈</span> Finances</button>
+    <button data-vue="contenu"><span class="ic">✎</span> Contenu</button>
+  </aside>
+
+  <main>
+    <header class="entete">
+      <div class="marque">
+        <div class="ligne-nb">Nahira <span>Beauty</span></div>
+        <div class="ligne-atelier">l'Atelier</div>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div class="date" id="dateJour"></div>
+        <button class="bouton-reglages" id="ouvrirReglages" aria-label="Réglages">⚙</button>
+      </div>
+    </header>
+
+    <!-- ============ APERÇU ============ -->
+    <section class="vue actif" id="vue-apercu">
+      <div class="eyebrow">Drop 001 · Éclat Noir</div>
+      <h2 class="section-titre">Bonjour, <em>Diégane</em></h2>
+
+      <div class="grille-kpi">
+        <div class="kpi"><div class="v" id="kCA">0 €</div><div class="l">Chiffre d'affaires</div></div>
+        <div class="kpi"><div class="v" id="kNet">0 €</div><div class="l">Net estimé</div></div>
+        <div class="kpi"><div class="v" id="kSets">0<small>/15</small></div><div class="l">Sets vendus</div></div>
+        <div class="kpi"><div class="v" id="kAExp">0</div><div class="l">À expédier</div></div>
+      </div>
+
+      <div class="carte">
+        <h3>Avancement du drop</h3>
+        <div id="progressDesigns"></div>
+      </div>
+
+      <div class="carte" id="carteActions" style="display:none;">
+        <h3>À faire maintenant</h3>
+        <div id="listeActions"></div>
+      </div>
+
+      <div class="eyebrow" style="margin-top:18px;">Raccourcis</div>
+      <div class="raccourcis">
+        <a href="https://dashboard.stripe.com" target="_blank" rel="noopener"><div class="t">Stripe</div><div class="s">Paiements</div></a>
+        <a href="https://mrshaidara2022-boop.github.io/nahira-luxe-nails/" target="_blank" rel="noopener"><div class="t">Boutique</div><div class="s">Site en ligne</div></a>
+        <a href="https://github.com/mrshaidara2022-boop/nahira-luxe-nails" target="_blank" rel="noopener"><div class="t">GitHub</div><div class="s">Code du site</div></a>
+        <a href="https://instagram.com/nahirabeautystudio" target="_blank" rel="noopener"><div class="t">Instagram</div><div class="s">@nahirabeautystudio</div></a>
+      </div>
+    </section>
+
+    <!-- ============ ÉDITIONS ============ -->
+    <section class="vue" id="vue-editions">
+      <div class="eyebrow">Registre des éditions</div>
+      <h2 class="section-titre">Pièces <em>numérotées</em></h2>
+      <p class="note" style="margin:-6px 0 14px;">Touche un numéro pour changer son état : disponible → réservé → vendu → offert.</p>
+      <div id="blocsDesigns"></div>
+      <div class="legende">
+        <span><i style="background:var(--carte-2); border:1px solid var(--bordure);"></i>Disponible</span>
+        <span><i style="background:rgba(245,216,154,0.6);"></i>Réservé</span>
+        <span><i style="background:rgba(127,216,164,0.6);"></i>Vendu</span>
+        <span><i style="background:rgba(240,111,167,0.7);"></i>Offert presse</span>
+      </div>
+    </section>
+
+    <!-- ============ COMMANDES ============ -->
+    <section class="vue" id="vue-commandes">
+      <div class="eyebrow">Carnet de commandes</div>
+      <h2 class="section-titre">Commandes</h2>
+      <button class="btn-principal" id="btnNouvelleCmd">+ Nouvelle commande</button>
+      <div class="filtres" id="filtresCmd">
+        <button class="puce active" data-f="toutes">Toutes</button>
+        <button class="puce" data-f="a_preparer">À préparer</button>
+        <button class="puce" data-f="expediee">Expédiées</button>
+        <button class="puce" data-f="livree">Livrées</button>
+      </div>
+      <div id="listeCommandes"></div>
+    </section>
+
+    <!-- ============ FINANCES ============ -->
+    <section class="vue" id="vue-finances">
+      <div class="eyebrow">Trésorerie du drop</div>
+      <h2 class="section-titre">Finances</h2>
+
+      <div class="carte">
+        <h3>Résultat estimé</h3>
+        <div class="ligne-fi"><span class="lab">Ventes produits</span><span class="val" id="fVentes">0 €</span></div>
+        <div class="ligne-fi"><span class="lab">Livraisons facturées</span><span class="val" id="fLivraisons">0 €</span></div>
+        <div class="ligne-fi"><span class="lab">Frais Stripe (≈1,5% + 0,25€)</span><span class="val" id="fStripe">−0 €</span></div>
+        <div class="ligne-fi"><span class="lab">Cotisations URSSAF (<span id="fTauxU">12,3</span>%)</span><span class="val" id="fUrssaf">−0 €</span></div>
+        <div class="ligne-fi"><span class="lab">Matières (<span id="fCoutSet">5</span>€ × sets vendus)</span><span class="val" id="fMatieres">−0 €</span></div>
+        <div class="ligne-fi"><span class="lab">Frais postaux réels</span><span class="val" id="fPostaux">−0 €</span></div>
+        <div class="ligne-fi total"><span class="lab">Bénéfice net estimé</span><span class="val" id="fNet">0 €</span></div>
+      </div>
+
+      <div class="carte">
+        <h3>Ventes par design</h3>
+        <div class="barres" id="barresDesigns"></div>
+      </div>
+      <p class="note">Estimations indicatives — le réel se lit dans Stripe et ton relevé URSSAF. Ajuste coût matières, frais postaux et taux dans ⚙ Réglages.</p>
+    </section>
+
+    <!-- ============ CONTENU ============ -->
+    <section class="vue" id="vue-contenu">
+      <div class="eyebrow">Plan de lancement · 12 posts</div>
+      <h2 class="section-titre">Contenu</h2>
+      <div class="carte" style="padding:14px 16px;">
+        <div class="prog">
+          <div class="ligne"><b>Posts publiés</b><span id="contenuCompteur">0 / 12</span></div>
+          <div class="rail"><div class="jauge" id="contenuJauge" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div id="listePosts"></div>
+    </section>
+  </main>
+</div>
+
+<!-- tab bar mobile -->
+<nav class="tabs">
+  <button data-vue="apercu" class="actif"><span class="ic">✦</span>Aperçu</button>
+  <button data-vue="editions"><span class="ic">♛</span>Éditions</button>
+  <button data-vue="commandes"><span class="ic">⬩</span>Cmd</button>
+  <button data-vue="finances"><span class="ic">◈</span>Finances</button>
+  <button data-vue="contenu"><span class="ic">✎</span>Contenu</button>
+</nav>
+
+<!-- ============ FEUILLE COMMANDE ============ -->
+<div class="voile" id="voile"></div>
+<div class="feuille" id="feuilleCmd">
+  <div class="poignee"></div>
+  <h3 id="feuilleCmdTitre">Nouvelle commande</h3>
+  <div class="champ"><label>Prénom / pseudo de la cliente</label><input id="cClient" type="text" placeholder="ex. Sarah M."></div>
+  <div class="deux">
+    <div class="champ"><label>Design</label>
+      <select id="cDesign"></select>
+    </div>
+    <div class="champ"><label>N° d'édition</label>
+      <select id="cNumero"></select>
+    </div>
+  </div>
+  <div class="deux">
+    <div class="champ"><label>Livraison</label>
+      <select id="cLivraison">
+        <option value="4.90">France — 4,90 €</option>
+        <option value="8.90">Europe — 8,90 €</option>
+        <option value="6.90">Dom-Tom — 6,90 €</option>
+        <option value="0">Offerte (2 sets +)</option>
+      </select>
+    </div>
+    <div class="champ"><label>Montant total (€)</label><input id="cMontant" type="number" step="0.01" inputmode="decimal"></div>
+  </div>
+  <div class="champ"><label>N° de suivi (optionnel)</label><input id="cSuivi" type="text" placeholder="ex. LA123456789FR"></div>
+  <button class="btn-principal" id="btnEnregistrerCmd" style="margin-top:6px;">Enregistrer la commande</button>
+  <button class="btn-secondaire btn-danger" id="btnSupprimerCmd" style="display:none;">Supprimer cette commande</button>
+</div>
+
+<!-- ============ FEUILLE RÉGLAGES ============ -->
+<div class="feuille" id="feuilleReglages">
+  <div class="poignee"></div>
+  <h3>Réglages de l'atelier</h3>
+  <div class="deux">
+    <div class="champ"><label>Coût matières / set (€)</label><input id="rCout" type="number" step="0.5" inputmode="decimal"></div>
+    <div class="champ"><label>Taux URSSAF (%)</label><input id="rUrssaf" type="number" step="0.1" inputmode="decimal"></div>
+  </div>
+  <div class="deux">
+    <div class="champ"><label>Prix Lait de Lune (€)</label><input id="rP1" type="number" step="1"></div>
+    <div class="champ"><label>Prix French Or Fin (€)</label><input id="rP2" type="number" step="1"></div>
+  </div>
+  <div class="champ"><label>Prix Orage d'Or (€)</label><input id="rP3" type="number" step="1"></div>
+  <button class="btn-principal" id="btnSauverReglages" style="margin-top:4px;">Enregistrer</button>
+  <button class="btn-secondaire" id="btnExport">Exporter une sauvegarde (.json)</button>
+  <button class="btn-secondaire" id="btnImport">Importer une sauvegarde</button>
+  <input type="file" id="fichierImport" accept="application/json" style="display:none;">
+  <button class="btn-secondaire btn-danger" id="btnReset">Tout remettre à zéro</button>
+  <p class="note">Tes données vivent uniquement dans ce navigateur, sur cet appareil. Personne d'autre n'y a accès, même avec l'adresse de la page. Pense à exporter une sauvegarde de temps en temps.</p>
+</div>
+
+<script>
+/* ================= DONNÉES ================= */
+var memoire = null; // repli si stockage indisponible
+function lireStock() {
+  try { var b = localStorage.getItem('nbn_atelier_v1'); return b ? JSON.parse(b) : null; }
+  catch (e) { return memoire; }
+}
+function ecrireStock(d) {
+  memoire = d;
+  try { localStorage.setItem('nbn_atelier_v1', JSON.stringify(d)); } catch (e) {}
+}
+
+function etatInitial() {
+  var posts = [
+    [1, 'Semaine 1 · La naissance', "Teaser identité — logo, fumée rose, « quelque chose arrive »"],
+    [2, 'Semaine 1 · La naissance', 'Application du chrome sur Orage d\u2019Or (ASMR macro)'],
+    [3, 'Semaine 1 · La naissance', 'Qui je suis — prothésiste diplômée, pourquoi cette marque'],
+    [4, 'Semaine 2 · Le savoir-faire', 'Sculpture des coulures d\u2019or 3D en gros plan'],
+    [5, 'Semaine 2 · Le savoir-faire', 'Une journée à l\u2019atelier — fabrication en accéléré'],
+    [6, 'Semaine 2 · Le savoir-faire', 'Numérotation à la main des coffrets 1/5 à 5/5'],
+    [7, 'Semaine 3 · L\u2019univers', 'Révélation design 1 — Lait de Lune'],
+    [8, 'Semaine 3 · L\u2019univers', 'Révélation design 2 — French Or Fin'],
+    [9, 'Semaine 3 · L\u2019univers', 'Révélation pièce signature — Orage d\u2019Or'],
+    [10, 'Semaine 4 · Le lancement', 'Annonce date + heure d\u2019ouverture du drop'],
+    [11, 'Semaine 4 · Le lancement', 'Compte à rebours — il reste 24h'],
+    [12, 'Semaine 4 · Le lancement', 'C\u2019est ouvert — lien en bio, 15 exemplaires']
+  ];
+  return {
+    reglages: { coutSet: 5, urssaf: 12.3, prix: { lait: 28, french: 30, orage: 44 } },
+    designs: [
+      { id:'lait',   nom:'Lait de Lune' },
+      { id:'french', nom:'French Or Fin' },
+      { id:'orage',  nom:"Orage d'Or" }
+    ],
+    editions: {},   // 'lait-1' : 'dispo' | 'reserve' | 'vendu' | 'offert'
+    commandes: [],  // {id, client, design, numero, livraison, montant, suivi, statut, date}
+    posts: posts.map(function(p){ return { n:p[0], semaine:p[1], titre:p[2], fait:false }; })
+  };
+}
+
+var etat = lireStock() || etatInitial();
+// migration douce si structure incomplète
+if (!etat.reglages) etat.reglages = etatInitial().reglages;
+if (!etat.posts) etat.posts = etatInitial().posts;
+if (!etat.editions) etat.editions = {};
+if (!etat.commandes) etat.commandes = [];
+
+function sauver() { ecrireStock(etat); rendre(); }
+
+/* ================= OUTILS ================= */
+function eur(n) { return (Math.round(n * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits:0, maximumFractionDigits:2 }) + ' €'; }
+function prixDesign(id) { var p = etat.reglages.prix; return id==='lait'?p.lait : id==='french'?p.french : p.orage; }
+function nomDesign(id) { for (var i=0;i<etat.designs.length;i++) if (etat.designs[i].id===id) return etat.designs[i].nom; return id; }
+function etatEdition(id, n) { return etat.editions[id + '-' + n] || 'dispo'; }
+function compterParEtat(id, e) { var c=0; for (var n=1;n<=5;n++) if (etatEdition(id,n)===e) c++; return c; }
+
+/* ================= NAVIGATION ================= */
+var boutonsNav = document.querySelectorAll('[data-vue]');
+boutonsNav.forEach(function(b){
+  b.addEventListener('click', function(){
+    var v = b.getAttribute('data-vue');
+    document.querySelectorAll('.vue').forEach(function(s){ s.classList.toggle('actif', s.id === 'vue-' + v); });
+    boutonsNav.forEach(function(x){ x.classList.toggle('actif', x.getAttribute('data-vue') === v); });
+    window.scrollTo({ top:0 });
+  });
+});
+
+/* ================= FEUILLES ================= */
+var voile = document.getElementById('voile');
+function ouvrirFeuille(f) { f.classList.add('ouvert'); voile.classList.add('ouvert'); }
+function fermerFeuilles() { document.querySelectorAll('.feuille').forEach(function(f){ f.classList.remove('ouvert'); }); voile.classList.remove('ouvert'); }
+voile.addEventListener('click', fermerFeuilles);
+
+/* ================= RENDU ================= */
+function rendre() {
+  // date
+  var d = new Date();
+  document.getElementById('dateJour').textContent = d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+
+  // ----- calculs commandes -----
+  var ventes=0, livr=0, stripe=0, postaux=0, aExp=0;
+  etat.commandes.forEach(function(c){
+    var l = parseFloat(c.livraison)||0;
+    var m = parseFloat(c.montant)||0;
+    ventes += (m - l); livr += l;
+    stripe += m * 0.015 + 0.25;
+    postaux += l > 0 ? Math.min(l, 7.5) * 0.72 : 4.9 * 0.72; // estimation coût réel ~72% du facturé
+    if (c.statut === 'a_preparer') aExp++;
+  });
+  var setsVendus = 0;
+  etat.designs.forEach(function(dg){ setsVendus += compterParEtat(dg.id,'vendu'); });
+  var matieres = setsVendus * etat.reglages.coutSet;
+  var urssaf = (ventes + livr) * etat.reglages.urssaf / 100;
+  var net = ventes + livr - stripe - urssaf - matieres - postaux;
+
+  // KPI
+  document.getElementById('kCA').textContent = eur(ventes + livr);
+  document.getElementById('kNet').textContent = eur(Math.max(net,0));
+  document.getElementById('kSets').innerHTML = setsVendus + '<small>/15</small>';
+  document.getElementById('kAExp').textContent = aExp;
+
+  // progression designs (aperçu)
+  var ph = '';
+  etat.designs.forEach(function(dg){
+    var v = compterParEtat(dg.id,'vendu') + compterParEtat(dg.id,'offert');
+    ph += '<div class="prog"><div class="ligne"><b>' + dg.nom + '</b><span>' + v + ' / 5 sorties</span></div>' +
+          '<div class="rail"><div class="jauge" style="width:' + (v/5*100) + '%"></div></div></div>';
+  });
+  document.getElementById('progressDesigns').innerHTML = ph;
+
+  // actions
+  var actions = [];
+  etat.commandes.filter(function(c){ return c.statut==='a_preparer'; }).forEach(function(c){
+    actions.push('Préparer & expédier la commande de <b>' + c.client + '</b> (' + nomDesign(c.design) + ' n°' + c.numero + '/5)');
+  });
+  var carteA = document.getElementById('carteActions');
+  if (actions.length) {
+    carteA.style.display = 'block';
+    document.getElementById('listeActions').innerHTML = actions.map(function(a){ return '<div class="ligne-fi" style="font-size:16px;"><span class="lab" style="color:var(--texte);">' + a + '</span></div>'; }).join('');
+  } else carteA.style.display = 'none';
+
+  // ----- éditions -----
+  var bh = '';
+  etat.designs.forEach(function(dg){
+    var dispo = compterParEtat(dg.id,'dispo');
+    bh += '<div class="design-bloc"><div class="haut"><span class="nom">' + dg.nom + '</span><span class="prix">' + prixDesign(dg.id) + ' € / set</span></div>' +
+          '<div class="dispo">' + dispo + ' encore disponible' + (dispo>1?'s':'') + '</div><div class="numeros">';
+    for (var n=1;n<=5;n++) {
+      var e = etatEdition(dg.id,n);
+      var lab = e==='dispo'?'libre' : e==='reserve'?'réservé' : e==='vendu'?'vendu' : 'offert';
+      bh += '<div class="num" data-etat="' + e + '" data-design="' + dg.id + '" data-numero="' + n + '"><span class="n">' + n + '/5</span><span class="e">' + lab + '</span></div>';
+    }
+    bh += '</div></div>';
+  });
+  document.getElementById('blocsDesigns').innerHTML = bh;
+  document.querySelectorAll('.num').forEach(function(el){
+    el.addEventListener('click', function(){
+      var cycle = ['dispo','reserve','vendu','offert'];
+      var k = el.getAttribute('data-design') + '-' + el.getAttribute('data-numero');
+      var i = cycle.indexOf(etat.editions[k] || 'dispo');
+      etat.editions[k] = cycle[(i+1) % cycle.length];
+      sauver();
+    });
+  });
+
+  // ----- commandes -----
+  rendreCommandes();
+
+  // ----- finances -----
+  document.getElementById('fVentes').textContent = eur(ventes);
+  document.getElementById('fLivraisons').textContent = eur(livr);
+  document.getElementById('fStripe').textContent = '−' + eur(stripe);
+  document.getElementById('fUrssaf').textContent = '−' + eur(urssaf);
+  document.getElementById('fTauxU').textContent = String(etat.reglages.urssaf).replace('.', ',');
+  document.getElementById('fCoutSet').textContent = String(etat.reglages.coutSet).replace('.', ',');
+  document.getElementById('fMatieres').textContent = '−' + eur(matieres);
+  document.getElementById('fPostaux').textContent = '−' + eur(postaux);
+  document.getElementById('fNet').textContent = eur(net);
+
+  var maxV = 1, vols = etat.designs.map(function(dg){
+    var t = 0;
+    etat.commandes.forEach(function(c){ if (c.design===dg.id) t += (parseFloat(c.montant)||0) - (parseFloat(c.livraison)||0); });
+    if (t > maxV) maxV = t; return t;
+  });
+  var bch = '';
+  etat.designs.forEach(function(dg, i){
+    bch += '<div class="barre-col"><div class="bv">' + eur(vols[i]) + '</div>' +
+           '<div class="barre' + (i===2?' or':'') + '" style="height:' + Math.max(vols[i]/maxV*100, 3) + '%"></div>' +
+           '<div class="bl">' + dg.nom + '</div></div>';
+  });
+  document.getElementById('barresDesigns').innerHTML = bch;
+
+  // ----- contenu -----
+  var faits = etat.posts.filter(function(p){ return p.fait; }).length;
+  document.getElementById('contenuCompteur').textContent = faits + ' / 12';
+  document.getElementById('contenuJauge').style.width = (faits/12*100) + '%';
+  var sem = '', lh = '';
+  etat.posts.forEach(function(p, i){
+    if (p.semaine !== sem) { sem = p.semaine; lh += '<div class="semaine-titre">' + sem + '</div>'; }
+    lh += '<div class="post' + (p.fait?' fait':'') + '" data-post="' + i + '"><div class="coche">' + (p.fait?'✓':'') + '</div>' +
+          '<div><div class="pn">Post ' + p.n + '</div><div class="pt">' + p.titre + '</div></div></div>';
+  });
+  document.getElementById('listePosts').innerHTML = lh;
+  document.querySelectorAll('.post').forEach(function(el){
+    el.addEventListener('click', function(){
+      var i = parseInt(el.getAttribute('data-post'), 10);
+      etat.posts[i].fait = !etat.posts[i].fait;
+      sauver();
+    });
+  });
+}
+
+/* ----- liste commandes + filtres ----- */
+var filtreActif = 'toutes';
+document.getElementById('filtresCmd').addEventListener('click', function(ev){
+  var b = ev.target.closest('.puce'); if (!b) return;
+  filtreActif = b.getAttribute('data-f');
+  document.querySelectorAll('#filtresCmd .puce').forEach(function(x){ x.classList.toggle('active', x===b); });
+  rendreCommandes();
+});
+
+function rendreCommandes() {
+  var liste = etat.commandes.slice().reverse().filter(function(c){ return filtreActif==='toutes' || c.statut===filtreActif; });
+  var conteneur = document.getElementById('listeCommandes');
+  if (!liste.length) {
+    conteneur.innerHTML = '<div class="vide"><div class="p">Rien pour l\u2019instant</div>Les commandes Stripe arrivent par email — note-les ici pour suivre préparation et expédition.</div>';
+    return;
+  }
+  var labels = { a_preparer:'À préparer', expediee:'Expédiée', livree:'Livrée' };
+  conteneur.innerHTML = liste.map(function(c){
+    return '<div class="cmd"><div class="l1"><span class="client">' + c.client + '</span><span class="montant">' + eur(parseFloat(c.montant)||0) + '</span></div>' +
+      '<div class="l2">' + nomDesign(c.design) + ' · n°' + c.numero + '/5' + (c.suivi ? ' · suivi ' + c.suivi : '') + '</div>' +
+      '<div class="l3"><button class="etat" data-s="' + c.statut + '" data-id="' + c.id + '">' + labels[c.statut] + '</button>' +
+      '<div class="actions"><button class="lien-action" data-modif="' + c.id + '">Modifier</button></div></div></div>';
+  }).join('');
+  conteneur.querySelectorAll('.etat').forEach(function(b){
+    b.addEventListener('click', function(){
+      var c = etat.commandes.find(function(x){ return x.id === b.getAttribute('data-id'); });
+      var cycle = ['a_preparer','expediee','livree'];
+      c.statut = cycle[(cycle.indexOf(c.statut)+1) % cycle.length];
+      sauver();
+    });
+  });
+  conteneur.querySelectorAll('[data-modif]').forEach(function(b){
+    b.addEventListener('click', function(){ ouvrirFeuilleCmd(b.getAttribute('data-modif')); });
+  });
+}
+
+/* ----- feuille commande ----- */
+var cmdEnEdition = null;
+var selDesign = document.getElementById('cDesign');
+var selNumero = document.getElementById('cNumero');
+
+function remplirSelecteurs(designChoisi, numeroChoisi) {
+  selDesign.innerHTML = etat.designs.map(function(dg){
+    return '<option value="' + dg.id + '"' + (dg.id===designChoisi?' selected':'') + '>' + dg.nom + ' — ' + prixDesign(dg.id) + ' €</option>';
+  }).join('');
+  remplirNumeros(designChoisi || etat.designs[0].id, numeroChoisi);
+}
+function remplirNumeros(designId, numeroChoisi) {
+  var h = '';
+  for (var n=1;n<=5;n++) {
+    var e = etatEdition(designId, n);
+    var libre = (e==='dispo' || e==='reserve' || (numeroChoisi && n===numeroChoisi));
+    h += '<option value="' + n + '"' + (n===numeroChoisi?' selected':'') + (libre?'':' disabled') + '>' + n + '/5' + (libre?'':' — pris') + '</option>';
+  }
+  selNumero.innerHTML = h;
+}
+selDesign.addEventListener('change', function(){
+  remplirNumeros(selDesign.value, null);
+  majMontantAuto();
+});
+selNumero.addEventListener('change', majMontantAuto);
+document.getElementById('cLivraison').addEventListener('change', majMontantAuto);
+function majMontantAuto() {
+  if (cmdEnEdition) return;
+  var total = prixDesign(selDesign.value) + parseFloat(document.getElementById('cLivraison').value);
+  document.getElementById('cMontant').value = total.toFixed(2);
+}
+
+function ouvrirFeuilleCmd(idModif) {
+  cmdEnEdition = idModif ? etat.commandes.find(function(x){ return x.id===idModif; }) : null;
+  document.getElementById('feuilleCmdTitre').textContent = cmdEnEdition ? 'Modifier la commande' : 'Nouvelle commande';
+  document.getElementById('btnSupprimerCmd').style.display = cmdEnEdition ? 'block' : 'none';
+  if (cmdEnEdition) {
+    remplirSelecteurs(cmdEnEdition.design, parseInt(cmdEnEdition.numero,10));
+    document.getElementById('cClient').value = cmdEnEdition.client;
+    document.getElementById('cLivraison').value = cmdEnEdition.livraison;
+    document.getElementById('cMontant').value = cmdEnEdition.montant;
+    document.getElementById('cSuivi').value = cmdEnEdition.suivi || '';
+  } else {
+    remplirSelecteurs(null, null);
+    document.getElementById('cClient').value = '';
+    document.getElementById('cLivraison').value = '4.90';
+    document.getElementById('cSuivi').value = '';
+    var tmp = cmdEnEdition; cmdEnEdition = null; majMontantAuto(); cmdEnEdition = tmp;
+  }
+  ouvrirFeuille(document.getElementById('feuilleCmd'));
+}
+document.getElementById('btnNouvelleCmd').addEventListener('click', function(){ ouvrirFeuilleCmd(null); });
+
+document.getElementById('btnEnregistrerCmd').addEventListener('click', function(){
+  var client = document.getElementById('cClient').value.trim();
+  if (!client) { document.getElementById('cClient').focus(); return; }
+  var donnees = {
+    client: client,
+    design: selDesign.value,
+    numero: selNumero.value,
+    livraison: document.getElementById('cLivraison').value,
+    montant: document.getElementById('cMontant').value || '0',
+    suivi: document.getElementById('cSuivi').value.trim()
+  };
+  if (cmdEnEdition) {
+    Object.assign(cmdEnEdition, donnees);
+  } else {
+    donnees.id = 'c' + Date.now();
+    donnees.statut = 'a_preparer';
+    donnees.date = new Date().toISOString();
+    etat.commandes.push(donnees);
+  }
+  // marque l'édition vendue automatiquement
+  etat.editions[donnees.design + '-' + donnees.numero] = 'vendu';
+  fermerFeuilles(); sauver();
+});
+
+document.getElementById('btnSupprimerCmd').addEventListener('click', function(){
+  if (!cmdEnEdition) return;
+  if (!confirm('Supprimer la commande de ' + cmdEnEdition.client + ' ?')) return;
+  etat.editions[cmdEnEdition.design + '-' + cmdEnEdition.numero] = 'dispo';
+  etat.commandes = etat.commandes.filter(function(x){ return x.id !== cmdEnEdition.id; });
+  cmdEnEdition = null;
+  fermerFeuilles(); sauver();
+});
+
+/* ----- réglages ----- */
+document.getElementById('ouvrirReglages').addEventListener('click', function(){
+  document.getElementById('rCout').value = etat.reglages.coutSet;
+  document.getElementById('rUrssaf').value = etat.reglages.urssaf;
+  document.getElementById('rP1').value = etat.reglages.prix.lait;
+  document.getElementById('rP2').value = etat.reglages.prix.french;
+  document.getElementById('rP3').value = etat.reglages.prix.orage;
+  ouvrirFeuille(document.getElementById('feuilleReglages'));
+});
+document.getElementById('btnSauverReglages').addEventListener('click', function(){
+  etat.reglages.coutSet = parseFloat(document.getElementById('rCout').value) || 5;
+  etat.reglages.urssaf = parseFloat(document.getElementById('rUrssaf').value) || 12.3;
+  etat.reglages.prix.lait = parseFloat(document.getElementById('rP1').value) || 28;
+  etat.reglages.prix.french = parseFloat(document.getElementById('rP2').value) || 30;
+  etat.reglages.prix.orage = parseFloat(document.getElementById('rP3').value) || 44;
+  fermerFeuilles(); sauver();
+});
+document.getElementById('btnExport').addEventListener('click', function(){
+  var blob = new Blob([JSON.stringify(etat, null, 2)], { type:'application/json' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'nahira-atelier-sauvegarde-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+});
+document.getElementById('btnImport').addEventListener('click', function(){ document.getElementById('fichierImport').click(); });
+document.getElementById('fichierImport').addEventListener('change', function(ev){
+  var f = ev.target.files[0]; if (!f) return;
+  var lecteur = new FileReader();
+  lecteur.onload = function(){
+    try { etat = JSON.parse(lecteur.result); fermerFeuilles(); sauver(); }
+    catch (e) { alert('Fichier de sauvegarde invalide.'); }
+  };
+  lecteur.readAsText(f);
+});
+document.getElementById('btnReset').addEventListener('click', function(){
+  if (!confirm('Tout effacer ? Cette action est définitive (pense à exporter avant).')) return;
+  etat = etatInitial(); fermerFeuilles(); sauver();
+});
+
+rendre();
+</script>
+</body>
+</html>
