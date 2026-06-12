@@ -1024,8 +1024,9 @@
       <span class="ligne-nails">Nails</span>
     </a>
     <ul class="nav-links droite">
-      <li><a href="#atelier">L'atelier</a></li>
       <li><a href="#faq">FAQ</a></li>
+      <li><a href="compte.html">Compte</a></li>
+      <li><a href="panier.html">Panier <span class="cart-badge" style="display:inline-flex;align-items:center;justify-content:center;min-width:17px;height:17px;padding:0 5px;background:var(--rose);color:var(--noir);border-radius:99px;font-size:.66rem;font-weight:600;vertical-align:middle"></span></a></li>
     </ul>
   </div>
 </nav>
@@ -1090,7 +1091,7 @@
 
       <!-- PRODUIT 1 -->
       <article class="carte-produit">
-        <div class="badge-rarete">5 / 5 disponibles</div>
+        <div class="badge-rarete" data-slug="lait-de-lune">5 / 5 disponibles</div>
         <img class="produit-img" src="lait-de-lune.jpg" alt="Set Lait de Lune — press on nails nude laiteux avec ligne or" style="object-fit: cover; display: block;">
         <div class="produit-infos">
           <h3 class="produit-nom">Lait de Lune</h3>
@@ -1106,14 +1107,14 @@
               <span class="prix-lancement-label">Prix de lancement</span>
             </div>
             <!-- Remplacer # par ton lien Stripe -->
-            <a href="https://buy.stripe.com/fZu3cv5XQ9OBfqx3arcs800" class="btn-acheter">Ajouter</a>
+            <a href="produit.html?d=lait-de-lune" class="btn-acheter">Découvrir</a>
           </div>
         </div>
       </article>
 
       <!-- PRODUIT 2 -->
       <article class="carte-produit">
-        <div class="badge-rarete">5 / 5 disponibles</div>
+        <div class="badge-rarete" data-slug="french-or-fin">5 / 5 disponibles</div>
         <img class="produit-img" src="french-or-fin.jpg" alt="Set French Or Fin — press on nails french dorée pailletée" style="object-fit: cover; display: block;">
         <div class="produit-infos">
           <h3 class="produit-nom">French Or Fin</h3>
@@ -1129,14 +1130,14 @@
               <span class="prix-lancement-label">Prix de lancement</span>
             </div>
             <!-- Remplacer # par ton lien Stripe -->
-            <a href="https://buy.stripe.com/00w7sLeum4uh0vD8uLcs801" class="btn-acheter">Ajouter</a>
+            <a href="produit.html?d=french-or-fin" class="btn-acheter">Découvrir</a>
           </div>
         </div>
       </article>
 
       <!-- PRODUIT 3 - SIGNATURE -->
       <article class="carte-produit signature">
-        <div class="badge-rarete">5 / 5 disponibles</div>
+        <div class="badge-rarete" data-slug="orage-dor">5 / 5 disponibles</div>
         <div class="badge-signature">Pièce signature</div>
         <img class="produit-img" src="orage-dor.jpg" alt="Set Orage d'Or — press on nails noir mat coulures or 3D" style="object-fit: cover; display: block;">
         <div class="produit-infos">
@@ -1153,7 +1154,7 @@
               <span class="prix-lancement-label">Prix de lancement</span>
             </div>
             <!-- Remplacer # par ton lien Stripe -->
-            <a href="https://buy.stripe.com/bJeaEX71Uf8VdipfXdcs802" class="btn-acheter">Ajouter</a>
+            <a href="produit.html?d=orage-dor" class="btn-acheter">Découvrir</a>
           </div>
         </div>
       </article>
@@ -1420,5 +1421,19 @@
   </div>
 </footer>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="boutique.js"></script>
+<script>
+(async function(){
+  document.querySelectorAll('.cart-badge').forEach(el => { el.textContent = NAHIRA.cartCount() > 0 ? NAHIRA.cartCount() : ''; if(!el.textContent) el.style.display='none'; });
+  try {
+    const stock = await NAHIRA.getAllStock();
+    document.querySelectorAll('.badge-rarete[data-slug]').forEach(b => {
+      const n = stock[b.dataset.slug];
+      if (typeof n === 'number') b.textContent = n > 0 ? n + ' / 5 disponibles' : 'Édition épuisée';
+    });
+  } catch(e) {}
+})();
+</script>
 </body>
 </html>

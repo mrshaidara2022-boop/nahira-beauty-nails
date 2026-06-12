@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mon compte — Nahira Beauty Nails</title>
+<link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="boutique.css">
+<style>
+  .auth-box{max-width:440px; margin:34px auto 0}
+  .onglets{display:flex; gap:8px; margin-bottom:22px}
+  .onglet{
+    flex:1; text-align:center; cursor:pointer; padding:12px;
+    font-family:'Montserrat',sans-serif; font-size:.74rem; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--texte-doux); border:1px solid var(--ligne); border-radius:99px; transition:all .25s;
+  }
+  .onglet.active{background:var(--rose); border-color:var(--rose); color:var(--noir); font-weight:600}
+  .commande{
+    border:1px solid var(--ligne); border-radius:14px; padding:18px 20px; margin-bottom:14px;
+    background:var(--carte);
+  }
+  .commande .entete{display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:8px}
+  .commande .date{font-family:'Montserrat',sans-serif; font-size:.74rem; color:var(--texte-faible); letter-spacing:.08em}
+  .statut{
+    font-family:'Montserrat',sans-serif; font-size:.64rem; letter-spacing:.16em; text-transform:uppercase;
+    padding:4px 12px; border-radius:99px; border:1px solid;
+  }
+  .statut.paid,.statut.preparing{color:#8be3ad; border-color:rgba(110,231,160,.4)}
+  .statut.shipped{color:var(--or-vif); border-color:var(--or)}
+  .statut.pending{color:var(--texte-doux); border-color:var(--ligne)}
+  .statut.cancelled,.statut.refunded{color:#f0a3a3; border-color:rgba(240,111,111,.35)}
+  .commande .article{font-size:1.05rem; color:var(--blanc)}
+  .commande .article small{font-family:'Montserrat',sans-serif; font-size:.72rem; color:var(--texte-doux); display:block; letter-spacing:.06em}
+  .commande .total{font-family:'Montserrat',sans-serif; font-size:.8rem; color:var(--or-vif); margin-top:10px}
+</style>
+</head>
+<body>
+
+<nav class="b-nav">
+  <div class="b-nav-inner">
+    <ul class="b-links">
+      <li><a href="index.html#collection">Collection</a></li>
+      <li><a href="index.html#rituel">La pose</a></li>
+    </ul>
+    <a href="index.html" class="b-logo">
+      <span class="l1">Nahira <span>Beauty</span></span>
+      <span class="l2">Nails</span>
+    </a>
+    <ul class="b-links">
+      <li><a href="compte.html">Compte</a></li>
+      <li><a href="panier.html">Panier<span class="cart-badge"></span></a></li>
+    </ul>
+  </div>
+</nav>
+
+<main class="b-page">
+
+  <!-- ===== NON CONNECTÉE ===== -->
+  <div id="vue-auth" style="display:none">
+    <div style="text-align:center">
+      <p class="b-eyebrow">Espace cliente</p>
+      <h1 class="b-titre">Mon compte <span class="b-script">✦</span></h1>
+    </div>
+    <div class="auth-box panneau">
+      <div class="onglets">
+        <div class="onglet active" id="ong-connexion">Connexion</div>
+        <div class="onglet" id="ong-inscription">Créer un compte</div>
+      </div>
+
+      <div class="champ" id="champ-nom" style="display:none">
+        <label>Prénom &amp; nom</label>
+        <input type="text" id="in-nom" autocomplete="name" placeholder="Ex. : Aïcha Diallo">
+      </div>
+      <div class="champ">
+        <label>Email</label>
+        <input type="email" id="in-email" autocomplete="email" placeholder="vous@exemple.com">
+      </div>
+      <div class="champ">
+        <label>Mot de passe</label>
+        <input type="password" id="in-mdp" autocomplete="current-password" placeholder="8 caractères minimum">
+      </div>
+      <div class="b-msg" id="msg-auth"></div>
+      <button class="btn btn-or" style="width:100%" id="btn-auth">Se connecter</button>
+      <p style="font-family:'Montserrat',sans-serif; font-size:.72rem; color:var(--texte-faible); text-align:center; margin-top:14px">
+        Le compte est facultatif : vous pouvez aussi commander en simple visiteuse.
+      </p>
+    </div>
+  </div>
+
+  <!-- ===== CONNECTÉE ===== -->
+  <div id="vue-compte" style="display:none">
+    <p class="b-eyebrow">Espace cliente</p>
+    <h1 class="b-titre">Bonjour <span class="b-script" id="hello-nom"></span></h1>
+    <p style="color:var(--texte-doux); margin:6px 0 28px" id="hello-email"></p>
+
+    <p class="section-titre" style="font-family:'Montserrat',sans-serif; font-size:.7rem; letter-spacing:.24em; text-transform:uppercase; color:var(--or); margin-bottom:14px">Mes commandes</p>
+    <div id="liste-commandes"><p class="skeleton">Chargement…</p></div>
+
+    <button class="btn btn-ghost" id="btn-deconnexion" style="margin-top:26px">Se déconnecter</button>
+  </div>
+
+</main>
+
+<footer class="b-footer">
+  <div>© 2026 Nahira Beauty Nails — Fait main en France ✦</div>
+  <div class="liens">
+    <a href="mentions-legales.html">Mentions légales</a>
+    <a href="cgv.html">CGV</a>
+    <a href="politique-confidentialite.html">Confidentialité</a>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="boutique.js"></script>
+<script>
+const sb = NAHIRA.sb;
+const STATUTS = {
+  pending: "En attente", paid: "Payée ✦", preparing: "En préparation",
+  shipped: "Expédiée", cancelled: "Annulée", refunded: "Remboursée",
+};
+
+let mode = "connexion";
+const msgA = document.getElementById("msg-auth");
+
+document.getElementById("ong-connexion").addEventListener("click", () => basculer("connexion"));
+document.getElementById("ong-inscription").addEventListener("click", () => basculer("inscription"));
+function basculer(m) {
+  mode = m;
+  document.getElementById("ong-connexion").classList.toggle("active", m === "connexion");
+  document.getElementById("ong-inscription").classList.toggle("active", m === "inscription");
+  document.getElementById("champ-nom").style.display = m === "inscription" ? "block" : "none";
+  document.getElementById("btn-auth").textContent = m === "connexion" ? "Se connecter" : "Créer mon compte";
+  msgA.className = "b-msg";
+}
+
+document.getElementById("btn-auth").addEventListener("click", async () => {
+  const email = document.getElementById("in-email").value.trim();
+  const mdp = document.getElementById("in-mdp").value;
+  msgA.className = "b-msg";
+  if (!email || !mdp) { msgA.className = "b-msg err"; msgA.textContent = "Email et mot de passe requis."; return; }
+
+  if (mode === "inscription") {
+    const nom = document.getElementById("in-nom").value.trim();
+    const { error } = await sb.auth.signUp({
+      email, password: mdp,
+      options: { data: { full_name: nom } },
+    });
+    if (error) { msgA.className = "b-msg err"; msgA.textContent = traduireErreur(error.message); return; }
+    msgA.className = "b-msg ok";
+    msgA.textContent = "Compte créé ! Vérifiez votre boîte mail : un lien de confirmation vous a été envoyé. Cliquez dessus puis connectez-vous ici.";
+  } else {
+    const { error } = await sb.auth.signInWithPassword({ email, password: mdp });
+    if (error) { msgA.className = "b-msg err"; msgA.textContent = traduireErreur(error.message); return; }
+    init();
+  }
+});
+
+function traduireErreur(m) {
+  if (/invalid login/i.test(m)) return "Email ou mot de passe incorrect.";
+  if (/already registered/i.test(m)) return "Un compte existe déjà avec cet email — connectez-vous.";
+  if (/at least 6|password/i.test(m)) return "Mot de passe trop court (6 caractères minimum).";
+  if (/not confirmed/i.test(m)) return "Confirmez d'abord votre email via le lien reçu par mail (pensez aux spams).";
+  return m;
+}
+
+document.getElementById("btn-deconnexion").addEventListener("click", async () => {
+  await sb.auth.signOut();
+  init();
+});
+
+async function chargerCommandes() {
+  const zone = document.getElementById("liste-commandes");
+  const { data, error } = await sb.from("orders")
+    .select("*, order_items(*, products(name), product_units:unit_id(serial_number))")
+    .neq("status", "pending")
+    .order("created_at", { ascending: false });
+  if (error) { zone.innerHTML = '<p class="skeleton">Impossible de charger vos commandes.</p>'; return; }
+  if (!data || data.length === 0) {
+    zone.innerHTML = '<p style="color:var(--texte-doux)">Aucune commande pour le moment — votre première pièce numérotée vous attend dans la <a href="index.html#collection" style="color:var(--or-vif)">collection</a>. ✦</p>';
+    return;
+  }
+  zone.innerHTML = "";
+  data.forEach(cmd => {
+    const d = new Date(cmd.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+    const articles = (cmd.order_items || []).map(it =>
+      '<div class="article">' + (it.products?.name || "Set") +
+      (it.product_units?.serial_number ? ' — N° ' + it.product_units.serial_number + '/5' : '') +
+      '<small>Taille ' + it.size + '</small></div>'
+    ).join("");
+    const div = document.createElement("div");
+    div.className = "commande";
+    div.innerHTML =
+      '<div class="entete"><span class="date">Commande du ' + d + '</span>' +
+      '<span class="statut ' + cmd.status + '">' + (STATUTS[cmd.status] || cmd.status) + '</span></div>' +
+      articles +
+      '<div class="total">Total : ' + NAHIRA.eur(cmd.total_cents) +
+      (cmd.tracking_number ? ' · Suivi : ' + cmd.tracking_number : '') + '</div>';
+    zone.appendChild(div);
+  });
+}
+
+async function init() {
+  const { data: { user } } = await sb.auth.getUser();
+  document.getElementById("vue-auth").style.display = user ? "none" : "block";
+  document.getElementById("vue-compte").style.display = user ? "block" : "none";
+  if (user) {
+    const nom = user.user_metadata?.full_name || "";
+    document.getElementById("hello-nom").textContent = nom ? nom.split(" ")[0] : "vous";
+    document.getElementById("hello-email").textContent = user.email;
+    chargerCommandes();
+  }
+}
+init();
+</script>
+</body>
+</html>

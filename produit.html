@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nahira Beauty Nails — Set press-on fait main</title>
+<meta name="description" content="Press-on nails sculptés à la main en France. Éditions limitées numérotées, choix de la taille, sur-mesure offert.">
+<link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="boutique.css">
+<style>
+  .fiche{display:grid; grid-template-columns:1fr 1fr; gap:50px; align-items:start; margin-top:34px}
+  @media(max-width:820px){.fiche{grid-template-columns:1fr; gap:30px}}
+  .visuel{position:relative; border-radius:20px; overflow:hidden; border:1px solid var(--ligne)}
+  .visuel img{width:100%; aspect-ratio:4/5; object-fit:cover}
+  .badge-stock{
+    position:absolute; top:16px; left:16px;
+    background:rgba(6,4,6,.8); backdrop-filter:blur(8px);
+    border:1px solid var(--or); color:var(--or-vif);
+    font-family:'Montserrat',sans-serif; font-size:.68rem; letter-spacing:.18em; text-transform:uppercase;
+    padding:8px 15px; border-radius:99px;
+  }
+  .prix-ligne{display:flex; align-items:baseline; gap:14px; margin:18px 0 4px}
+  .prix{font-size:2.2rem; color:var(--or-vif)}
+  .prix-barre{text-decoration:line-through; color:var(--texte-faible); font-size:1.2rem}
+  .label-lancement{
+    font-family:'Montserrat',sans-serif; font-size:.62rem; letter-spacing:.2em;
+    text-transform:uppercase; color:var(--rose); border:1px solid var(--rose);
+    padding:4px 10px; border-radius:99px;
+  }
+  .numerote{
+    font-family:'Montserrat',sans-serif; font-size:.78rem; letter-spacing:.1em;
+    color:var(--texte-doux); margin-bottom:22px;
+  }
+  .numerote strong{color:var(--or-vif); font-weight:600}
+  .section-titre{
+    font-family:'Montserrat',sans-serif; font-size:.7rem; letter-spacing:.24em;
+    text-transform:uppercase; color:var(--or); margin:30px 0 13px;
+  }
+  #bloc-mesures{display:none; margin-top:14px}
+  details{border-bottom:1px solid var(--ligne); padding:15px 0}
+  details summary{
+    cursor:pointer; list-style:none; font-size:1.1rem; color:var(--blanc);
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  details summary::after{content:"+"; color:var(--or); font-size:1.3rem}
+  details[open] summary::after{content:"–"}
+  details p, details ul{color:var(--texte-doux); padding-top:10px; font-size:1rem}
+  details ul{margin-left:18px}
+  .guide-table{width:100%; border-collapse:collapse; margin-top:8px; font-family:'Montserrat',sans-serif; font-size:.82rem}
+  .guide-table th,.guide-table td{padding:9px 8px; text-align:left; border-bottom:1px solid var(--ligne)}
+  .guide-table th{color:var(--or); font-weight:500; letter-spacing:.1em; text-transform:uppercase; font-size:.68rem}
+  .guide-table td{color:var(--texte-doux)}
+  .guide-table td:first-child{color:var(--blanc); font-weight:600}
+  .etapes{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-top:10px}
+  .etape{background:var(--carte); border:1px solid var(--ligne); border-radius:14px; padding:18px}
+  .etape .num{font-family:'Parisienne',cursive; color:var(--rose); font-size:1.6rem; line-height:1}
+  .etape h4{font-weight:500; color:var(--blanc); margin:8px 0 4px; font-size:1.02rem}
+  .etape p{font-size:.92rem; color:var(--texte-doux); line-height:1.5}
+  .epuise{
+    background:rgba(240,111,111,.08); border:1px solid rgba(240,111,111,.3);
+    color:#f0a3a3; padding:16px 20px; border-radius:12px;
+    font-family:'Montserrat',sans-serif; font-size:.85rem; letter-spacing:.05em;
+  }
+</style>
+</head>
+<body>
+
+<nav class="b-nav">
+  <div class="b-nav-inner">
+    <ul class="b-links">
+      <li><a href="index.html#collection">Collection</a></li>
+      <li><a href="index.html#rituel">La pose</a></li>
+    </ul>
+    <a href="index.html" class="b-logo">
+      <span class="l1">Nahira <span>Beauty</span></span>
+      <span class="l2">Nails</span>
+    </a>
+    <ul class="b-links">
+      <li><a href="compte.html">Compte</a></li>
+      <li><a href="panier.html">Panier<span class="cart-badge"></span></a></li>
+    </ul>
+  </div>
+</nav>
+
+<main class="b-page">
+  <p class="skeleton" id="chargement">Chargement du set…</p>
+
+  <div id="contenu" style="display:none">
+    <div class="fiche">
+      <div class="visuel">
+        <div class="badge-stock" id="badge-stock"></div>
+        <img id="p-img" src="" alt="">
+      </div>
+
+      <div>
+        <p class="b-eyebrow">Drop 001 · Éclat Noir</p>
+        <h1 class="b-titre" id="p-nom"></h1>
+        <p style="font-family:'Parisienne',cursive; color:var(--rose); font-size:1.35rem" id="p-tagline"></p>
+
+        <div class="prix-ligne">
+          <span class="prix" id="p-prix"></span>
+          <span class="prix-barre" id="p-prix-barre"></span>
+          <span class="label-lancement">Prix de lancement</span>
+        </div>
+        <p class="numerote" id="p-numerote"></p>
+
+        <p style="color:var(--texte-doux)" id="p-desc"></p>
+        <p style="font-family:'Montserrat',sans-serif; font-size:.78rem; color:var(--texte-faible); margin-top:10px" id="p-details"></p>
+
+        <div id="bloc-achat">
+          <p class="section-titre">1 · Choisissez votre taille</p>
+          <div class="tailles" id="tailles">
+            <span class="taille-chip" data-t="XS">XS</span>
+            <span class="taille-chip" data-t="S">S</span>
+            <span class="taille-chip" data-t="M">M</span>
+            <span class="taille-chip" data-t="L">L</span>
+            <span class="taille-chip" data-t="XL">XL</span>
+            <span class="taille-chip" data-t="SUR-MESURE">Sur-mesure ✦</span>
+          </div>
+
+          <div id="bloc-mesures" class="champ">
+            <label>Vos mesures (largeur en mm, du pouce à l'auriculaire)</label>
+            <textarea id="mesures" rows="2" placeholder="Ex. : pouce 17, index 13, majeur 14, annulaire 13, auriculaire 9 — main droite et gauche si différentes"></textarea>
+            <p style="font-family:'Montserrat',sans-serif; font-size:.72rem; color:var(--texte-faible); margin-top:6px">
+              Service offert · Nous façonnons chaque capsule à vos mesures exactes, comme en salon.
+            </p>
+          </div>
+
+          <p class="section-titre">2 · Ajoutez à votre panier</p>
+          <div class="b-msg" id="msg"></div>
+          <div style="display:flex; gap:12px; flex-wrap:wrap">
+            <button class="btn btn-or" id="btn-ajouter">Ajouter au panier</button>
+            <a class="btn btn-ghost" href="panier.html">Voir le panier</a>
+          </div>
+          <p class="note-or" style="margin-top:18px">
+            Livraison France 4,90 € · <strong style="color:var(--or-vif)">Offerte dès 2 sets</strong> · Expédition sous 2 à 4 jours ouvrés, le temps d'assembler votre set à votre taille.
+          </p>
+        </div>
+
+        <div id="bloc-epuise" class="epuise" style="display:none">
+          Édition épuisée — les 5 exemplaires numérotés ont trouvé leur écrin.
+          Suivez-nous sur Instagram pour le prochain drop. ✦
+        </div>
+      </div>
+    </div>
+
+    <p class="section-titre" style="margin-top:60px">Guide des tailles</p>
+    <div class="panneau">
+      <p style="color:var(--texte-doux); font-size:1rem; margin-bottom:6px">
+        Mesurez la largeur de votre ongle naturel au point le plus large, avec un mètre ruban souple
+        ou une bandelette de papier reportée sur une règle. Si vous hésitez entre deux tailles, prenez la plus grande.
+      </p>
+      <table class="guide-table">
+        <tr><th>Taille</th><th>Largeur</th><th>Correspond souvent à</th></tr>
+        <tr><td>XS</td><td>10 – 12 mm</td><td>Auriculaire fin</td></tr>
+        <tr><td>S</td><td>12 – 14 mm</td><td>Auriculaire, annulaire</td></tr>
+        <tr><td>M</td><td>14 – 16 mm</td><td>Majeur, index</td></tr>
+        <tr><td>L</td><td>16 – 18 mm</td><td>Pouce fin, index large</td></tr>
+        <tr><td>XL</td><td>18 – 19 mm</td><td>Pouce</td></tr>
+        <tr><td>Sur-mesure ✦</td><td>À vos mesures</td><td>Façonnage individuel offert</td></tr>
+      </table>
+    </div>
+
+    <p class="section-titre" style="margin-top:46px">La pose en 4 gestes</p>
+    <div class="etapes">
+      <div class="etape"><div class="num">1</div><h4>Préparez</h4><p>Repoussez les cuticules, dégraissez l'ongle avec la lingette fournie.</p></div>
+      <div class="etape"><div class="num">2</div><h4>Appliquez le gel pad</h4><p>Posez le pad adhésif sur l'ongle naturel, lissez, retirez le film.</p></div>
+      <div class="etape"><div class="num">3</div><h4>Pressez la capsule</h4><p>Du bas vers le haut, pressez fermement 15 secondes.</p></div>
+      <div class="etape"><div class="num">4</div><h4>Évitez l'eau 2 h</h4><p>Tenue jusqu'à 10 jours. Retrait en douceur après trempage — jamais en arrachant.</p></div>
+    </div>
+
+    <p class="section-titre" style="margin-top:46px">Questions fréquentes</p>
+    <details>
+      <summary>Que contient exactement le set ?</summary>
+      <p>12 capsules sculptées à la main au gel professionnel, des gel pads adhésifs, une lime, un repousse-cuticules en bois et une lingette de préparation. Le tout dans un écrin numéroté.</p>
+    </details>
+    <details>
+      <summary>Pourquoi seulement 5 exemplaires ?</summary>
+      <p>Chaque set est entièrement façonné à la main, capsule par capsule. Nous limitons volontairement chaque design à 5 exemplaires numérotés : votre set est une pièce, pas un produit de série.</p>
+    </details>
+    <details>
+      <summary>Les capsules sont-elles réutilisables ?</summary>
+      <p>Oui — retirées en douceur après trempage dans l'eau tiède savonneuse, elles se reposent avec de nouveaux gel pads. Ne jamais arracher une capsule.</p>
+    </details>
+    <details>
+      <summary>Et si je me trompe de taille ?</summary>
+      <p>Écrivez-nous à contact@nahirabeautynails.fr avant ouverture du set : tant que le scellé est intact, nous trouvons une solution. Pour zéro doute, choisissez le sur-mesure offert.</p>
+    </details>
+  </div>
+</main>
+
+<footer class="b-footer">
+  <div>© 2026 Nahira Beauty Nails — Fait main en France ✦</div>
+  <div class="liens">
+    <a href="mentions-legales.html">Mentions légales</a>
+    <a href="cgv.html">CGV</a>
+    <a href="politique-confidentialite.html">Confidentialité</a>
+    <a href="mailto:contact@nahirabeautynails.fr">contact@nahirabeautynails.fr</a>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="boutique.js"></script>
+<script>
+(async function(){
+  const slug = new URLSearchParams(location.search).get("d");
+  const produit = slug ? await NAHIRA.getProduct(slug) : null;
+  const charge = document.getElementById("chargement");
+
+  if (!produit) {
+    charge.textContent = "Set introuvable — retournez à la collection.";
+    return;
+  }
+
+  const stock = await NAHIRA.getStock(produit.id);
+
+  document.title = produit.name + " — Nahira Beauty Nails";
+  document.getElementById("p-img").src = produit.image_url;
+  document.getElementById("p-img").alt = "Set " + produit.name + " — press-on nails fait main";
+  document.getElementById("p-nom").textContent = produit.name;
+  document.getElementById("p-tagline").textContent = produit.tagline || "";
+  document.getElementById("p-desc").textContent = produit.description || "";
+  document.getElementById("p-details").textContent = produit.details || "";
+  document.getElementById("p-prix").textContent = NAHIRA.eur(produit.price_cents);
+  document.getElementById("p-prix-barre").textContent = produit.compare_at_cents ? NAHIRA.eur(produit.compare_at_cents) : "";
+  document.getElementById("badge-stock").textContent = stock.count + " / 5 disponibles";
+  document.getElementById("p-numerote").innerHTML = stock.next
+    ? "Prochain exemplaire : <strong>N° " + stock.next + " / 5</strong> — édition limitée numérotée"
+    : "Édition épuisée";
+
+  if (stock.count === 0) {
+    document.getElementById("bloc-achat").style.display = "none";
+    document.getElementById("bloc-epuise").style.display = "block";
+  }
+
+  charge.style.display = "none";
+  document.getElementById("contenu").style.display = "block";
+
+  // Choix de taille
+  let taille = null;
+  document.querySelectorAll(".taille-chip").forEach(chip => {
+    chip.addEventListener("click", () => {
+      document.querySelectorAll(".taille-chip").forEach(c => c.classList.remove("active"));
+      chip.classList.add("active");
+      taille = chip.dataset.t;
+      document.getElementById("bloc-mesures").style.display = taille === "SUR-MESURE" ? "block" : "none";
+      msg.className = "b-msg";
+    });
+  });
+
+  // Ajouter au panier
+  const msg = document.getElementById("msg");
+  document.getElementById("btn-ajouter").addEventListener("click", () => {
+    if (!taille) {
+      msg.className = "b-msg err";
+      msg.textContent = "Choisissez d'abord votre taille (ou le sur-mesure).";
+      return;
+    }
+    const custom = taille === "SUR-MESURE" ? document.getElementById("mesures").value.trim() : null;
+    if (taille === "SUR-MESURE" && !custom) {
+      msg.className = "b-msg err";
+      msg.textContent = "Indiquez vos mesures pour le sur-mesure (vous pouvez aussi nous les envoyer par email après commande).";
+      return;
+    }
+    const dejaAuPanier = NAHIRA.getCart().filter(it => it.product_id === produit.id).length;
+    if (dejaAuPanier >= stock.count) {
+      msg.className = "b-msg err";
+      msg.textContent = "Vous avez déjà tous les exemplaires disponibles de ce set dans votre panier.";
+      return;
+    }
+    NAHIRA.addToCart({
+      product_id: produit.id,
+      slug: produit.slug,
+      name: produit.name,
+      price_cents: produit.price_cents,
+      image_url: produit.image_url,
+      size: taille,
+      custom: custom,
+    });
+    msg.className = "b-msg ok";
+    msg.textContent = "✦ " + produit.name + " (taille " + taille + ") ajouté à votre panier.";
+  });
+})();
+</script>
+</body>
+</html>

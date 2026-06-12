@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Merci — Nahira Beauty Nails</title>
+<link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="boutique.css">
+<style>
+  .merci{max-width:620px; margin:60px auto 0; text-align:center}
+  .merci .coeur{font-family:'Parisienne',cursive; font-size:3.4rem; color:var(--rose); line-height:1}
+  .etapes-suite{text-align:left; margin-top:34px}
+  .etapes-suite .item{display:flex; gap:14px; padding:13px 0; border-bottom:1px solid var(--ligne); align-items:baseline}
+  .etapes-suite .item span:first-child{color:var(--or-vif); font-family:'Parisienne',cursive; font-size:1.4rem; min-width:24px}
+  .etapes-suite .item p{color:var(--texte-doux); font-size:1rem}
+</style>
+</head>
+<body>
+
+<nav class="b-nav">
+  <div class="b-nav-inner">
+    <ul class="b-links">
+      <li><a href="index.html#collection">Collection</a></li>
+      <li><a href="index.html#rituel">La pose</a></li>
+    </ul>
+    <a href="index.html" class="b-logo">
+      <span class="l1">Nahira <span>Beauty</span></span>
+      <span class="l2">Nails</span>
+    </a>
+    <ul class="b-links">
+      <li><a href="compte.html">Compte</a></li>
+      <li><a href="panier.html">Panier<span class="cart-badge"></span></a></li>
+    </ul>
+  </div>
+</nav>
+
+<main class="b-page">
+  <div class="merci">
+    <div class="coeur">Merci ✦</div>
+    <h1 class="b-titre" style="margin-top:10px">Votre commande est confirmée</h1>
+    <p style="color:var(--texte-doux); margin-top:14px">
+      Votre set numéroté est désormais réservé à votre nom — il quitte officiellement la collection.
+    </p>
+
+    <div class="etapes-suite panneau">
+      <div class="item"><span>1</span><p>Vous recevez immédiatement un <strong style="color:var(--blanc)">email de confirmation</strong> avec votre reçu (pensez aux spams).</p></div>
+      <div class="item"><span>2</span><p>Nous assemblons votre set <strong style="color:var(--blanc)">à votre taille</strong>, capsule par capsule.</p></div>
+      <div class="item"><span>3</span><p>Expédition en lettre suivie sous <strong style="color:var(--blanc)">2 à 4 jours ouvrés</strong>, numéro de suivi envoyé par email.</p></div>
+      <div class="item" style="border:none"><span>✦</span><p>Sur-mesure ou question ? Écrivez-nous : <a href="mailto:contact@nahirabeautynails.fr" style="color:var(--or-vif)">contact@nahirabeautynails.fr</a></p></div>
+    </div>
+
+    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:30px">
+      <a class="btn btn-or" href="compte.html">Suivre ma commande</a>
+      <a class="btn btn-ghost" href="index.html#collection">Retour à la collection</a>
+    </div>
+  </div>
+</main>
+
+<footer class="b-footer">
+  <div>© 2026 Nahira Beauty Nails — Fait main en France ✦</div>
+  <div class="liens">
+    <a href="mentions-legales.html">Mentions légales</a>
+    <a href="cgv.html">CGV</a>
+    <a href="politique-confidentialite.html">Confidentialité</a>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="boutique.js"></script>
+<script>NAHIRA.clearCart();</script>
+</body>
+</html>

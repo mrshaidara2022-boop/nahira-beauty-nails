@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Votre panier — Nahira Beauty Nails</title>
+<link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="boutique.css">
+<style>
+  .grille-panier{display:grid; grid-template-columns:1.6fr 1fr; gap:30px; margin-top:34px; align-items:start}
+  @media(max-width:820px){.grille-panier{grid-template-columns:1fr}}
+  .ligne-article{
+    display:grid; grid-template-columns:84px 1fr auto; gap:16px; align-items:center;
+    padding:16px 0; border-bottom:1px solid var(--ligne);
+  }
+  .ligne-article img{width:84px; height:100px; object-fit:cover; border-radius:12px; border:1px solid var(--ligne)}
+  .ligne-article .nom{color:var(--blanc); font-size:1.15rem}
+  .ligne-article .meta{font-family:'Montserrat',sans-serif; font-size:.74rem; color:var(--texte-doux); letter-spacing:.06em; margin-top:3px}
+  .ligne-article .prix{color:var(--or-vif); font-size:1.1rem}
+  .btn-suppr{
+    background:none; border:none; color:var(--texte-faible); cursor:pointer;
+    font-family:'Montserrat',sans-serif; font-size:.68rem; letter-spacing:.12em; text-transform:uppercase;
+    margin-top:6px; padding:0;
+  }
+  .btn-suppr:hover{color:#f0a3a3}
+  .recap-ligne{display:flex; justify-content:space-between; font-family:'Montserrat',sans-serif; font-size:.85rem; color:var(--texte-doux); padding:7px 0}
+  .recap-total{display:flex; justify-content:space-between; font-size:1.3rem; color:var(--blanc); border-top:1px solid var(--ligne); margin-top:10px; padding-top:14px}
+  .vide{text-align:center; padding:70px 20px; color:var(--texte-doux)}
+</style>
+</head>
+<body>
+
+<nav class="b-nav">
+  <div class="b-nav-inner">
+    <ul class="b-links">
+      <li><a href="index.html#collection">Collection</a></li>
+      <li><a href="index.html#rituel">La pose</a></li>
+    </ul>
+    <a href="index.html" class="b-logo">
+      <span class="l1">Nahira <span>Beauty</span></span>
+      <span class="l2">Nails</span>
+    </a>
+    <ul class="b-links">
+      <li><a href="compte.html">Compte</a></li>
+      <li><a href="panier.html">Panier<span class="cart-badge"></span></a></li>
+    </ul>
+  </div>
+</nav>
+
+<main class="b-page">
+  <p class="b-eyebrow">Votre sélection</p>
+  <h1 class="b-titre">Panier <span class="b-script">✦</span></h1>
+
+  <div id="panier-vide" class="vide" style="display:none">
+    <p style="font-size:1.3rem; margin-bottom:18px">Votre panier attend encore sa première pièce…</p>
+    <a class="btn btn-or" href="index.html#collection">Découvrir la collection</a>
+  </div>
+
+  <div class="grille-panier" id="panier-plein" style="display:none">
+    <div id="liste-articles"></div>
+
+    <div class="panneau">
+      <p class="section-titre" style="margin:0 0 14px; font-family:'Montserrat',sans-serif; font-size:.7rem; letter-spacing:.24em; text-transform:uppercase; color:var(--or)">Récapitulatif</p>
+      <div class="recap-ligne"><span>Sous-total</span><span id="sous-total"></span></div>
+      <div class="recap-ligne"><span>Livraison</span><span id="livraison"></span></div>
+      <div class="recap-total"><span>Total</span><span id="total"></span></div>
+      <p style="font-family:'Montserrat',sans-serif; font-size:.72rem; color:var(--texte-faible); margin:10px 0 18px" id="note-livraison"></p>
+      <div class="b-msg" id="msg"></div>
+      <button class="btn btn-or" style="width:100%" id="btn-payer">Procéder au paiement</button>
+      <p style="font-family:'Montserrat',sans-serif; font-size:.7rem; color:var(--texte-faible); text-align:center; margin-top:12px">
+        🔒 Paiement sécurisé par Stripe · Adresse de livraison à l'étape suivante
+      </p>
+    </div>
+  </div>
+</main>
+
+<footer class="b-footer">
+  <div>© 2026 Nahira Beauty Nails — Fait main en France ✦</div>
+  <div class="liens">
+    <a href="mentions-legales.html">Mentions légales</a>
+    <a href="cgv.html">CGV</a>
+    <a href="politique-confidentialite.html">Confidentialité</a>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="boutique.js"></script>
+<script>
+function rendre() {
+  const cart = NAHIRA.getCart();
+  const vide = document.getElementById("panier-vide");
+  const plein = document.getElementById("panier-plein");
+
+  if (cart.length === 0) { vide.style.display = "block"; plein.style.display = "none"; return; }
+  vide.style.display = "none"; plein.style.display = "grid";
+
+  const liste = document.getElementById("liste-articles");
+  liste.innerHTML = "";
+  cart.forEach((it, i) => {
+    const div = document.createElement("div");
+    div.className = "ligne-article";
+    div.innerHTML =
+      '<img src="' + it.image_url + '" alt="">' +
+      '<div><div class="nom">' + it.name + '</div>' +
+      '<div class="meta">Taille : ' + it.size + (it.custom ? " · mesures fournies" : "") + ' · 12 capsules · édition numérotée</div>' +
+      '<button class="btn-suppr" data-i="' + i + '">Retirer</button></div>' +
+      '<div class="prix">' + NAHIRA.eur(it.price_cents) + '</div>';
+    liste.appendChild(div);
+  });
+  liste.querySelectorAll(".btn-suppr").forEach(b => {
+    b.addEventListener("click", () => { NAHIRA.removeFromCart(parseInt(b.dataset.i)); rendre(); });
+  });
+
+  const sousTotal = NAHIRA.cartSubtotal();
+  document.getElementById("sous-total").textContent = NAHIRA.eur(sousTotal);
+  if (cart.length >= 2) {
+    document.getElementById("livraison").textContent = "Offerte ✦";
+    document.getElementById("total").textContent = NAHIRA.eur(sousTotal);
+    document.getElementById("note-livraison").textContent = "Livraison offerte dès 2 sets — c'est votre cas !";
+  } else {
+    document.getElementById("livraison").textContent = "dès 4,90 €";
+    document.getElementById("total").textContent = NAHIRA.eur(sousTotal) + " + livraison";
+    document.getElementById("note-livraison").textContent = "France 4,90 € · DOM-TOM 6,90 € · BE/CH/LUX 8,90 € — choisie à l'étape de paiement. Astuce : ajoutez un 2ᵉ set, la livraison est offerte.";
+  }
+}
+
+document.getElementById("btn-payer").addEventListener("click", async () => {
+  const btn = document.getElementById("btn-payer");
+  const msg = document.getElementById("msg");
+  btn.disabled = true; btn.textContent = "Préparation du paiement…";
+  msg.className = "b-msg";
+  try {
+    await NAHIRA.checkout();
+  } catch (e) {
+    msg.className = "b-msg err";
+    msg.textContent = e.message;
+    btn.disabled = false; btn.textContent = "Procéder au paiement";
+  }
+});
+
+rendre();
+</script>
+</body>
+</html>
