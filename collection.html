@@ -69,6 +69,23 @@
 
   <p class="skeleton" id="chargement">Chargement de la collection…</p>
   <div class="grille" id="grille"></div>
+
+  <div class="panneau" style="margin-top:50px; text-align:center">
+    <p class="b-eyebrow">Pièce unique 1/1</p>
+    <p style="font-size:1.25rem; color:var(--blanc)">La manucure de vos rêves n'est pas dans la collection ?</p>
+    <p style="color:var(--texte-doux); margin:8px 0 18px">L'Atelier sculpte des pièces uniques sur commande.</p>
+    <a class="btn btn-or" href="couture.html">Découvrir la Commande Couture ✦</a>
+  </div>
+
+  <div class="panneau" style="margin-top:18px; text-align:center">
+    <p class="b-eyebrow">Drop 002</p>
+    <p style="color:var(--texte-doux); margin-bottom:16px">Soyez prévenue en premier du prochain drop — avant tout le monde.</p>
+    <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap">
+      <input type="email" id="att-email" placeholder="vous@exemple.com" style="background:var(--noir-2); border:1px solid var(--ligne); border-radius:99px; padding:13px 20px; color:var(--blanc); font-family:'Montserrat',sans-serif; font-size:.85rem; min-width:240px">
+      <button class="btn btn-or" id="att-btn">Me prévenir ✦</button>
+    </div>
+    <div class="b-msg" id="att-msg" style="max-width:380px; margin:14px auto 0"></div>
+  </div>
 </main>
 
 <footer class="b-footer">
@@ -101,6 +118,21 @@
       (p.compare_at_cents ? '<span class="barre">' + NAHIRA.eur(p.compare_at_cents) + '</span>' : '') + '</div>' +
       '<div class="cta">' + (p.stock > 0 ? "Découvrir →" : "Voir le set →") + '</div></div>';
     grille.appendChild(a);
+  });
+
+  document.getElementById("att-btn").addEventListener("click", async () => {
+    const email = document.getElementById("att-email").value.trim();
+    const m = document.getElementById("att-msg");
+    m.className = "b-msg";
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      m.className = "b-msg err"; m.textContent = "Entrez un email valide."; return;
+    }
+    const { error } = await NAHIRA.sb.from("waitlist").insert({ email });
+    if (error && error.code === "23505") {
+      m.className = "b-msg ok"; m.textContent = "Vous êtes déjà sur la liste ✦"; return;
+    }
+    if (error) { m.className = "b-msg err"; m.textContent = "Réessayez dans un instant."; return; }
+    m.className = "b-msg ok"; m.textContent = "C'est noté — vous saurez tout avant tout le monde ✦";
   });
 })();
 </script>

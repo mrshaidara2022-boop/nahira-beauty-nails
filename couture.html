@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Commande Couture — Nahira Beauty Nails</title>
+<meta name="description" content="Décrivez la manucure de vos rêves : l'Atelier Nahira la sculpte à la main en pièce unique 1/1. Haute couture de l'ongle, fait main en France.">
+<link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="boutique.css">
+<style>
+  .colonne{max-width:640px; margin:0 auto}
+  .fiche-ia{
+    background:rgba(232,194,122,.06); border:1px solid var(--or); border-radius:16px;
+    padding:22px; margin:18px 0; display:none;
+  }
+  .fiche-ia h3{font-family:'Parisienne',cursive; color:var(--or-vif); font-size:1.7rem; font-weight:400}
+  .fiche-ia .vision{color:var(--texte); font-style:italic; margin:10px 0}
+  .fiche-ia ul{margin:10px 0 10px 18px; color:var(--texte-doux); font-size:1rem}
+  .fiche-ia .question{
+    border-left:2px solid var(--rose); padding:8px 14px; margin-top:12px;
+    color:var(--rose-pale); font-size:.98rem;
+  }
+  .processus{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:24px 0}
+  .processus .etape{background:var(--carte); border:1px solid var(--ligne); border-radius:14px; padding:16px; text-align:center}
+  .processus .num{font-family:'Parisienne',cursive; color:var(--rose); font-size:1.5rem}
+  .processus p{font-size:.88rem; color:var(--texte-doux); line-height:1.5}
+</style>
+</head>
+<body>
+
+<nav class="b-nav">
+  <div class="b-nav-inner">
+    <ul class="b-links">
+      <li><a href="collection.html">Collection</a></li>
+      <li><a href="couture.html">Couture</a></li>
+    </ul>
+    <a href="index.html" class="b-logo">
+      <span class="l1">Nahira <span>Beauty</span></span>
+      <span class="l2">Nails</span>
+    </a>
+    <ul class="b-links">
+      <li><a href="compte.html">Compte</a></li>
+      <li><a href="panier.html">Panier<span class="cart-badge"></span></a></li>
+    </ul>
+  </div>
+</nav>
+
+<main class="b-page">
+  <div class="colonne">
+    <div style="text-align:center">
+      <p class="b-eyebrow">Pièce unique · 1/1 · Sur rendez-vous d'atelier</p>
+      <h1 class="b-titre">La Commande <span class="b-script">Couture</span></h1>
+      <p style="color:var(--texte-doux); margin-top:12px">
+        La manucure de vos rêves n'existe pas encore ? Décrivez-la.
+        Notre assistante d'atelier met des mots sur votre vision, puis l'artisane la sculpte
+        à la main — une seule fois, pour vous seule.
+      </p>
+    </div>
+
+    <div class="processus">
+      <div class="etape"><div class="num">1</div><p>Vous décrivez votre rêve</p></div>
+      <div class="etape"><div class="num">2</div><p>L'Atelier vous répond sous 48 h avec un devis</p></div>
+      <div class="etape"><div class="num">3</div><p>Votre pièce 1/1 est sculptée et numérotée</p></div>
+    </div>
+
+    <div class="panneau">
+      <div class="champ"><label>Votre prénom</label><input type="text" id="co-nom" placeholder="Ex. : Aïcha"></div>
+      <div class="champ"><label>Votre email</label><input type="email" id="co-email" placeholder="vous@exemple.com"></div>
+      <div class="champ">
+        <label>Décrivez la manucure de vos rêves</label>
+        <textarea id="co-texte" rows="4" placeholder="L'occasion, les couleurs, les matières, une inspiration (bijou, robe, souvenir)… tout ce qui vous passe par la tête"></textarea>
+      </div>
+      <div class="champ">
+        <label>Votre budget</label>
+        <div class="tailles">
+          <span class="taille-chip" data-b="80-100 €">80–100 €</span>
+          <span class="taille-chip" data-b="100-150 €">100–150 €</span>
+          <span class="taille-chip" data-b="150 € et plus">150 € +</span>
+          <span class="taille-chip" data-b="À discuter">À discuter</span>
+        </div>
+      </div>
+
+      <div class="b-msg" id="co-msg"></div>
+
+      <div style="display:flex; gap:12px; flex-wrap:wrap">
+        <button class="btn btn-ghost" id="co-affiner">✦ Affiner avec l'assistante d'atelier</button>
+        <button class="btn btn-or" id="co-envoyer">Envoyer ma demande</button>
+      </div>
+
+      <div class="fiche-ia" id="fiche">
+        <p style="font-family:'Montserrat',sans-serif; font-size:.64rem; letter-spacing:.24em; text-transform:uppercase; color:var(--or); margin-bottom:6px">Fiche d'intention de l'Atelier</p>
+        <h3 id="f-titre"></h3>
+        <p class="vision" id="f-vision"></p>
+        <ul id="f-elements"></ul>
+        <div class="question" id="f-question"></div>
+        <p style="font-family:'Montserrat',sans-serif; font-size:.7rem; color:var(--texte-faible); margin-top:12px">
+          Cette fiche accompagnera votre demande. Vous pouvez compléter votre description ci-dessus avant d'envoyer.
+        </p>
+      </div>
+
+      <p style="font-family:'Montserrat',sans-serif; font-size:.7rem; color:var(--texte-faible); margin-top:16px">
+        Demande sans engagement. L'Atelier accepte un nombre limité de Commandes Couture par mois.
+      </p>
+    </div>
+  </div>
+</main>
+
+<footer class="b-footer">
+  <div>© 2026 Nahira Beauty Nails — Fait main en France ✦</div>
+  <div class="liens">
+    <a href="mentions-legales.html">Mentions légales</a>
+    <a href="cgv.html">CGV</a>
+    <a href="politique-confidentialite.html">Confidentialité</a>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="boutique.js"></script>
+<script>
+const URL_BRIEF = "https://mxbmjtzrggahbwahxmkp.supabase.co/functions/v1/couture-brief";
+let budget = null;
+let ficheIA = null;
+const msg = document.getElementById("co-msg");
+
+document.querySelectorAll(".taille-chip").forEach(c => {
+  c.addEventListener("click", () => {
+    document.querySelectorAll(".taille-chip").forEach(x => x.classList.remove("active"));
+    c.classList.add("active"); budget = c.dataset.b;
+  });
+});
+
+document.getElementById("co-affiner").addEventListener("click", async () => {
+  const texte = document.getElementById("co-texte").value.trim();
+  const btn = document.getElementById("co-affiner");
+  msg.className = "b-msg";
+  if (texte.length < 10) {
+    msg.className = "b-msg err"; msg.textContent = "Décrivez d'abord votre rêve en quelques phrases."; return;
+  }
+  btn.disabled = true; btn.textContent = "L'assistante réfléchit…";
+  try {
+    const res = await fetch(URL_BRIEF, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ description: texte }),
+    });
+    const d = await res.json();
+    if (d.erreur) throw new Error(d.erreur);
+    ficheIA = d;
+    document.getElementById("f-titre").textContent = "« " + d.titre + " »";
+    document.getElementById("f-vision").textContent = d.vision;
+    document.getElementById("f-elements").innerHTML = (d.elements || []).map(e => "<li>" + e.replace(/</g,"&lt;") + "</li>").join("");
+    document.getElementById("f-question").textContent = "✦ " + d.question;
+    document.getElementById("fiche").style.display = "block";
+    document.getElementById("fiche").scrollIntoView({ behavior: "smooth" });
+  } catch (e) {
+    msg.className = "b-msg err"; msg.textContent = e.message;
+  }
+  btn.disabled = false; btn.textContent = "✦ Affiner avec l'assistante d'atelier";
+});
+
+document.getElementById("co-envoyer").addEventListener("click", async () => {
+  const nom = document.getElementById("co-nom").value.trim();
+  const email = document.getElementById("co-email").value.trim();
+  const texte = document.getElementById("co-texte").value.trim();
+  const btn = document.getElementById("co-envoyer");
+  msg.className = "b-msg";
+  if (!nom || !email || texte.length < 10) {
+    msg.className = "b-msg err"; msg.textContent = "Prénom, email et description sont requis."; return;
+  }
+  btn.disabled = true; btn.textContent = "Envoi…";
+  const { error } = await NAHIRA.sb.from("couture_requests").insert({
+    name: nom, email, brief: texte, budget,
+    ai_brief: ficheIA ? JSON.stringify(ficheIA) : null,
+  });
+  if (error) {
+    msg.className = "b-msg err"; msg.textContent = "Envoi impossible, réessayez.";
+    btn.disabled = false; btn.textContent = "Envoyer ma demande"; return;
+  }
+  msg.className = "b-msg ok";
+  msg.textContent = "Merci " + nom + " ✦ Votre rêve est entre les mains de l'Atelier — réponse sous 48 h à " + email + ".";
+  btn.textContent = "Demande envoyée ✓";
+});
+</script>
+</body>
+</html>

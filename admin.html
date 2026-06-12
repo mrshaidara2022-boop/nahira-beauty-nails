@@ -81,11 +81,13 @@
     <div class="onglets-admin">
       <div class="ong active" data-v="commandes">Commandes <span class="compteur" id="c-commandes"></span></div>
       <div class="ong" data-v="avis">Avis <span class="compteur" id="c-avis"></span></div>
+      <div class="ong" data-v="couture">Couture <span class="compteur" id="c-couture"></span></div>
       <div class="ong" data-v="stats">Statistiques</div>
     </div>
 
     <div class="vue active" id="vue-commandes"><p class="skeleton">Chargement…</p></div>
     <div class="vue" id="vue-avis"><p class="skeleton">Chargement…</p></div>
+    <div class="vue" id="vue-couture"><p class="skeleton">Chargement…</p></div>
     <div class="vue" id="vue-stats"><p class="skeleton">Chargement…</p></div>
   </div>
 </main>
@@ -213,6 +215,47 @@ async function chargerAvis() {
   }));
 }
 
+/* ===== COMMANDES COUTURE ===== */
+async function chargerCouture() {
+  const zone = document.getElementById("vue-couture");
+  const { data, error } = await sb.from("couture_requests").select("*").order("created_at", { ascending: false });
+  if (error) { zone.innerHTML = "<p class='skeleton'>Erreur de chargement.</p>"; return; }
+  const enAttente = (data || []).filter(c => c.status === "pending");
+  document.getElementById("c-couture").textContent = enAttente.length || "";
+  if (!data || data.length === 0) {
+    zone.innerHTML = "<p style='color:var(--texte-doux)'>Aucune demande Couture pour le moment.</p>"; return;
+  }
+  const ETIQ = { pending: "À étudier", accepted: "Acceptée", declined: "Déclinée" };
+  const CL = { pending: "pending", accepted: "paid", declined: "cancelled" };
+  zone.innerHTML = "";
+  data.forEach(c => {
+    const d = new Date(c.created_at).toLocaleDateString("fr-FR", { day:"numeric", month:"long" });
+    let fiche = "";
+    try {
+      const f = JSON.parse(c.ai_brief || "null");
+      if (f) fiche = '<div class="meta" style="border-left:2px solid var(--or); padding-left:12px; margin-top:8px">' +
+        '<strong>« ' + f.titre + ' »</strong><br>' + f.vision + '<br>• ' + (f.elements || []).join("<br>• ") + '</div>';
+    } catch(e) {}
+    const div = document.createElement("div");
+    div.className = "bloc";
+    div.innerHTML =
+      '<div class="entete"><strong style="color:var(--blanc)">' + c.name.replace(/</g,"&lt;") + '</strong>' +
+      '<span class="pastille ' + CL[c.status] + '">' + ETIQ[c.status] + '</span></div>' +
+      '<div class="meta">' + d + ' · ' + c.email.replace(/</g,"&lt;") + (c.budget ? ' · Budget : <strong>' + c.budget + '</strong>' : '') + '</div>' +
+      '<p style="color:var(--texte-doux); margin-top:8px">' + c.brief.replace(/</g,"&lt;") + '</p>' + fiche +
+      '<div class="actions">' +
+      '<a class="mini-btn mb-or" style="text-decoration:none" href="mailto:' + c.email + '?subject=Votre Commande Couture — Atelier Nahira ✦">✉ Répondre</a>' +
+      (c.status !== "accepted" ? '<button class="mini-btn mb-vert" data-cst="accepted" data-id="' + c.id + '">✓ Accepter</button>' : '') +
+      (c.status !== "declined" ? '<button class="mini-btn mb-rouge" data-cst="declined" data-id="' + c.id + '">Décliner</button>' : '') +
+      '</div>';
+    zone.appendChild(div);
+  });
+  zone.querySelectorAll("[data-cst]").forEach(b => b.addEventListener("click", async () => {
+    await sb.from("couture_requests").update({ status: b.dataset.cst }).eq("id", b.dataset.id);
+    chargerCouture();
+  }));
+}
+
 /* ===== STATISTIQUES ===== */
 async function chargerStats() {
   const zone = document.getElementById("vue-stats");
@@ -228,6 +271,7 @@ async function chargerStats() {
   const { count: visites7j } = await sb.from("page_views")
     .select("*", { count: "exact", head: true }).gte("created_at", depuis);
 
+  const { data: attente } = await sb.from("waitlist").select("email").order("created_at", { ascending: false });
   zone.innerHTML =
     '<div class="stats-grille">' +
     '<div class="stat"><div class="valeur">' + NAHIRA.eur(revenus) + '</div><div class="libelle">Chiffre d\'affaires</div></div>' +
@@ -235,13 +279,16 @@ async function chargerStats() {
     '<div class="stat"><div class="valeur">' + (15 - stockTotal) + ' / 15</div><div class="libelle">Sets vendus</div></div>' +
     '<div class="stat"><div class="valeur">' + (visites7j ?? 0) + '</div><div class="libelle">Visites — 7 jours</div></div>' +
     '<div class="stat"><div class="valeur">' + (visitesTotal ?? 0) + '</div><div class="libelle">Visites — total</div></div>' +
+    '<div class="stat"><div class="valeur">' + (attente || []).length + '</div><div class="libelle">Liste d\'attente Drop 002</div></div>' +
     '</div>' +
     '<div class="bloc"><div class="meta">' +
     '<strong>Stock restant :</strong><br>' +
     '• Lait de Lune : ' + (stock["lait-de-lune"] ?? "—") + ' / 5<br>' +
     '• French Or Fin : ' + (stock["french-or-fin"] ?? "—") + ' / 5<br>' +
     '• Orage d\'Or : ' + (stock["orage-dor"] ?? "—") + ' / 5' +
-    '</div></div>';
+    '</div></div>' +
+    ((attente || []).length ? '<div class="bloc"><div class="meta"><strong>Liste d\'attente Drop 002 :</strong><br>' +
+      attente.map(a => a.email.replace(/</g,"&lt;")).join("<br>") + '</div></div>' : '');
 }
 
 /* ===== GARDE D'ACCÈS ===== */
@@ -259,7 +306,7 @@ async function chargerStats() {
   }
   document.getElementById("garde").style.display = "none";
   document.getElementById("tableau").style.display = "block";
-  chargerCommandes(); chargerAvis(); chargerStats();
+  chargerCommandes(); chargerAvis(); chargerCouture(); chargerStats();
 })();
 </script>
 </body>

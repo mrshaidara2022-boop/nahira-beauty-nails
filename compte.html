@@ -180,7 +180,7 @@ document.getElementById("btn-deconnexion").addEventListener("click", async () =>
 async function chargerCommandes() {
   const zone = document.getElementById("liste-commandes");
   const { data, error } = await sb.from("orders")
-    .select("*, order_items(*, products(name), product_units:unit_id(serial_number))")
+    .select("*, order_items(*, products(name, slug), product_units:unit_id(serial_number))")
     .neq("status", "pending")
     .order("created_at", { ascending: false });
   if (error) { zone.innerHTML = '<p class="skeleton">Impossible de charger vos commandes.</p>'; return; }
@@ -191,11 +191,15 @@ async function chargerCommandes() {
   zone.innerHTML = "";
   data.forEach(cmd => {
     const d = new Date(cmd.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
-    const articles = (cmd.order_items || []).map(it =>
-      '<div class="article">' + (it.products?.name || "Set") +
-      (it.product_units?.serial_number ? ' — N° ' + it.product_units.serial_number + '/5' : '') +
-      '<small>Taille ' + it.size + '</small></div>'
-    ).join("");
+    const articles = (cmd.order_items || []).map(it => {
+      const sn = it.product_units?.serial_number;
+      const slug = it.products?.slug;
+      return '<div class="article">' + (it.products?.name || "Set") +
+        (sn ? ' — N° ' + sn + '/5' : '') +
+        '<small>Taille ' + it.size +
+        (sn && slug ? ' · <a href="piece.html?s=' + slug + '-' + sn + '" style="color:var(--or-vif)">Certificat de ma pièce ✦</a>' : '') +
+        '</small></div>';
+    }).join("");
     const div = document.createElement("div");
     div.className = "commande";
     div.innerHTML =
