@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Atelier — Administration Nahira</title>
+<link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="boutique.css">
+<style>
+  .onglets-admin{display:flex; gap:8px; margin:26px 0; flex-wrap:wrap}
+  .ong{
+    cursor:pointer; padding:11px 20px;
+    font-family:'Montserrat',sans-serif; font-size:.72rem; letter-spacing:.16em; text-transform:uppercase;
+    color:var(--texte-doux); border:1px solid var(--ligne); border-radius:99px; transition:all .25s;
+  }
+  .ong.active{background:var(--or); border-color:var(--or); color:#1a1208; font-weight:600}
+  .ong .compteur{
+    background:var(--rose); color:var(--noir); border-radius:99px;
+    padding:1px 7px; font-size:.66rem; margin-left:6px; font-weight:600;
+  }
+  .vue{display:none}
+  .vue.active{display:block}
+  .stats-grille{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin-bottom:24px}
+  .stat{background:var(--carte); border:1px solid var(--ligne); border-radius:14px; padding:18px}
+  .stat .valeur{font-size:1.9rem; color:var(--or-vif)}
+  .stat .libelle{font-family:'Montserrat',sans-serif; font-size:.64rem; letter-spacing:.16em; text-transform:uppercase; color:var(--texte-doux); margin-top:4px}
+  .bloc{background:var(--carte); border:1px solid var(--ligne); border-radius:14px; padding:18px 20px; margin-bottom:14px}
+  .bloc .entete{display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; align-items:center}
+  .pastille{
+    font-family:'Montserrat',sans-serif; font-size:.62rem; letter-spacing:.14em; text-transform:uppercase;
+    padding:4px 12px; border-radius:99px; border:1px solid;
+  }
+  .pastille.paid,.pastille.preparing{color:#8be3ad; border-color:rgba(110,231,160,.4)}
+  .pastille.shipped{color:var(--or-vif); border-color:var(--or)}
+  .pastille.pending{color:var(--texte-doux); border-color:var(--ligne)}
+  .pastille.cancelled,.pastille.refunded{color:#f0a3a3; border-color:rgba(240,111,111,.35)}
+  .meta{font-family:'Montserrat',sans-serif; font-size:.74rem; color:var(--texte-doux); letter-spacing:.04em; line-height:1.8}
+  .meta strong{color:var(--blanc); font-weight:500}
+  .actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px}
+  .mini-btn{
+    cursor:pointer; border:none; border-radius:99px; padding:9px 16px;
+    font-family:'Montserrat',sans-serif; font-size:.66rem; letter-spacing:.14em; text-transform:uppercase;
+  }
+  .mb-vert{background:rgba(110,231,160,.15); color:#8be3ad; border:1px solid rgba(110,231,160,.4)}
+  .mb-rouge{background:rgba(240,111,111,.12); color:#f0a3a3; border:1px solid rgba(240,111,111,.35)}
+  .mb-or{background:rgba(232,194,122,.14); color:var(--or-vif); border:1px solid var(--or)}
+  .mini-input{
+    background:var(--noir-2); border:1px solid var(--ligne); border-radius:99px;
+    padding:8px 14px; color:var(--blanc); font-family:'Montserrat',sans-serif; font-size:.74rem; min-width:180px;
+  }
+  .avis-media img{max-width:120px; border-radius:10px; margin-top:8px; border:1px solid var(--ligne)}
+  .avis-media video{max-width:200px; border-radius:10px; margin-top:8px; display:block}
+</style>
+</head>
+<body>
+
+<nav class="b-nav">
+  <div class="b-nav-inner">
+    <ul class="b-links"><li><a href="index.html">← Boutique</a></li></ul>
+    <a href="index.html" class="b-logo">
+      <span class="l1">Nahira <span>Beauty</span></span>
+      <span class="l2">Atelier</span>
+    </a>
+    <ul class="b-links"><li><a href="#" id="lien-sortie">Déconnexion</a></li></ul>
+  </div>
+</nav>
+
+<main class="b-page">
+  <div id="garde" style="text-align:center; padding:70px 20px">
+    <p class="b-eyebrow">Espace privé</p>
+    <h1 class="b-titre">Atelier <span class="b-script">✦</span></h1>
+    <p style="color:var(--texte-doux); margin:14px 0 24px" id="garde-msg">Vérification de l'accès…</p>
+    <a class="btn btn-ghost" href="compte.html" id="garde-btn" style="display:none">Se connecter</a>
+  </div>
+
+  <div id="tableau" style="display:none">
+    <p class="b-eyebrow">Espace privé</p>
+    <h1 class="b-titre">Bonjour, l'Atelier vous attend <span class="b-script">✦</span></h1>
+
+    <div class="onglets-admin">
+      <div class="ong active" data-v="commandes">Commandes <span class="compteur" id="c-commandes"></span></div>
+      <div class="ong" data-v="avis">Avis <span class="compteur" id="c-avis"></span></div>
+      <div class="ong" data-v="stats">Statistiques</div>
+    </div>
+
+    <div class="vue active" id="vue-commandes"><p class="skeleton">Chargement…</p></div>
+    <div class="vue" id="vue-avis"><p class="skeleton">Chargement…</p></div>
+    <div class="vue" id="vue-stats"><p class="skeleton">Chargement…</p></div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="boutique.js"></script>
+<script>
+const sb = NAHIRA.sb;
+const STATUTS = {
+  pending: "En attente", paid: "Payée — à préparer", preparing: "En préparation",
+  shipped: "Expédiée", cancelled: "Annulée", refunded: "Remboursée",
+};
+
+document.getElementById("lien-sortie").addEventListener("click", async (e) => {
+  e.preventDefault(); await sb.auth.signOut(); location.href = "compte.html";
+});
+
+document.querySelectorAll(".ong").forEach(o => {
+  o.addEventListener("click", () => {
+    document.querySelectorAll(".ong").forEach(x => x.classList.remove("active"));
+    document.querySelectorAll(".vue").forEach(x => x.classList.remove("active"));
+    o.classList.add("active");
+    document.getElementById("vue-" + o.dataset.v).classList.add("active");
+  });
+});
+
+/* ===== COMMANDES ===== */
+async function chargerCommandes() {
+  const zone = document.getElementById("vue-commandes");
+  const { data, error } = await sb.from("orders")
+    .select("*, order_items(*, products(name), product_units:unit_id(serial_number))")
+    .neq("status", "pending")
+    .order("created_at", { ascending: false });
+  if (error) { zone.innerHTML = "<p class='skeleton'>Erreur de chargement.</p>"; return; }
+  const actives = (data || []).filter(c => ["paid","preparing"].includes(c.status));
+  document.getElementById("c-commandes").textContent = actives.length || "";
+  if (!data || data.length === 0) {
+    zone.innerHTML = "<p style='color:var(--texte-doux)'>Aucune commande pour le moment. Le drop arrive… ✦</p>"; return;
+  }
+  zone.innerHTML = "";
+  data.forEach(cmd => {
+    const d = new Date(cmd.created_at).toLocaleDateString("fr-FR", { day:"numeric", month:"long", hour:"2-digit", minute:"2-digit" });
+    const articles = (cmd.order_items || []).map(it =>
+      "• " + (it.products?.name || "Set") +
+      (it.product_units?.serial_number ? " N°" + it.product_units.serial_number + "/5" : "") +
+      " — taille <strong>" + it.size + "</strong>" +
+      (it.custom_measurements ? "<br>&nbsp;&nbsp;Mesures : " + it.custom_measurements.replace(/</g,"&lt;") : "")
+    ).join("<br>");
+    const adresse = [cmd.shipping_name, cmd.shipping_address, (cmd.shipping_postal_code||"") + " " + (cmd.shipping_city||""), cmd.shipping_country]
+      .filter(Boolean).join(", ");
+    const div = document.createElement("div");
+    div.className = "bloc";
+    div.innerHTML =
+      '<div class="entete"><strong style="color:var(--blanc)">' + d + '</strong>' +
+      '<span class="pastille ' + cmd.status + '">' + (STATUTS[cmd.status] || cmd.status) + '</span></div>' +
+      '<div class="meta">' + articles +
+      '<br><strong>Total :</strong> ' + NAHIRA.eur(cmd.total_cents) +
+      ' (livraison ' + NAHIRA.eur(cmd.shipping_cents) + ')' +
+      '<br><strong>Email :</strong> ' + (cmd.email || "—") +
+      '<br><strong>Adresse :</strong> ' + (adresse || "—") +
+      (cmd.tracking_number ? '<br><strong>Suivi :</strong> ' + cmd.tracking_number : '') + '</div>' +
+      '<div class="actions">' +
+      (cmd.status === "paid" ? '<button class="mini-btn mb-or" data-act="preparing" data-id="' + cmd.id + '">→ En préparation</button>' : '') +
+      (["paid","preparing"].includes(cmd.status) ?
+        '<input class="mini-input" placeholder="N° de suivi La Poste" id="suivi-' + cmd.id + '" value="' + (cmd.tracking_number || "") + '">' +
+        '<button class="mini-btn mb-vert" data-act="shipped" data-id="' + cmd.id + '">✓ Expédiée</button>' : '') +
+      '</div>';
+    zone.appendChild(div);
+  });
+  zone.querySelectorAll("[data-act]").forEach(b => {
+    b.addEventListener("click", async () => {
+      const maj = { status: b.dataset.act };
+      const suivi = document.getElementById("suivi-" + b.dataset.id);
+      if (suivi && suivi.value.trim()) maj.tracking_number = suivi.value.trim();
+      await sb.from("orders").update(maj).eq("id", b.dataset.id);
+      chargerCommandes();
+    });
+  });
+}
+
+/* ===== AVIS ===== */
+async function chargerAvis() {
+  const zone = document.getElementById("vue-avis");
+  const { data, error } = await sb.from("reviews")
+    .select("*, products(name)")
+    .order("created_at", { ascending: false });
+  if (error) { zone.innerHTML = "<p class='skeleton'>Erreur de chargement.</p>"; return; }
+  const enAttente = (data || []).filter(a => a.status === "pending");
+  document.getElementById("c-avis").textContent = enAttente.length || "";
+  if (!data || data.length === 0) {
+    zone.innerHTML = "<p style='color:var(--texte-doux)'>Aucun avis déposé pour le moment.</p>"; return;
+  }
+  zone.innerHTML = "";
+  const ETIQ = { pending: "À modérer", approved: "Publié", rejected: "Retiré" };
+  const CL = { pending: "pending", approved: "paid", rejected: "cancelled" };
+  data.sort((a,b) => (a.status === "pending" ? -1 : 1) - (b.status === "pending" ? -1 : 1));
+  data.forEach(a => {
+    const d = new Date(a.created_at).toLocaleDateString("fr-FR", { day:"numeric", month:"long" });
+    const div = document.createElement("div");
+    div.className = "bloc";
+    div.innerHTML =
+      '<div class="entete"><strong style="color:var(--blanc)">' + a.author_name.replace(/</g,"&lt;") +
+      ' <span style="color:var(--or-vif)">' + NAHIRA.etoiles(a.rating) + '</span></strong>' +
+      '<span class="pastille ' + CL[a.status] + '">' + ETIQ[a.status] + '</span></div>' +
+      '<div class="meta"><strong>' + (a.products?.name || "") + '</strong> · ' + d + ' · ' + a.email.replace(/</g,"&lt;") + '</div>' +
+      '<p style="color:var(--texte-doux); margin-top:8px">' + a.comment.replace(/</g,"&lt;") + '</p>' +
+      '<div class="avis-media">' +
+      (a.photo_url ? '<img src="' + a.photo_url + '">' : '') +
+      (a.video_url ? '<video src="' + a.video_url + '" controls preload="metadata"></video>' : '') + '</div>' +
+      '<div class="actions">' +
+      (a.status !== "approved" ? '<button class="mini-btn mb-vert" data-st="approved" data-id="' + a.id + '">✓ Publier</button>' : '') +
+      (a.status !== "rejected" ? '<button class="mini-btn mb-rouge" data-st="rejected" data-id="' + a.id + '">Retirer</button>' : '') +
+      '<button class="mini-btn mb-rouge" data-del="' + a.id + '">Supprimer définitivement</button>' +
+      '</div>';
+    zone.appendChild(div);
+  });
+  zone.querySelectorAll("[data-st]").forEach(b => b.addEventListener("click", async () => {
+    await sb.from("reviews").update({ status: b.dataset.st }).eq("id", b.dataset.id);
+    chargerAvis();
+  }));
+  zone.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", async () => {
+    if (!confirm("Supprimer définitivement cet avis ?")) return;
+    await sb.from("reviews").delete().eq("id", b.dataset.del);
+    chargerAvis();
+  }));
+}
+
+/* ===== STATISTIQUES ===== */
+async function chargerStats() {
+  const zone = document.getElementById("vue-stats");
+  const { data: cmds } = await sb.from("orders")
+    .select("total_cents, status, created_at")
+    .in("status", ["paid","preparing","shipped"]);
+  const revenus = (cmds || []).reduce((s,c) => s + c.total_cents, 0);
+  const stock = await NAHIRA.getAllStock();
+  const stockTotal = Object.values(stock).reduce((s,n) => s + n, 0);
+
+  const { count: visitesTotal } = await sb.from("page_views").select("*", { count: "exact", head: true });
+  const depuis = new Date(Date.now() - 7*24*3600*1000).toISOString();
+  const { count: visites7j } = await sb.from("page_views")
+    .select("*", { count: "exact", head: true }).gte("created_at", depuis);
+
+  zone.innerHTML =
+    '<div class="stats-grille">' +
+    '<div class="stat"><div class="valeur">' + NAHIRA.eur(revenus) + '</div><div class="libelle">Chiffre d\'affaires</div></div>' +
+    '<div class="stat"><div class="valeur">' + (cmds || []).length + '</div><div class="libelle">Commandes payées</div></div>' +
+    '<div class="stat"><div class="valeur">' + (15 - stockTotal) + ' / 15</div><div class="libelle">Sets vendus</div></div>' +
+    '<div class="stat"><div class="valeur">' + (visites7j ?? 0) + '</div><div class="libelle">Visites — 7 jours</div></div>' +
+    '<div class="stat"><div class="valeur">' + (visitesTotal ?? 0) + '</div><div class="libelle">Visites — total</div></div>' +
+    '</div>' +
+    '<div class="bloc"><div class="meta">' +
+    '<strong>Stock restant :</strong><br>' +
+    '• Lait de Lune : ' + (stock["lait-de-lune"] ?? "—") + ' / 5<br>' +
+    '• French Or Fin : ' + (stock["french-or-fin"] ?? "—") + ' / 5<br>' +
+    '• Orage d\'Or : ' + (stock["orage-dor"] ?? "—") + ' / 5' +
+    '</div></div>';
+}
+
+/* ===== GARDE D'ACCÈS ===== */
+(async function(){
+  const { data: { user } } = await sb.auth.getUser();
+  const msg = document.getElementById("garde-msg");
+  const btn = document.getElementById("garde-btn");
+  if (!user) {
+    msg.textContent = "Connectez-vous d'abord avec votre compte, puis revenez sur cette page.";
+    btn.style.display = "inline-block"; return;
+  }
+  const ok = await NAHIRA.isAdmin();
+  if (!ok) {
+    msg.textContent = "Accès réservé à la fondatrice. Cette tentative a été notée. ✦"; return;
+  }
+  document.getElementById("garde").style.display = "none";
+  document.getElementById("tableau").style.display = "block";
+  chargerCommandes(); chargerAvis(); chargerStats();
+})();
+</script>
+</body>
+</html>

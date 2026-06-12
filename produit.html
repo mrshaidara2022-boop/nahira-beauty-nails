@@ -68,7 +68,7 @@
 <nav class="b-nav">
   <div class="b-nav-inner">
     <ul class="b-links">
-      <li><a href="index.html#collection">Collection</a></li>
+      <li><a href="collection.html">Collection</a></li>
       <li><a href="index.html#rituel">La pose</a></li>
     </ul>
     <a href="index.html" class="b-logo">
@@ -117,6 +117,9 @@
             <span class="taille-chip" data-t="XL">XL</span>
             <span class="taille-chip" data-t="SUR-MESURE">Sur-mesure ✦</span>
           </div>
+          <p style="font-family:'Montserrat',sans-serif; font-size:.74rem; margin-top:12px">
+            <a href="taille.html" style="color:var(--or-vif); text-decoration:none">📸 Pas sûre de votre taille ? Essayez notre diagnostic photo — exclusivité Atelier ✦</a>
+          </p>
 
           <div id="bloc-mesures" class="champ">
             <label>Vos mesures (largeur en mm, du pouce à l'auriculaire)</label>
@@ -186,6 +189,31 @@
       <summary>Et si je me trompe de taille ?</summary>
       <p>Écrivez-nous à contact@nahirabeautynails.fr avant ouverture du set : tant que le scellé est intact, nous trouvons une solution. Pour zéro doute, choisissez le sur-mesure offert.</p>
     </details>
+
+    <p class="section-titre" style="margin-top:56px">Avis clientes</p>
+    <div class="panneau" style="margin-bottom:22px">
+      <div id="avis-resume" class="skeleton">Chargement des avis…</div>
+      <div id="avis-liste"></div>
+    </div>
+
+    <div class="panneau">
+      <p style="font-family:'Montserrat',sans-serif; font-size:.7rem; letter-spacing:.24em; text-transform:uppercase; color:var(--or); margin-bottom:16px">Partagez votre expérience ✦</p>
+      <div class="champ"><label>Votre prénom</label><input type="text" id="av-nom" placeholder="Ex. : Aïcha"></div>
+      <div class="champ"><label>Votre email (jamais publié)</label><input type="email" id="av-email" placeholder="vous@exemple.com"></div>
+      <div class="champ"><label>Votre note</label>
+        <div id="av-etoiles" style="font-size:1.8rem; letter-spacing:6px; cursor:pointer; color:var(--texte-faible); user-select:none">
+          <span data-n="1">☆</span><span data-n="2">☆</span><span data-n="3">☆</span><span data-n="4">☆</span><span data-n="5">☆</span>
+        </div>
+      </div>
+      <div class="champ"><label>Votre avis</label><textarea id="av-texte" rows="3" placeholder="Confort, tenue, rendu… racontez-nous tout"></textarea></div>
+      <div class="champ"><label>Photo (facultatif, 8 Mo max)</label><input type="file" id="av-photo" accept="image/*"></div>
+      <div class="champ"><label>Vidéo (facultatif, 30 Mo max)</label><input type="file" id="av-video" accept="video/mp4,video/quicktime,video/webm"></div>
+      <div class="b-msg" id="av-msg"></div>
+      <button class="btn btn-or" id="av-envoyer">Envoyer mon avis</button>
+      <p style="font-family:'Montserrat',sans-serif; font-size:.7rem; color:var(--texte-faible); margin-top:12px">
+        Chaque avis est relu avant publication. Votre email reste privé.
+      </p>
+    </div>
   </div>
 </main>
 
@@ -239,11 +267,28 @@
   // Choix de taille
   let taille = null;
   document.querySelectorAll(".taille-chip").forEach(chip => {
-    chip.addEventListener("click", () => {
+    chip.addEventListener("click", async () => {
       document.querySelectorAll(".taille-chip").forEach(c => c.classList.remove("active"));
       chip.classList.add("active");
       taille = chip.dataset.t;
       document.getElementById("bloc-mesures").style.display = taille === "SUR-MESURE" ? "block" : "none";
+      if (taille === "SUR-MESURE") {
+        try {
+          let mes = JSON.parse(localStorage.getItem("nahira_mesures") || "null");
+          if (!mes) {
+            const { data: { user } } = await NAHIRA.sb.auth.getUser();
+            if (user) {
+              const { data: prof } = await NAHIRA.sb.from("profiles").select("measurements").eq("id", user.id).single();
+              mes = prof?.measurements || null;
+            }
+          }
+          const champ = document.getElementById("mesures");
+          if (mes && !champ.value) {
+            champ.value = "pouce " + mes.pouce + ", index " + mes.index + ", majeur " + mes.majeur +
+              ", annulaire " + mes.annulaire + ", auriculaire " + mes.auriculaire + " (diagnostic photo)";
+          }
+        } catch(e) {}
+      }
       msg.className = "b-msg";
     });
   });
@@ -279,6 +324,81 @@
     });
     msg.className = "b-msg ok";
     msg.textContent = "✦ " + produit.name + " (taille " + taille + ") ajouté à votre panier.";
+  });
+
+  /* ===== AVIS : affichage ===== */
+  async function chargerAvis() {
+    const avis = await NAHIRA.getReviews(produit.id);
+    const resume = document.getElementById("avis-resume");
+    const liste = document.getElementById("avis-liste");
+    if (avis.length === 0) {
+      resume.className = "";
+      resume.innerHTML = '<p style="color:var(--texte-doux)">Soyez la première à donner votre avis sur ce set. ✦</p>';
+      return;
+    }
+    const moyenne = avis.reduce((s, a) => s + a.rating, 0) / avis.length;
+    resume.className = "";
+    resume.innerHTML = '<div style="display:flex; align-items:baseline; gap:12px; margin-bottom:14px">' +
+      '<span style="color:var(--or-vif); font-size:1.5rem">' + NAHIRA.etoiles(Math.round(moyenne)) + '</span>' +
+      '<span style="font-family:Montserrat,sans-serif; font-size:.8rem; color:var(--texte-doux)">' +
+      moyenne.toFixed(1) + ' / 5 · ' + avis.length + ' avis</span></div>';
+    liste.innerHTML = "";
+    avis.forEach(a => {
+      const d = new Date(a.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+      const div = document.createElement("div");
+      div.style.cssText = "border-top:1px solid var(--ligne); padding:16px 0";
+      let media = "";
+      if (a.photo_url) media += '<img src="' + a.photo_url + '" alt="Photo cliente" style="max-width:130px; border-radius:10px; margin-top:10px; border:1px solid var(--ligne)">';
+      if (a.video_url) media += '<video src="' + a.video_url + '" controls preload="metadata" style="max-width:220px; border-radius:10px; margin-top:10px; display:block"></video>';
+      div.innerHTML =
+        '<div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:6px">' +
+        '<strong style="color:var(--blanc); font-weight:500">' + a.author_name.replace(/</g,"&lt;") + '</strong>' +
+        '<span style="font-family:Montserrat,sans-serif; font-size:.7rem; color:var(--texte-faible)">' + d + '</span></div>' +
+        '<div style="color:var(--or-vif); margin:4px 0">' + NAHIRA.etoiles(a.rating) + '</div>' +
+        '<p style="color:var(--texte-doux); font-size:1rem">' + a.comment.replace(/</g,"&lt;") + '</p>' + media;
+      liste.appendChild(div);
+    });
+  }
+  chargerAvis();
+
+  /* ===== AVIS : dépôt ===== */
+  let note = 0;
+  document.querySelectorAll("#av-etoiles span").forEach(s => {
+    s.addEventListener("click", () => {
+      note = parseInt(s.dataset.n);
+      document.querySelectorAll("#av-etoiles span").forEach(x => {
+        x.textContent = parseInt(x.dataset.n) <= note ? "★" : "☆";
+        x.style.color = parseInt(x.dataset.n) <= note ? "var(--or-vif)" : "var(--texte-faible)";
+      });
+    });
+  });
+  document.getElementById("av-envoyer").addEventListener("click", async () => {
+    const m = document.getElementById("av-msg");
+    const btn = document.getElementById("av-envoyer");
+    const nom = document.getElementById("av-nom").value.trim();
+    const email = document.getElementById("av-email").value.trim();
+    const texte = document.getElementById("av-texte").value.trim();
+    m.className = "b-msg";
+    if (!nom || !email || !texte || !note) {
+      m.className = "b-msg err";
+      m.textContent = "Prénom, email, note et avis sont requis.";
+      return;
+    }
+    btn.disabled = true; btn.textContent = "Envoi en cours…";
+    try {
+      await NAHIRA.submitReview({
+        product_id: produit.id, author_name: nom, email, rating: note, comment: texte,
+        photoFile: document.getElementById("av-photo").files[0] || null,
+        videoFile: document.getElementById("av-video").files[0] || null,
+      });
+      m.className = "b-msg ok";
+      m.textContent = "Merci " + nom + " ! Votre avis a bien été reçu — il sera publié après relecture. ✦";
+      ["av-nom","av-email","av-texte"].forEach(id => document.getElementById(id).value = "");
+      document.getElementById("av-photo").value = ""; document.getElementById("av-video").value = "";
+    } catch (e) {
+      m.className = "b-msg err"; m.textContent = e.message;
+    }
+    btn.disabled = false; btn.textContent = "Envoyer mon avis";
   });
 })();
 </script>

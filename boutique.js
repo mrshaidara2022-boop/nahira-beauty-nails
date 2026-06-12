@@ -9,7 +9,7 @@ const NAHIRA = (() => {
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  /* ---------- PANIER (stocké dans le navigateur) ---------- */
+  /* ---------- PANIER ---------- */
   function getCart() {
     try { return JSON.parse(localStorage.getItem(CART_KEY) || "[]"); }
     catch { return []; }
@@ -18,21 +18,11 @@ const NAHIRA = (() => {
     localStorage.setItem(CART_KEY, JSON.stringify(cart));
     updateBadge();
   }
-  function addToCart(item) {
-    const cart = getCart();
-    cart.push(item);
-    saveCart(cart);
-  }
-  function removeFromCart(index) {
-    const cart = getCart();
-    cart.splice(index, 1);
-    saveCart(cart);
-  }
+  function addToCart(item) { const c = getCart(); c.push(item); saveCart(c); }
+  function removeFromCart(i) { const c = getCart(); c.splice(i, 1); saveCart(c); }
   function clearCart() { saveCart([]); }
   function cartCount() { return getCart().length; }
-  function cartSubtotal() {
-    return getCart().reduce((s, it) => s + (it.price_cents || 0), 0);
-  }
+  function cartSubtotal() { return getCart().reduce((s, it) => s + (it.price_cents || 0), 0); }
   function updateBadge() {
     document.querySelectorAll(".cart-badge").forEach(el => {
       el.textContent = cartCount() > 0 ? cartCount() : "";
@@ -43,8 +33,16 @@ const NAHIRA = (() => {
   async function getProduct(slug) {
     const { data, error } = await sb.from("products")
       .select("*").eq("slug", slug).eq("active", true).single();
-    if (error) return null;
-    return data;
+    return error ? null : data;
+  }
+  async function getProducts() {
+    const { data } = await sb.from("products")
+      .select("*, product_units(status)").eq("active", true)
+      .order("price_cents");
+    return (data || []).map(p => ({
+      ...p,
+      stock: (p.product_units || []).filter(u => u.status === "available").length,
+    }));
   }
   async function getStock(productId) {
     const { data, error } = await sb.from("product_units")
@@ -60,6 +58,35 @@ const NAHIRA = (() => {
       map[p.slug] = (p.product_units || []).filter(u => u.status === "available").length;
     });
     return map;
+  }
+
+  /* ---------- AVIS ---------- */
+  async function getReviews(productId) {
+    const { data } = await sb.from("reviews")
+      .select("author_name, rating, comment, photo_url, video_url, created_at")
+      .eq("product_id", productId).eq("status", "approved")
+      .order("created_at", { ascending: false });
+    return data || [];
+  }
+  async function uploadMedia(file, kind) {
+    if (!file) return null;
+    const maxMo = kind === "video" ? 30 : 8;
+    if (file.size > maxMo * 1024 * 1024) {
+      throw new Error((kind === "video" ? "Vidéo" : "Photo") + " trop lourde (max " + maxMo + " Mo).");
+    }
+    const ext = (file.name.split(".").pop() || "bin").toLowerCase();
+    const path = kind + "/" + Date.now() + "-" + Math.random().toString(36).slice(2, 8) + "." + ext;
+    const { error } = await sb.storage.from("avis").upload(path, file);
+    if (error) throw new Error("Envoi du fichier impossible : " + error.message);
+    return sb.storage.from("avis").getPublicUrl(path).data.publicUrl;
+  }
+  async function submitReview({ product_id, author_name, email, rating, comment, photoFile, videoFile }) {
+    const photo_url = await uploadMedia(photoFile, "photo");
+    const video_url = await uploadMedia(videoFile, "video");
+    const { error } = await sb.from("reviews").insert({
+      product_id, author_name, email, rating, comment, photo_url, video_url,
+    });
+    if (error) throw new Error("Dépôt de l'avis impossible. Réessayez.");
   }
 
   /* ---------- PAIEMENT ---------- */
@@ -88,14 +115,35 @@ const NAHIRA = (() => {
     location.href = data.url;
   }
 
+  /* ---------- ADMIN ---------- */
+  async function isAdmin() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return false;
+    const { data } = await sb.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
+    return !!data;
+  }
+
+  /* ---------- VISITES (anonyme, RGPD-friendly) ---------- */
+  function trackView() {
+    try {
+      const path = location.pathname + location.search;
+      const key = "nv_" + path;
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+      sb.from("page_views").insert({ path, ref: document.referrer || null }).then(() => {});
+    } catch (e) {}
+  }
+
   /* ---------- HELPERS ---------- */
   const eur = c => (c / 100).toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + " €";
+  const etoiles = n => "★".repeat(n) + "☆".repeat(5 - n);
 
-  document.addEventListener("DOMContentLoaded", updateBadge);
+  document.addEventListener("DOMContentLoaded", () => { updateBadge(); trackView(); });
 
   return {
     sb, getCart, addToCart, removeFromCart, clearCart,
     cartCount, cartSubtotal, updateBadge,
-    getProduct, getStock, getAllStock, checkout, eur,
+    getProduct, getProducts, getStock, getAllStock,
+    getReviews, submitReview, checkout, isAdmin, eur, etoiles,
   };
 })();

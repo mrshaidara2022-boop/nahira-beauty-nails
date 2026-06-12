@@ -39,7 +39,7 @@
 <nav class="b-nav">
   <div class="b-nav-inner">
     <ul class="b-links">
-      <li><a href="index.html#collection">Collection</a></li>
+      <li><a href="collection.html">Collection</a></li>
       <li><a href="index.html#rituel">La pose</a></li>
     </ul>
     <a href="index.html" class="b-logo">
@@ -92,6 +92,15 @@
     <p class="b-eyebrow">Espace cliente</p>
     <h1 class="b-titre">Bonjour <span class="b-script" id="hello-nom"></span></h1>
     <p style="color:var(--texte-doux); margin:6px 0 28px" id="hello-email"></p>
+
+    <div class="commande" id="bloc-mesures-profil" style="display:none">
+      <div class="entete"><strong style="color:var(--blanc)">Mes mesures d'ongles ✦</strong>
+      <span class="statut paid" id="mes-taille"></span></div>
+      <div style="font-family:'Montserrat',sans-serif; font-size:.78rem; color:var(--texte-doux); line-height:1.9" id="mes-detail"></div>
+      <p style="font-family:'Montserrat',sans-serif; font-size:.68rem; color:var(--texte-faible); margin-top:8px">
+        Mémorisées depuis votre diagnostic photo — utilisées automatiquement pour vos commandes sur-mesure.
+        <a href="taille.html" style="color:var(--or-vif)">Refaire le diagnostic</a></p>
+    </div>
 
     <p class="section-titre" style="font-family:'Montserrat',sans-serif; font-size:.7rem; letter-spacing:.24em; text-transform:uppercase; color:var(--or); margin-bottom:14px">Mes commandes</p>
     <div id="liste-commandes"><p class="skeleton">Chargement…</p></div>
@@ -207,6 +216,17 @@ async function init() {
     const nom = user.user_metadata?.full_name || "";
     document.getElementById("hello-nom").textContent = nom ? nom.split(" ")[0] : "vous";
     document.getElementById("hello-email").textContent = user.email;
+    try {
+      const { data: prof } = await sb.from("profiles").select("measurements, preferred_size").eq("id", user.id).single();
+      if (prof?.measurements) {
+        const m = prof.measurements;
+        document.getElementById("bloc-mesures-profil").style.display = "block";
+        document.getElementById("mes-taille").textContent = prof.preferred_size ? "Taille " + prof.preferred_size : "Mesures enregistrées";
+        document.getElementById("mes-detail").innerHTML =
+          "Pouce ≈ " + (m.pouce ?? "—") + " mm · Index ≈ " + (m.index ?? "—") + " mm · Majeur ≈ " + (m.majeur ?? "—") +
+          " mm · Annulaire ≈ " + (m.annulaire ?? "—") + " mm · Auriculaire ≈ " + (m.auriculaire ?? "—") + " mm";
+      }
+    } catch(e) {}
     chargerCommandes();
   }
 }
