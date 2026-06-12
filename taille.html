@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trouver ma taille — Diagnostic photo ✦ Nahira Beauty Nails</title>
+<meta name="description" content="Une photo de votre main, et notre Atelier estime la taille de chacun de vos ongles. Exclusivité Nahira Beauty Nails.">
+<link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="boutique.css">
+<style>
+  .colonne{max-width:640px; margin:0 auto}
+  .etapes-photo{margin:22px 0}
+  .etapes-photo .item{display:flex; gap:14px; padding:11px 0; align-items:baseline; border-bottom:1px solid var(--ligne)}
+  .etapes-photo .item:last-child{border:none}
+  .etapes-photo .num{color:var(--or-vif); font-family:'Parisienne',cursive; font-size:1.4rem; min-width:22px}
+  .etapes-photo p{color:var(--texte-doux); font-size:1rem}
+  .zone-photo{
+    border:2px dashed var(--ligne); border-radius:18px; padding:36px 20px;
+    text-align:center; cursor:pointer; transition:border-color .3s; margin:20px 0;
+  }
+  .zone-photo:hover{border-color:var(--rose)}
+  .zone-photo img{max-height:220px; margin:0 auto 12px; border-radius:12px}
+  .zone-photo .picto{font-size:2.2rem}
+  .zone-photo p{font-family:'Montserrat',sans-serif; font-size:.8rem; color:var(--texte-doux); letter-spacing:.06em}
+  #fichier{display:none}
+  .resultat-table{width:100%; border-collapse:collapse; margin:14px 0; font-family:'Montserrat',sans-serif; font-size:.85rem}
+  .resultat-table td{padding:9px 8px; border-bottom:1px solid var(--ligne); color:var(--texte-doux)}
+  .resultat-table td:first-child{color:var(--blanc)}
+  .resultat-table td:last-child{text-align:right; color:var(--or-vif)}
+  .taille-finale{
+    text-align:center; padding:24px; margin:18px 0;
+    background:rgba(232,194,122,.07); border:1px solid var(--or); border-radius:16px;
+  }
+  .taille-finale .grosse{font-size:3rem; color:var(--or-vif); line-height:1}
+  .taille-finale .lib{font-family:'Montserrat',sans-serif; font-size:.66rem; letter-spacing:.24em; text-transform:uppercase; color:var(--texte-doux); margin-top:6px}
+  .fiab{font-family:'Montserrat',sans-serif; font-size:.7rem; letter-spacing:.1em; text-transform:uppercase; padding:4px 12px; border-radius:99px; border:1px solid}
+  .fiab.haute{color:#8be3ad; border-color:rgba(110,231,160,.4)}
+  .fiab.moyenne{color:var(--or-vif); border-color:var(--or)}
+  .fiab.faible{color:#f0a3a3; border-color:rgba(240,111,111,.35)}
+  .analyse-en-cours{text-align:center; padding:30px; display:none}
+  .analyse-en-cours .pulse{
+    font-family:'Parisienne',cursive; color:var(--rose); font-size:1.6rem;
+    animation:pulse 1.4s ease infinite;
+  }
+  @keyframes pulse{0%,100%{opacity:.45}50%{opacity:1}}
+</style>
+</head>
+<body>
+
+<nav class="b-nav">
+  <div class="b-nav-inner">
+    <ul class="b-links">
+      <li><a href="collection.html">Collection</a></li>
+      <li><a href="taille.html">Ma taille</a></li>
+    </ul>
+    <a href="index.html" class="b-logo">
+      <span class="l1">Nahira <span>Beauty</span></span>
+      <span class="l2">Nails</span>
+    </a>
+    <ul class="b-links">
+      <li><a href="compte.html">Compte</a></li>
+      <li><a href="panier.html">Panier<span class="cart-badge"></span></a></li>
+    </ul>
+  </div>
+</nav>
+
+<main class="b-page">
+  <div class="colonne">
+    <div style="text-align:center">
+      <p class="b-eyebrow">Exclusivité Atelier · Intelligence artificielle</p>
+      <h1 class="b-titre">Trouver <span class="b-script">ma taille</span></h1>
+      <p style="color:var(--texte-doux); margin-top:12px">
+        Une photo de votre main, et notre Atelier estime la largeur de chacun de vos ongles.
+        Fini le doute, fini le mètre ruban.
+      </p>
+    </div>
+
+    <div class="panneau" style="margin-top:28px">
+      <p style="font-family:'Montserrat',sans-serif; font-size:.7rem; letter-spacing:.24em; text-transform:uppercase; color:var(--or); margin-bottom:6px">Comment prendre la photo</p>
+      <div class="etapes-photo">
+        <div class="item"><span class="num">1</span><p>Posez votre main <strong style="color:var(--blanc)">bien à plat</strong> sur une table, ongles face à vous.</p></div>
+        <div class="item"><span class="num">2</span><p>Posez une <strong style="color:var(--blanc)">carte bancaire</strong> (ou carte de fidélité au même format) juste à côté de votre main, sur la table. C'est notre règle de mesure.</p></div>
+        <div class="item"><span class="num">3</span><p>Photographiez <strong style="color:var(--blanc)">du dessus</strong>, bien en face, avec une bonne lumière. Main et carte doivent être nettes.</p></div>
+      </div>
+
+      <label class="zone-photo" for="fichier" id="zone">
+        <div class="picto">📸</div>
+        <p>Touchez ici pour prendre ou choisir votre photo</p>
+      </label>
+      <input type="file" id="fichier" accept="image/*" capture="environment">
+
+      <p style="font-family:'Montserrat',sans-serif; font-size:.68rem; color:var(--texte-faible); text-align:center">
+        🔒 Votre photo est analysée puis immédiatement oubliée — elle n'est jamais stockée. Connectée à votre compte ? Vos mesures y seront mémorisées pour vos prochaines commandes.
+      </p>
+
+      <div class="b-msg" id="msg"></div>
+
+      <div class="analyse-en-cours" id="attente">
+        <p class="pulse">L'Atelier observe vos ongles… ✦</p>
+        <p style="font-family:'Montserrat',sans-serif; font-size:.72rem; color:var(--texte-faible); margin-top:8px">Quelques secondes</p>
+      </div>
+
+      <div id="resultat" style="display:none">
+        <div class="taille-finale">
+          <div class="grosse" id="r-taille"></div>
+          <div class="lib">Taille recommandée</div>
+          <div style="margin-top:10px"><span class="fiab" id="r-fiab"></span></div>
+        </div>
+        <table class="resultat-table">
+          <tr><td>Pouce</td><td id="m-pouce"></td></tr>
+          <tr><td>Index</td><td id="m-index"></td></tr>
+          <tr><td>Majeur</td><td id="m-majeur"></td></tr>
+          <tr><td>Annulaire</td><td id="m-annulaire"></td></tr>
+          <tr><td>Auriculaire</td><td id="m-auriculaire"></td></tr>
+        </table>
+        <p class="note-or" id="r-conseil" style="margin:14px 0"></p>
+        <p style="font-family:'Montserrat',sans-serif; font-size:.72rem; color:var(--texte-faible)">
+          Estimation indicative par photo. Pour un ajustement parfait au millimètre, choisissez le
+          <strong style="color:var(--or-vif)">sur-mesure offert</strong> sur la page du set : ces mesures y seront pré-remplies.
+        </p>
+        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:18px">
+          <a class="btn btn-or" href="collection.html">Choisir mon set ✦</a>
+          <button class="btn btn-ghost" id="refaire">Reprendre une photo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="b-footer">
+  <div>© 2026 Nahira Beauty Nails — Fait main en France ✦</div>
+  <div class="liens">
+    <a href="mentions-legales.html">Mentions légales</a>
+    <a href="cgv.html">CGV</a>
+    <a href="politique-confidentialite.html">Confidentialité</a>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="boutique.js"></script>
+<script>
+const URL_ANALYSE = "https://mxbmjtzrggahbwahxmkp.supabase.co/functions/v1/analyse-taille";
+const msg = document.getElementById("msg");
+
+document.getElementById("fichier").addEventListener("change", async (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  msg.className = "b-msg";
+  document.getElementById("resultat").style.display = "none";
+
+  // Aperçu
+  const zone = document.getElementById("zone");
+  const url = URL.createObjectURL(f);
+  zone.innerHTML = '<img src="' + url + '" alt="Votre photo"><p>Touchez pour changer de photo</p>';
+
+  // Compression (max 1100px, JPEG)
+  const img = new Image();
+  img.onload = async () => {
+    const max = 1100;
+    const ratio = Math.min(1, max / Math.max(img.width, img.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.width * ratio);
+    canvas.height = Math.round(img.height * ratio);
+    canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+    const base64 = canvas.toDataURL("image/jpeg", 0.85).split(",")[1];
+
+    document.getElementById("attente").style.display = "block";
+    try {
+      const res = await fetch(URL_ANALYSE, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: base64, mime: "image/jpeg" }),
+      });
+      const data = await res.json();
+      document.getElementById("attente").style.display = "none";
+
+      if (data.erreur) {
+        msg.className = "b-msg err";
+        msg.textContent = data.erreur;
+        return;
+      }
+      const m = data.mesures || {};
+      document.getElementById("r-taille").textContent = data.taille_recommandee || "—";
+      const fiab = document.getElementById("r-fiab");
+      fiab.textContent = "Fiabilité " + (data.fiabilite || "moyenne");
+      fiab.className = "fiab " + (data.fiabilite || "moyenne");
+      ["pouce","index","majeur","annulaire","auriculaire"].forEach(d => {
+        document.getElementById("m-" + d).textContent = m[d] ? "≈ " + m[d] + " mm" : "—";
+      });
+      document.getElementById("r-conseil").textContent = data.conseil || "";
+      // Mesures gardées pour pré-remplir le sur-mesure
+      try { localStorage.setItem("nahira_mesures", JSON.stringify(m)); } catch(e) {}
+      // Et mémorisées dans le compte si la cliente est connectée
+      try {
+        const { data: { user } } = await NAHIRA.sb.auth.getUser();
+        if (user) {
+          await NAHIRA.sb.from("profiles").update({
+            measurements: m,
+            preferred_size: data.taille_recommandee || null,
+          }).eq("id", user.id);
+        }
+      } catch(e) {}
+      document.getElementById("resultat").style.display = "block";
+      document.getElementById("resultat").scrollIntoView({ behavior: "smooth" });
+    } catch (err) {
+      document.getElementById("attente").style.display = "none";
+      msg.className = "b-msg err";
+      msg.textContent = "Analyse momentanément indisponible — réessayez dans un instant.";
+    }
+  };
+  img.src = url;
+});
+
+document.getElementById("refaire")?.addEventListener("click", () => {
+  document.getElementById("fichier").value = "";
+  document.getElementById("fichier").click();
+});
+</script>
+</body>
+</html>
