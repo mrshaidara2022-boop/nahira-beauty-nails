@@ -79,11 +79,30 @@
         <label>Mot de passe</label>
         <input type="password" id="in-mdp" autocomplete="current-password" placeholder="8 caractères minimum">
       </div>
+      <p style="text-align:right; margin:-6px 0 14px">
+        <a href="#" id="lien-oubli" style="font-family:'Montserrat',sans-serif; font-size:.7rem; color:var(--texte-faible); text-decoration:none">Mot de passe oublié ?</a>
+      </p>
       <div class="b-msg" id="msg-auth"></div>
       <button class="btn btn-or" style="width:100%" id="btn-auth">Se connecter</button>
       <p style="font-family:'Montserrat',sans-serif; font-size:.72rem; color:var(--texte-faible); text-align:center; margin-top:14px">
         Le compte est facultatif : vous pouvez aussi commander en simple visiteuse.
       </p>
+    </div>
+  </div>
+
+  <!-- ===== NOUVEAU MOT DE PASSE (après lien email) ===== -->
+  <div id="vue-reset" style="display:none">
+    <div style="text-align:center">
+      <p class="b-eyebrow">Espace cliente</p>
+      <h1 class="b-titre">Nouveau <span class="b-script">mot de passe</span></h1>
+    </div>
+    <div class="auth-box panneau">
+      <div class="champ">
+        <label>Choisissez votre nouveau mot de passe</label>
+        <input type="password" id="reset-mdp" autocomplete="new-password" placeholder="8 caractères minimum">
+      </div>
+      <div class="b-msg" id="msg-reset"></div>
+      <button class="btn btn-or" style="width:100%" id="btn-reset">Enregistrer mon mot de passe</button>
     </div>
   </div>
 
@@ -171,6 +190,41 @@ function traduireErreur(m) {
   if (/not confirmed/i.test(m)) return "Confirmez d'abord votre email via le lien reçu par mail (pensez aux spams).";
   return m;
 }
+
+document.getElementById("lien-oubli").addEventListener("click", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("in-email").value.trim();
+  if (!email) {
+    msgA.className = "b-msg err";
+    msgA.textContent = "Entrez d'abord votre email dans le champ ci-dessus, puis recliquez sur « Mot de passe oublié ? ».";
+    return;
+  }
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: location.origin + "/compte.html",
+  });
+  if (error) { msgA.className = "b-msg err"; msgA.textContent = "Envoi impossible, vérifiez l'email saisi."; return; }
+  msgA.className = "b-msg ok";
+  msgA.textContent = "Email envoyé à " + email + " ✦ Cliquez sur le lien reçu pour choisir un nouveau mot de passe (pensez aux spams).";
+});
+
+sb.auth.onAuthStateChange((event) => {
+  if (event === "PASSWORD_RECOVERY") {
+    document.getElementById("vue-auth").style.display = "none";
+    document.getElementById("vue-compte").style.display = "none";
+    document.getElementById("vue-reset").style.display = "block";
+  }
+});
+
+document.getElementById("btn-reset").addEventListener("click", async () => {
+  const mdp = document.getElementById("reset-mdp").value;
+  const m = document.getElementById("msg-reset");
+  if (mdp.length < 6) { m.className = "b-msg err"; m.textContent = "6 caractères minimum."; return; }
+  const { error } = await sb.auth.updateUser({ password: mdp });
+  if (error) { m.className = "b-msg err"; m.textContent = "Échec — le lien a peut-être expiré, redemandez un email."; return; }
+  m.className = "b-msg ok";
+  m.textContent = "Mot de passe enregistré ✦ Vous êtes connectée.";
+  setTimeout(() => { document.getElementById("vue-reset").style.display = "none"; init(); }, 1500);
+});
 
 document.getElementById("btn-deconnexion").addEventListener("click", async () => {
   await sb.auth.signOut();
