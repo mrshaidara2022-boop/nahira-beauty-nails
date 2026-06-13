@@ -12,6 +12,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Atelier NBN">
 <link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Montserrat:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 
@@ -226,6 +227,28 @@ nav.tabs button.actif .ic { filter:none; }
   .feuille .poignee { display:none; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
+
+/* ---- Onglets Supabase ---- */
+nav.tabs { overflow-x:auto; justify-content:flex-start; gap:0; scrollbar-width:none; }
+nav.tabs::-webkit-scrollbar { display:none; }
+nav.tabs button { flex:none; }
+.sep-tab { width:1px; background:var(--bordure); margin:6px 2px; flex:none; }
+.bloc-sb { background:var(--carte); border:1px solid var(--bordure); border-radius:16px; padding:14px; margin-bottom:10px; }
+.bl-haut { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; }
+.bl-meta { font-size:14px; color:var(--texte-doux); margin-top:5px; line-height:1.6; }
+.bl-corps { font-size:16px; color:var(--texte); margin-top:8px; line-height:1.55; }
+.bl-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.pastille-sb { font-family:'Montserrat',sans-serif; font-size:8px; letter-spacing:1.4px; text-transform:uppercase; padding:5px 12px; border-radius:99px; border:1px solid; flex:none; }
+.ps-attente { color:var(--attente); border-color:rgba(245,216,154,.4); }
+.ps-ok { color:var(--ok); border-color:rgba(127,216,164,.4); }
+.ps-ko { color:var(--alerte); border-color:rgba(255,140,140,.35); }
+.btn-sb { cursor:pointer; border:none; border-radius:99px; padding:9px 16px; font-family:'Montserrat',sans-serif; font-size:9px; letter-spacing:1.4px; text-transform:uppercase; text-decoration:none; display:inline-block; }
+.btn-vert { background:rgba(127,216,164,.12); color:var(--ok); border:1px solid rgba(127,216,164,.4); }
+.btn-rouge { background:rgba(255,140,140,.12); color:var(--alerte); border:1px solid rgba(255,140,140,.35); }
+.btn-or-sb { background:rgba(232,194,122,.12); color:var(--or-vif); border:1px solid var(--or); }
+.mini-input-dash { background:var(--noir-2); border:1px solid var(--bordure); border-radius:99px; padding:8px 14px; color:var(--blanc); font-family:'Montserrat',sans-serif; font-size:.74rem; min-width:150px; max-width:200px; }
+.auth-requis { text-align:center; padding:50px 20px; color:var(--texte-doux); font-size:17px; }
+.auth-requis a { color:var(--rose); }
 </style>
 </head>
 <body>
@@ -243,6 +266,11 @@ nav.tabs button.actif .ic { filter:none; }
     <button data-vue="commandes"><span class="ic">⬩</span> Commandes</button>
     <button data-vue="finances"><span class="ic">◈</span> Finances</button>
     <button data-vue="contenu"><span class="ic">✎</span> Contenu</button>
+    <div style="height:1px;background:var(--bordure);margin:10px 6px"></div>
+    <button data-vue="boutique"><span class="ic">◇</span> Boutique live</button>
+    <button data-vue="avis"><span class="ic">★</span> Avis</button>
+    <button data-vue="couture-dash"><span class="ic">✦</span> Couture</button>
+    <button data-vue="clientes"><span class="ic">♡</span> Clientes</button>
   </aside>
 
   <main>
@@ -339,6 +367,34 @@ nav.tabs button.actif .ic { filter:none; }
       <p class="note">Estimations indicatives — le réel se lit dans Stripe et ton relevé URSSAF. Ajuste coût matières, frais postaux et taux dans ⚙ Réglages.</p>
     </section>
 
+    <!-- ============ BOUTIQUE LIVE ============ -->
+    <section class="vue" id="vue-boutique">
+      <div class="eyebrow">Via paiement Stripe</div>
+      <h2 class="section-titre">Boutique <em>live</em></h2>
+      <div id="boutique-zone"><p style="color:var(--texte-faible)">Sélectionnez cet onglet pour charger…</p></div>
+    </section>
+
+    <!-- ============ AVIS ============ -->
+    <section class="vue" id="vue-avis">
+      <div class="eyebrow">Modération</div>
+      <h2 class="section-titre">Avis <em>clients</em></h2>
+      <div id="avis-zone"><p style="color:var(--texte-faible)">Sélectionnez cet onglet pour charger…</p></div>
+    </section>
+
+    <!-- ============ COUTURE ============ -->
+    <section class="vue" id="vue-couture-dash">
+      <div class="eyebrow">Pièces uniques 1/1</div>
+      <h2 class="section-titre">Commandes <em>Couture</em></h2>
+      <div id="couture-zone"><p style="color:var(--texte-faible)">Sélectionnez cet onglet pour charger…</p></div>
+    </section>
+
+    <!-- ============ CLIENTES ============ -->
+    <section class="vue" id="vue-clientes">
+      <div class="eyebrow">Comptes &amp; mesures</div>
+      <h2 class="section-titre">Mes <em>clientes</em></h2>
+      <div id="clientes-zone"><p style="color:var(--texte-faible)">Sélectionnez cet onglet pour charger…</p></div>
+    </section>
+
     <!-- ============ CONTENU ============ -->
     <section class="vue" id="vue-contenu">
       <div class="eyebrow">Plan de lancement · 12 posts</div>
@@ -361,6 +417,11 @@ nav.tabs button.actif .ic { filter:none; }
   <button data-vue="commandes"><span class="ic">⬩</span>Cmd</button>
   <button data-vue="finances"><span class="ic">◈</span>Finances</button>
   <button data-vue="contenu"><span class="ic">✎</span>Contenu</button>
+  <div class="sep-tab"></div>
+  <button data-vue="boutique"><span class="ic">◇</span>Live</button>
+  <button data-vue="avis"><span class="ic">★</span>Avis</button>
+  <button data-vue="couture-dash"><span class="ic">✦</span>Couture</button>
+  <button data-vue="clientes"><span class="ic">♡</span>Clientes</button>
 </nav>
 
 <!-- ============ FEUILLE COMMANDE ============ -->
@@ -791,6 +852,159 @@ document.getElementById('fermerVisionneuse').addEventListener('click', function(
 });
 
 rendre();
+
+/* ================= SUPABASE — Boutique Live, Avis, Couture, Clientes ================= */
+var _sb = null, _sbAdmin = null;
+var _sbLoaded = { boutique:false, avis:false, 'couture-dash':false, clientes:false };
+var _STATUTS = { pending:'En attente', paid:'Payée', preparing:'En préparation', shipped:'Expédiée', cancelled:'Annulée', refunded:'Remboursée' };
+
+function getSB() {
+  if (_sb) return _sb;
+  try { _sb = window.supabase.createClient('https://mxbmjtzrggahbwahxmkp.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14Ym1qdHpyZ2dhaGJ3YWh4bWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyMzc5NDQsImV4cCI6MjA5NjgxMzk0NH0.iTibkVCaTZYoMzQO4TQvddlKeZY40vNcfJ-kEgIHXpE'); } catch(e) {}
+  return _sb;
+}
+async function isAdmin() {
+  if (_sbAdmin !== null) return _sbAdmin;
+  var sb = getSB(); if (!sb) { _sbAdmin = false; return false; }
+  try {
+    var r = await sb.auth.getUser();
+    var u = r.data && r.data.user;
+    if (!u) { _sbAdmin = false; return false; }
+    var d = await sb.from('admins').select('user_id').eq('user_id',u.id).maybeSingle();
+    _sbAdmin = !!(d.data);
+  } catch(e) { _sbAdmin = false; }
+  return _sbAdmin;
+}
+function eurSB(c){ return (c/100).toLocaleString('fr-FR',{minimumFractionDigits:0,maximumFractionDigits:2})+' €'; }
+function etoilesSB(n){ return '★'.repeat(n)+'☆'.repeat(5-n); }
+function authBlock(zone){ zone.innerHTML='<div class="auth-requis"><p>Connexion avec votre compte admin requise.</p><a class="btn-principal" href="compte.html" style="display:inline-block;text-decoration:none;margin-top:14px;max-width:220px">Se connecter</a></div>'; }
+
+async function chargerBoutique() {
+  var zone = document.getElementById('boutique-zone');
+  if (!await isAdmin()) { authBlock(zone); return; }
+  zone.innerHTML='<p style="color:var(--texte-faible)">Chargement…</p>';
+  var sb = getSB();
+  var res = await sb.from('orders').select('*, order_items(*, products(name), product_units:unit_id(serial_number))').neq('status','pending').order('created_at',{ascending:false});
+  if (res.error) { zone.innerHTML='<p style="color:var(--alerte)">Erreur de chargement.</p>'; return; }
+  var data = res.data || [];
+  if (!data.length) { zone.innerHTML='<div class="vide"><div class="p">Aucune commande</div>Les premières commandes Stripe apparaîtront ici.</div>'; return; }
+  var html='';
+  data.forEach(function(cmd){
+    var d=new Date(cmd.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});
+    var articles=(cmd.order_items||[]).map(function(it){ return '• '+(it.products&&it.products.name||'Set')+(it.product_units&&it.product_units.serial_number?' N°'+it.product_units.serial_number+'/5':'')+' — taille <strong>'+it.size+'</strong>'; }).join('<br>');
+    var adresse=[cmd.shipping_name,cmd.shipping_address,(cmd.shipping_postal_code||'')+' '+(cmd.shipping_city||''),cmd.shipping_country].filter(Boolean).join(', ');
+    var ps=['paid','preparing'].includes(cmd.status)?'ps-ok':cmd.status==='shipped'?'ps-attente':'ps-ko';
+    html+='<div class="bloc-sb"><div class="bl-haut"><strong style="font-size:18px;color:var(--blanc)">'+d+'</strong><span class="pastille-sb '+ps+'">'+(_STATUTS[cmd.status]||cmd.status)+'</span></div>';
+    html+='<div class="bl-meta">'+articles+'</div>';
+    html+='<div class="bl-meta">Total : <strong>'+eurSB(cmd.total_cents)+'</strong> · '+(cmd.email||'—')+'<br>'+(adresse||'—')+(cmd.tracking_number?'<br>Suivi : '+cmd.tracking_number:'')+'</div>';
+    html+='<div class="bl-actions">';
+    if(cmd.status==='paid') html+='<button class="btn-sb btn-or-sb" data-bid="'+cmd.id+'" data-bact="preparing">→ En préparation</button>';
+    if(['paid','preparing'].includes(cmd.status)) html+='<input class="mini-input-dash" placeholder="N° de suivi" id="bsuivi-'+cmd.id+'" value="'+(cmd.tracking_number||'')+'"><button class="btn-sb btn-vert" data-bid="'+cmd.id+'" data-bact="shipped">✓ Expédiée</button>';
+    html+='</div></div>';
+  });
+  zone.innerHTML=html;
+  zone.querySelectorAll('[data-bact]').forEach(function(b){
+    b.addEventListener('click',async function(){
+      var maj={status:b.getAttribute('data-bact')};
+      var suivi=document.getElementById('bsuivi-'+b.getAttribute('data-bid'));
+      if(suivi&&suivi.value.trim()) maj.tracking_number=suivi.value.trim();
+      await getSB().from('orders').update(maj).eq('id',b.getAttribute('data-bid'));
+      _sbLoaded.boutique=false; chargerBoutique();
+    });
+  });
+}
+
+async function chargerAvis() {
+  var zone=document.getElementById('avis-zone');
+  if (!await isAdmin()) { authBlock(zone); return; }
+  zone.innerHTML='<p style="color:var(--texte-faible)">Chargement…</p>';
+  var sb=getSB();
+  var res=await sb.from('reviews').select('*, products(name)').order('created_at',{ascending:false});
+  if(res.error){ zone.innerHTML='<p style="color:var(--alerte)">Erreur.</p>'; return; }
+  var data=res.data||[];
+  if(!data.length){ zone.innerHTML='<div class="vide"><div class="p">Aucun avis</div>Les avis des clientes apparaîtront ici.</div>'; return; }
+  var ETIQ={pending:'À modérer',approved:'Publié',rejected:'Retiré'};
+  var PSM={pending:'ps-attente',approved:'ps-ok',rejected:'ps-ko'};
+  data.sort(function(a,b){ return (a.status==='pending'?0:1)-(b.status==='pending'?0:1); });
+  var html='';
+  data.forEach(function(a){
+    var d=new Date(a.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
+    html+='<div class="bloc-sb"><div class="bl-haut"><strong style="font-size:17px;color:var(--blanc)">'+a.author_name.replace(/</g,'&lt;')+' <span style="color:var(--attente)">'+etoilesSB(a.rating)+'</span></strong><span class="pastille-sb '+(PSM[a.status]||'ps-attente')+'">'+(ETIQ[a.status]||a.status)+'</span></div>';
+    html+='<div class="bl-meta">'+(a.products&&a.products.name||'')+' · '+d+' · '+a.email.replace(/</g,'&lt;')+'</div>';
+    html+='<div class="bl-corps">'+a.comment.replace(/</g,'&lt;')+'</div>';
+    html+='<div class="bl-actions">';
+    if(a.status!=='approved') html+='<button class="btn-sb btn-vert" data-ast="approved" data-aid="'+a.id+'">✓ Publier</button>';
+    if(a.status!=='rejected') html+='<button class="btn-sb btn-rouge" data-ast="rejected" data-aid="'+a.id+'">Retirer</button>';
+    html+='<button class="btn-sb btn-rouge" data-adel="'+a.id+'">Supprimer</button></div></div>';
+  });
+  zone.innerHTML=html;
+  zone.querySelectorAll('[data-ast]').forEach(function(b){
+    b.addEventListener('click',async function(){ await getSB().from('reviews').update({status:b.getAttribute('data-ast')}).eq('id',b.getAttribute('data-aid')); _sbLoaded.avis=false; chargerAvis(); });
+  });
+  zone.querySelectorAll('[data-adel]').forEach(function(b){
+    b.addEventListener('click',async function(){ if(!confirm('Supprimer cet avis ?')) return; await getSB().from('reviews').delete().eq('id',b.getAttribute('data-adel')); _sbLoaded.avis=false; chargerAvis(); });
+  });
+}
+
+async function chargerCoutureDash() {
+  var zone=document.getElementById('couture-zone');
+  if (!await isAdmin()) { authBlock(zone); return; }
+  zone.innerHTML='<p style="color:var(--texte-faible)">Chargement…</p>';
+  var sb=getSB();
+  var res=await sb.from('couture_requests').select('*').order('created_at',{ascending:false});
+  if(res.error){ zone.innerHTML='<p style="color:var(--alerte)">Erreur.</p>'; return; }
+  var data=res.data||[];
+  if(!data.length){ zone.innerHTML='<div class="vide"><div class="p">Aucune demande</div>Les demandes Couture apparaîtront ici.</div>'; return; }
+  var ETIQ={pending:'À étudier',accepted:'Acceptée',declined:'Déclinée'};
+  var PSM={pending:'ps-attente',accepted:'ps-ok',declined:'ps-ko'};
+  var html='';
+  data.forEach(function(c){
+    var d=new Date(c.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
+    var fiche='';
+    try { var f=JSON.parse(c.ai_brief||'null'); if(f) fiche='<div class="bl-meta" style="border-left:2px solid var(--or);padding-left:12px;margin-top:8px"><strong>« '+f.titre+' »</strong><br>'+f.vision+'</div>'; } catch(e){}
+    html+='<div class="bloc-sb"><div class="bl-haut"><strong style="font-size:17px;color:var(--blanc)">'+c.name.replace(/</g,'&lt;')+'</strong><span class="pastille-sb '+(PSM[c.status]||'ps-attente')+'">'+(ETIQ[c.status]||c.status)+'</span></div>';
+    html+='<div class="bl-meta">'+d+' · '+c.email.replace(/</g,'&lt;')+(c.budget?' · <strong>'+c.budget+'</strong>':'')+'</div>';
+    html+='<div class="bl-corps">'+c.brief.replace(/</g,'&lt;')+'</div>'+fiche;
+    html+='<div class="bl-actions"><a class="btn-sb btn-or-sb" href="mailto:'+c.email+'?subject=Votre Commande Couture — Atelier Nahira ✦">✉ Répondre</a>';
+    if(c.status!=='accepted') html+='<button class="btn-sb btn-vert" data-cst="accepted" data-cid="'+c.id+'">✓ Accepter</button>';
+    if(c.status!=='declined') html+='<button class="btn-sb btn-rouge" data-cst="declined" data-cid="'+c.id+'">Décliner</button>';
+    html+='</div></div>';
+  });
+  zone.innerHTML=html;
+  zone.querySelectorAll('[data-cst]').forEach(function(b){
+    b.addEventListener('click',async function(){ await getSB().from('couture_requests').update({status:b.getAttribute('data-cst')}).eq('id',b.getAttribute('data-cid')); _sbLoaded['couture-dash']=false; chargerCoutureDash(); });
+  });
+}
+
+async function chargerClientes() {
+  var zone=document.getElementById('clientes-zone');
+  if (!await isAdmin()) { authBlock(zone); return; }
+  zone.innerHTML='<p style="color:var(--texte-faible)">Chargement…</p>';
+  var sb=getSB();
+  var res=await sb.from('profiles').select('*').order('created_at',{ascending:false});
+  if(res.error){ zone.innerHTML='<p style="color:var(--alerte)">Erreur.</p>'; return; }
+  var data=res.data||[];
+  if(!data.length){ zone.innerHTML='<div class="vide"><div class="p">Aucune cliente</div>Les comptes créés apparaîtront ici.</div>'; return; }
+  var html='';
+  data.forEach(function(p){
+    var m=p.measurements?Object.entries(p.measurements).map(function(e){ var n={pouce:'P',index:'I',majeur:'M',annulaire:'A',auriculaire:'Au'}; return (n[e[0]]||e[0])+':'+e[1]+'mm'; }).join(' · '):null;
+    html+='<div class="bloc-sb"><div class="bl-haut"><strong style="color:var(--blanc)">'+(p.full_name||'—').replace(/</g,'&lt;')+'</strong>'+(p.preferred_size?'<span class="pastille-sb ps-ok">Taille '+p.preferred_size+'</span>':'')+'</div>';
+    html+='<div class="bl-meta">'+(p.email||'').replace(/</g,'&lt;')+'</div>';
+    if(m) html+='<div class="bl-meta" style="margin-top:5px;font-family:Montserrat,sans-serif;font-size:11px;letter-spacing:1px">Mesures : <span style="color:var(--or-vif)">'+m+'</span></div>';
+    html+='</div>';
+  });
+  zone.innerHTML=html;
+}
+
+// Chargement paresseux des onglets Supabase au premier clic
+document.addEventListener('click', function(e) {
+  var b = e.target.closest('[data-vue]'); if (!b) return;
+  var v = b.getAttribute('data-vue');
+  if (v === 'boutique' && !_sbLoaded.boutique) { _sbLoaded.boutique=true; chargerBoutique(); }
+  else if (v === 'avis' && !_sbLoaded.avis) { _sbLoaded.avis=true; chargerAvis(); }
+  else if (v === 'couture-dash' && !_sbLoaded['couture-dash']) { _sbLoaded['couture-dash']=true; chargerCoutureDash(); }
+  else if (v === 'clientes' && !_sbLoaded.clientes) { _sbLoaded.clientes=true; chargerClientes(); }
+});
 </script>
 </body>
 </html>

@@ -1,8 +1,8 @@
 {
-  "name": "Atelier — Nahira Beauty Nails",
-  "short_name": "Atelier NBN",
-  "description": "Tableau de bord privé : éditions numérotées, commandes, finances, contenu.",
-  "start_url": "./dashboard.html",
+  "name": "Nahira Beauty Nails",
+  "short_name": "Nahira Nails",
+  "description": "Press-on nails faits main en France — éditions limitées et numérotées.",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#060406",
@@ -10,10 +10,16 @@
   "lang": "fr",
   "icons": [
     {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIj48cmVjdCB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgcng9IjQyIiBmaWxsPSIjMDYwNDA2Ii8+PHRleHQgeD0iNTAlIiB5PSI1NiUiIGZvbnQtZmFtaWx5PSJHZW9yZ2lhLCBzZXJpZiIgZm9udC1zaXplPSI4MiIgZmlsbD0iI0YwNkZBNyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSI+TjwvdGV4dD48L3N2Zz4=",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
       "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMCIgZmlsbD0iIzA2MDQwNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTYlIiBmb250LWZhbWlseT0iR2VvcmdpYSwgc2VyaWYiIGZvbnQtc2l6ZT0iMjIwIiBmaWxsPSIjRjA2RkE3IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIj5OPC90ZXh0Pjwvc3ZnPg==",
       "sizes": "512x512",
       "type": "image/svg+xml",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ]
 }
