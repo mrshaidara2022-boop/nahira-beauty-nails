@@ -51,6 +51,28 @@
   }
   .avis-media img{max-width:120px; border-radius:10px; margin-top:8px; border:1px solid var(--ligne)}
   .avis-media video{max-width:200px; border-radius:10px; margin-top:8px; display:block}
+  /* ---- Analytics ---- */
+  .stat-inline{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(232,194,122,.08);font-family:'Montserrat',sans-serif;font-size:.78rem}
+  .stat-inline:last-child{border-bottom:none}
+  .stat-inline .nom{color:var(--texte-doux)}
+  .stat-inline .val{color:var(--blanc);font-weight:500;white-space:nowrap;margin-left:12px}
+  .barre-inline{height:3px;background:linear-gradient(90deg,var(--or),var(--rose));border-radius:3px;margin-top:4px;min-width:2px}
+  .horaire-grid{display:grid;grid-template-columns:repeat(24,1fr);gap:2px;align-items:flex-end;height:56px;margin:12px 0 4px}
+  .h-bar{background:rgba(232,194,122,.25);border-radius:2px 2px 0 0;min-height:2px}
+  .h-bar.pic{background:linear-gradient(180deg,var(--or),rgba(232,194,122,.25))}
+  .h-labels{display:flex;justify-content:space-between;font-family:'Montserrat',sans-serif;font-size:.6rem;color:var(--texte-faible);letter-spacing:.04em}
+  .tendance-grille{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;align-items:flex-end;height:64px;margin:12px 0 4px}
+  .j-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:100%}
+  .j-bar{width:100%;background:rgba(240,111,167,.3);border-radius:3px 3px 0 0;min-height:2px}
+  .j-label{font-family:'Montserrat',sans-serif;font-size:.6rem;color:var(--texte-faible);text-align:center;line-height:1.3}
+  .j-count{font-family:'Montserrat',sans-serif;font-size:.7rem;color:var(--blanc);font-weight:500}
+  .visite-ligne{display:flex;gap:10px;align-items:baseline;padding:7px 0;border-bottom:1px solid rgba(232,194,122,.08);font-size:.8rem;flex-wrap:wrap}
+  .visite-ligne:last-child{border-bottom:none}
+  .vl-heure{color:var(--texte-faible);font-family:'Montserrat',sans-serif;font-size:.66rem;min-width:80px;flex:none}
+  .vl-page{color:var(--texte-doux);flex:1;min-width:80px}
+  .vl-src{color:var(--or-vif);font-family:'Montserrat',sans-serif;font-size:.66rem;flex:none}
+  .vl-pays{color:var(--texte-faible);font-family:'Montserrat',sans-serif;font-size:.66rem;flex:none}
+  .an-titre{font-family:'Montserrat',sans-serif;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--blanc);margin-bottom:10px;display:block}
 </style>
 </head>
 <body>
@@ -257,38 +279,182 @@ async function chargerCouture() {
 }
 
 /* ===== STATISTIQUES ===== */
+function _nomPage(path) {
+  const p = (path || "").split("?")[0];
+  const m = { "/":"Accueil", "/index.html":"Accueil", "/collection.html":"Collection",
+    "/taille.html":"Guide Taille", "/couture.html":"Couture", "/panier.html":"Panier",
+    "/compte.html":"Compte", "/merci.html":"Confirmation ✦" };
+  if (p.includes("piece.html") || p.includes("produit.html")) return "Fiche Produit";
+  return m[p] || p;
+}
+function _tempsRelatif(d) {
+  const diff = Date.now() - new Date(d).getTime();
+  if (diff < 60000) return "À l'instant";
+  if (diff < 3600000) return "Il y a " + Math.round(diff/60000) + " min";
+  if (diff < 86400000) return "Il y a " + Math.round(diff/3600000) + "h";
+  return new Date(d).toLocaleDateString("fr-FR", { day:"numeric", month:"short" });
+}
+function _srcLabel(ref) {
+  if (!ref) return "Direct";
+  if (/instagram|ig\.me|l\.instagram/.test(ref)) return "Instagram";
+  if (/tiktok/.test(ref)) return "TikTok";
+  if (/google/.test(ref)) return "Google";
+  if (/facebook|fb\.com/.test(ref)) return "Facebook";
+  if (ref.includes("nahirabeautynails")) return "Interne";
+  return "Autre";
+}
+
 async function chargerStats() {
   const zone = document.getElementById("vue-stats");
-  const { data: cmds } = await sb.from("orders")
-    .select("total_cents, status, created_at")
-    .in("status", ["paid","preparing","shipped"]);
-  const revenus = (cmds || []).reduce((s,c) => s + c.total_cents, 0);
+  zone.innerHTML = '<p class="skeleton">Chargement des statistiques…</p>';
+
+  const [cmdsRes, viewsRes, attenteRes] = await Promise.all([
+    sb.from("orders").select("total_cents,status,created_at").in("status",["paid","preparing","shipped"]),
+    sb.from("page_views").select("path,ref,created_at,country").order("created_at",{ascending:false}).limit(2000),
+    sb.from("waitlist").select("email").order("created_at",{ascending:false})
+  ]);
+
+  const cmds = cmdsRes.data || [];
+  const views = viewsRes.data || [];
+  const attente = attenteRes.data || [];
   const stock = await NAHIRA.getAllStock();
+
+  const revenus = cmds.reduce((s,c) => s + c.total_cents, 0);
   const stockTotal = Object.values(stock).reduce((s,n) => s + n, 0);
 
-  const { count: visitesTotal } = await sb.from("page_views").select("*", { count: "exact", head: true });
-  const depuis = new Date(Date.now() - 7*24*3600*1000).toISOString();
-  const { count: visites7j } = await sb.from("page_views")
-    .select("*", { count: "exact", head: true }).gte("created_at", depuis);
+  const now = Date.now();
+  const views7j = views.filter(v => now - new Date(v.created_at).getTime() < 7*24*3600*1000);
 
-  const { data: attente } = await sb.from("waitlist").select("email").order("created_at", { ascending: false });
-  zone.innerHTML =
-    '<div class="stats-grille">' +
-    '<div class="stat"><div class="valeur">' + NAHIRA.eur(revenus) + '</div><div class="libelle">Chiffre d\'affaires</div></div>' +
-    '<div class="stat"><div class="valeur">' + (cmds || []).length + '</div><div class="libelle">Commandes payées</div></div>' +
-    '<div class="stat"><div class="valeur">' + (15 - stockTotal) + ' / 15</div><div class="libelle">Sets vendus</div></div>' +
-    '<div class="stat"><div class="valeur">' + (visites7j ?? 0) + '</div><div class="libelle">Visites — 7 jours</div></div>' +
-    '<div class="stat"><div class="valeur">' + (visitesTotal ?? 0) + '</div><div class="libelle">Visites — total</div></div>' +
-    '<div class="stat"><div class="valeur">' + (attente || []).length + '</div><div class="libelle">Liste d\'attente Drop 002</div></div>' +
-    '</div>' +
-    '<div class="bloc"><div class="meta">' +
-    '<strong>Stock restant :</strong><br>' +
-    '• Lait de Lune : ' + (stock["lait-de-lune"] ?? "—") + ' / 5<br>' +
-    '• French Or Fin : ' + (stock["french-or-fin"] ?? "—") + ' / 5<br>' +
-    '• Orage d\'Or : ' + (stock["orage-dor"] ?? "—") + ' / 5' +
-    '</div></div>' +
-    ((attente || []).length ? '<div class="bloc"><div class="meta"><strong>Liste d\'attente Drop 002 :</strong><br>' +
-      attente.map(a => a.email.replace(/</g,"&lt;")).join("<br>") + '</div></div>' : '');
+  // Pages
+  const byPage = {};
+  views.forEach(v => { const k = _nomPage(v.path); byPage[k] = (byPage[k]||0)+1; });
+  const topPages = Object.entries(byPage).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const maxPage = topPages[0] ? topPages[0][1] : 1;
+
+  // Sources
+  const bySrc = {};
+  views.forEach(v => { const k = _srcLabel(v.ref); bySrc[k] = (bySrc[k]||0)+1; });
+  const topSrc = Object.entries(bySrc).sort((a,b)=>b[1]-a[1]);
+  const totalSrc = Math.max(views.length, 1);
+
+  // Pays
+  const byCountry = {};
+  views.forEach(v => { if (v.country) byCountry[v.country] = (byCountry[v.country]||0)+1; });
+  const topCountries = Object.entries(byCountry).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const maxCountry = topCountries[0] ? topCountries[0][1] : 1;
+
+  // Horaires
+  const byHour = Array(24).fill(0);
+  views.forEach(v => { byHour[new Date(v.created_at).getHours()]++; });
+  const maxH = Math.max(...byHour, 1);
+  const heureMax = byHour.indexOf(Math.max(...byHour));
+
+  // Tendance 7 jours
+  const jours = [];
+  for (let i=6; i>=0; i--) {
+    const d = new Date(now - i*24*3600*1000);
+    jours.push({ label: d.toLocaleDateString("fr-FR",{weekday:"short"}), count: 0 });
+  }
+  views7j.forEach(v => {
+    const diff = Math.floor((now - new Date(v.created_at).getTime()) / (24*3600*1000));
+    if (diff >= 0 && diff < 7) jours[6-diff].count++;
+  });
+  const maxJ = Math.max(...jours.map(j=>j.count), 1);
+
+  let h = "";
+
+  // ── KPI ──
+  h += '<div class="stats-grille">' +
+    '<div class="stat"><div class="valeur">'+NAHIRA.eur(revenus)+'</div><div class="libelle">Chiffre d\'affaires</div></div>' +
+    '<div class="stat"><div class="valeur">'+cmds.length+'</div><div class="libelle">Commandes</div></div>' +
+    '<div class="stat"><div class="valeur">'+(15-stockTotal)+' / 15</div><div class="libelle">Sets vendus</div></div>' +
+    '<div class="stat"><div class="valeur">'+views7j.length+'</div><div class="libelle">Visites — 7 jours</div></div>' +
+    '<div class="stat"><div class="valeur">'+views.length+'</div><div class="libelle">Visites — total</div></div>' +
+    '<div class="stat"><div class="valeur">'+attente.length+'</div><div class="libelle">Liste d\'attente</div></div>' +
+    '</div>';
+
+  // ── Tendance 7j ──
+  h += '<div class="bloc"><span class="an-titre">Tendance — 7 jours</span><div class="tendance-grille">';
+  jours.forEach(j => {
+    const pct = Math.max(j.count / maxJ * 100, 3);
+    h += '<div class="j-col"><div class="j-count">'+j.count+'</div><div class="j-bar" style="height:'+pct+'%"></div></div>';
+  });
+  h += '</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px">';
+  jours.forEach(j => { h += '<div class="j-label">'+j.label+'</div>'; });
+  h += '</div></div>';
+
+  // ── Répartition horaire ──
+  h += '<div class="bloc"><span class="an-titre">Répartition horaire <span style="color:var(--or-vif);font-weight:600">pic à '+heureMax+'h</span></span>';
+  h += '<div class="horaire-grid">';
+  byHour.forEach((n,i) => {
+    const pct = Math.max(n / maxH * 100, 3);
+    h += '<div class="h-bar'+(i===heureMax?' pic':'')+'" style="height:'+pct+'%"></div>';
+  });
+  h += '</div><div class="h-labels"><span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>23h</span></div></div>';
+
+  // ── 3 colonnes : Pages / Sources / Pays ──
+  h += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:14px">';
+
+  // Pages
+  h += '<div class="bloc" style="margin:0"><span class="an-titre">Pages visitées</span>';
+  topPages.forEach(([p,n]) => {
+    h += '<div class="stat-inline"><div style="flex:1;min-width:0"><div class="nom" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+p+'</div>' +
+         '<div class="barre-inline" style="width:'+Math.round(n/maxPage*100)+'%"></div></div>' +
+         '<div class="val">'+n+'</div></div>';
+  });
+  if (!topPages.length) h += '<p style="color:var(--texte-faible)">Aucune donnée</p>';
+  h += '</div>';
+
+  // Sources
+  h += '<div class="bloc" style="margin:0"><span class="an-titre">Sources</span>';
+  topSrc.forEach(([s,n]) => {
+    const pct = Math.round(n/totalSrc*100);
+    h += '<div class="stat-inline"><div class="nom">'+s+'</div><div class="val">'+pct+'% <span style="color:var(--texte-faible)">('+n+')</span></div></div>';
+  });
+  h += '</div>';
+
+  // Pays
+  h += '<div class="bloc" style="margin:0"><span class="an-titre">Pays</span>';
+  if (topCountries.length) {
+    topCountries.forEach(([c,n]) => {
+      h += '<div class="stat-inline"><div style="flex:1;min-width:0"><div class="nom">'+c+'</div>' +
+           '<div class="barre-inline" style="width:'+Math.round(n/maxCountry*100)+'%"></div></div>' +
+           '<div class="val">'+n+'</div></div>';
+    });
+  } else {
+    h += '<p style="color:var(--texte-faible);font-size:.8rem">Données en cours de collecte sur les prochaines visites.</p>';
+  }
+  h += '</div>';
+  h += '</div>'; // fin 3 colonnes
+
+  // ── Dernières visites ──
+  h += '<div class="bloc"><span class="an-titre">Dernières visites</span>';
+  if (views.length) {
+    views.slice(0, 25).forEach(v => {
+      h += '<div class="visite-ligne">' +
+        '<div class="vl-heure">'+_tempsRelatif(v.created_at)+'</div>' +
+        '<div class="vl-page">'+_nomPage(v.path)+'</div>' +
+        '<div class="vl-src">'+_srcLabel(v.ref)+'</div>' +
+        (v.country ? '<div class="vl-pays">'+v.country+'</div>' : '') +
+        '</div>';
+    });
+  } else {
+    h += '<p style="color:var(--texte-faible)">Aucune visite enregistrée.</p>';
+  }
+  h += '</div>';
+
+  // ── Stock ──
+  h += '<div class="bloc"><div class="meta"><strong>Stock restant :</strong><br>' +
+    '• Lait de Lune : '+(stock["lait-de-lune"]??"—")+' / 5<br>' +
+    '• French Or Fin : '+(stock["french-or-fin"]??"—")+' / 5<br>' +
+    '• Orage d\'Or : '+(stock["orage-dor"]??"—")+' / 5</div></div>';
+
+  if (attente.length) {
+    h += '<div class="bloc"><div class="meta"><strong>Liste d\'attente Drop 002 :</strong><br>' +
+      attente.map(a => a.email.replace(/</g,"&lt;")).join("<br>") + '</div></div>';
+  }
+
+  zone.innerHTML = h;
 }
 
 /* ===== GARDE D'ACCÈS ===== */

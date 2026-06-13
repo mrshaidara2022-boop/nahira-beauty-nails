@@ -130,7 +130,13 @@ const NAHIRA = (() => {
       const key = "nv_" + path;
       if (sessionStorage.getItem(key)) return;
       sessionStorage.setItem(key, "1");
-      sb.from("page_views").insert({ path, ref: document.referrer || null }).then(() => {});
+      let done = false;
+      const insert = (country) => {
+        if (done) return; done = true;
+        sb.from("page_views").insert({ path, ref: document.referrer || null, country: country || null }).then(() => {});
+      };
+      setTimeout(() => insert(null), 2500);
+      fetch("https://ipapi.co/country_name/").then(r => r.text()).then(c => insert(c.trim())).catch(() => insert(null));
     } catch (e) {}
   }
 
