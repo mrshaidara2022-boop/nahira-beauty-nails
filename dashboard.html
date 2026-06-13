@@ -296,6 +296,8 @@ nav.tabs button { flex:none; }
         <div class="kpi"><div class="v" id="kSets">0<small>/15</small></div><div class="l">Sets vendus</div></div>
         <div class="kpi"><div class="v" id="kAExp">0</div><div class="l">À expédier</div></div>
         <div class="kpi"><div class="v" id="kWaitlist">—</div><div class="l">Liste d'attente</div></div>
+        <div class="kpi"><div class="v" id="kVisitesAuj">—</div><div class="l">Visites auj.</div></div>
+        <div class="kpi"><div class="v" id="kVisitesSem">—</div><div class="l">Visites 7 jours</div></div>
       </div>
 
       <div class="carte">
@@ -306,6 +308,11 @@ nav.tabs button { flex:none; }
       <div class="carte" id="carteActions" style="display:none;">
         <h3>À faire maintenant</h3>
         <div id="listeActions"></div>
+      </div>
+
+      <div class="carte" id="carteStats" style="display:none">
+        <h3>Statistiques visiteurs</h3>
+        <div id="statsContenu"></div>
       </div>
 
       <div class="eyebrow" style="margin-top:18px;">Raccourcis</div>
@@ -563,7 +570,7 @@ voile.addEventListener('click', fermerFeuilles);
 function rendre() {
   // date
   var d = new Date();
-  document.getElementById('dateJour').textContent = d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+  document.getElementById('dateJour').innerHTML = d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' }) + '<br>' + d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
 
   // ----- calculs commandes -----
   var ventes=0, livr=0, stripe=0, postaux=0, aExp=0;
@@ -853,6 +860,13 @@ document.getElementById('fermerVisionneuse').addEventListener('click', function(
 });
 
 rendre();
+setInterval(function() {
+  var d = new Date();
+  var el = document.getElementById('dateJour');
+  if (el) el.innerHTML = d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' }) + '<br>' + d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+}, 60000);
+chargerKpiSupabase();
+chargerStats();
 
 /* ================= SUPABASE — Boutique Live, Avis, Couture, Clientes ================= */
 var _sb = null, _sbAdmin = null;
@@ -1022,6 +1036,51 @@ async function chargerClientes() {
   zone.innerHTML=html;
 }
 
+async function chargerStats() {
+  if (!await isAdmin()) return;
+  var sb = getSB();
+  var now = new Date();
+  var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+  var weekStart = new Date(now.getTime() - 7*24*60*60*1000).toISOString();
+  var monthStart = new Date(now.getTime() - 30*24*60*60*1000).toISOString();
+
+  var todayRes = await sb.from('page_views').select('*', { count: 'exact', head: true }).gte('created_at', todayStart);
+  if (!todayRes.error) { var e1 = document.getElementById('kVisitesAuj'); if (e1) e1.textContent = todayRes.count || 0; }
+
+  var weekRes = await sb.from('page_views').select('*', { count: 'exact', head: true }).gte('created_at', weekStart);
+  if (!weekRes.error) { var e2 = document.getElementById('kVisitesSem'); if (e2) e2.textContent = weekRes.count || 0; }
+
+  var detailRes = await sb.from('page_views').select('path, country').gte('created_at', monthStart);
+  if (!detailRes.error && detailRes.data) {
+    var pages = {}, pays = {};
+    detailRes.data.forEach(function(v) {
+      pages[v.path] = (pages[v.path] || 0) + 1;
+      if (v.country) pays[v.country] = (pays[v.country] || 0) + 1;
+    });
+    var topPages = Object.entries(pages).sort(function(a,b){ return b[1]-a[1]; }).slice(0, 5);
+    var topPays = Object.entries(pays).sort(function(a,b){ return b[1]-a[1]; }).slice(0, 5);
+    var carteS = document.getElementById('carteStats');
+    if (carteS && (topPages.length || topPays.length)) {
+      var html = '';
+      if (topPages.length) {
+        html += '<div class="eyebrow" style="margin-bottom:6px">Pages — 30 derniers jours</div>';
+        topPages.forEach(function(p) {
+          var label = decodeURIComponent(p[0].replace(/.*\//, '') || 'accueil').replace('.html', '') || 'accueil';
+          html += '<div class="ligne-fi" style="font-size:15px"><span class="lab">/' + label + '</span><span class="val">' + p[1] + ' vues</span></div>';
+        });
+      }
+      if (topPays.length) {
+        html += '<div class="eyebrow" style="margin-bottom:6px; margin-top:14px">Pays visiteurs</div>';
+        topPays.forEach(function(c) {
+          html += '<div class="ligne-fi" style="font-size:15px"><span class="lab">' + c[0] + '</span><span class="val">' + c[1] + '</span></div>';
+        });
+      }
+      document.getElementById('statsContenu').innerHTML = html;
+      carteS.style.display = 'block';
+    }
+  }
+}
+
 async function chargerKpiSupabase() {
   if (!await isAdmin()) return;
   var sb = getSB();
@@ -1076,7 +1135,7 @@ async function initRealtime() {
 document.addEventListener('click', function(e) {
   var b = e.target.closest('[data-vue]'); if (!b) return;
   var v = b.getAttribute('data-vue');
-  if (v === 'boutique' && !_sbLoaded.boutique) { _sbLoaded.boutique=true; chargerBoutique(); chargerKpiSupabase(); initRealtime(); }
+  if (v === 'boutique' && !_sbLoaded.boutique) { _sbLoaded.boutique=true; chargerBoutique(); initRealtime(); }
   else if (v === 'avis' && !_sbLoaded.avis) { _sbLoaded.avis=true; chargerAvis(); }
   else if (v === 'couture-dash' && !_sbLoaded['couture-dash']) { _sbLoaded['couture-dash']=true; chargerCoutureDash(); }
   else if (v === 'clientes' && !_sbLoaded.clientes) { _sbLoaded.clientes=true; chargerClientes(); }
