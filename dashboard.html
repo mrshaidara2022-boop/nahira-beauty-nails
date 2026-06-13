@@ -295,6 +295,9 @@ nav.tabs button { flex:none; }
         <div class="kpi"><div class="v" id="kNet">0 €</div><div class="l">Net estimé</div></div>
         <div class="kpi"><div class="v" id="kSets">0<small>/15</small></div><div class="l">Sets vendus</div></div>
         <div class="kpi"><div class="v" id="kAExp">0</div><div class="l">À expédier</div></div>
+        <div class="kpi"><div class="v" id="kWaitlist">—</div><div class="l">Liste d'attente</div></div>
+        <div class="kpi"><div class="v" id="kVisitesAuj">—</div><div class="l">Visites auj.</div></div>
+        <div class="kpi"><div class="v" id="kVisitesSem">—</div><div class="l">Visites 7 jours</div></div>
       </div>
 
       <div class="carte">
@@ -305,6 +308,11 @@ nav.tabs button { flex:none; }
       <div class="carte" id="carteActions" style="display:none;">
         <h3>À faire maintenant</h3>
         <div id="listeActions"></div>
+      </div>
+
+      <div class="carte" id="carteStats" style="display:none">
+        <h3>Statistiques visiteurs</h3>
+        <div id="statsContenu"></div>
       </div>
 
       <div class="eyebrow" style="margin-top:18px;">Raccourcis</div>
@@ -562,7 +570,7 @@ voile.addEventListener('click', fermerFeuilles);
 function rendre() {
   // date
   var d = new Date();
-  document.getElementById('dateJour').textContent = d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+  document.getElementById('dateJour').innerHTML = d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' }) + '<br>' + d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
 
   // ----- calculs commandes -----
   var ventes=0, livr=0, stripe=0, postaux=0, aExp=0;
@@ -852,6 +860,13 @@ document.getElementById('fermerVisionneuse').addEventListener('click', function(
 });
 
 rendre();
+setInterval(function() {
+  var d = new Date();
+  var el = document.getElementById('dateJour');
+  if (el) el.innerHTML = d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' }) + '<br>' + d.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' });
+}, 60000);
+chargerKpiSupabase();
+chargerStats();
 
 /* ================= SUPABASE — Boutique Live, Avis, Couture, Clientes ================= */
 var _sb = null, _sbAdmin = null;
@@ -888,7 +903,7 @@ async function chargerBoutique() {
   if (res.error) { zone.innerHTML='<p style="color:var(--alerte)">Erreur de chargement.</p>'; return; }
   var data = res.data || [];
   if (!data.length) { zone.innerHTML='<div class="vide"><div class="p">Aucune commande</div>Les premières commandes Stripe apparaîtront ici.</div>'; return; }
-  var html='';
+  var html='<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn-sb btn-or-sb" id="btnExportCsv">⬇ Exporter CSV</button></div>';
   data.forEach(function(cmd){
     var d=new Date(cmd.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});
     var articles=(cmd.order_items||[]).map(function(it){ return '• '+(it.products&&it.products.name||'Set')+(it.product_units&&it.product_units.serial_number?' N°'+it.product_units.serial_number+'/5':'')+' — taille <strong>'+it.size+'</strong>'; }).join('<br>');
@@ -903,6 +918,31 @@ async function chargerBoutique() {
     html+='</div></div>';
   });
   zone.innerHTML=html;
+  var btnExp = document.getElementById('btnExportCsv');
+  if (btnExp) btnExp.addEventListener('click', function() {
+    var rows = [['Date','Email','Produit','Taille','Total','Livraison','Statut','Suivi','Adresse']];
+    (res.data || []).forEach(function(cmd) {
+      var art = (cmd.order_items || []).map(function(it){ return (it.products&&it.products.name||'Set')+' '+it.size; }).join(' + ');
+      var adr = [cmd.shipping_name,cmd.shipping_address,cmd.shipping_city,cmd.shipping_country].filter(Boolean).join(', ');
+      rows.push([
+        new Date(cmd.created_at).toLocaleDateString('fr-FR'),
+        cmd.email||'',
+        art,
+        (cmd.order_items||[]).map(function(it){return it.size;}).join('+'),
+        ((cmd.total_cents||0)/100).toFixed(2).replace('.',','),
+        ((cmd.shipping_cents||0)/100).toFixed(2).replace('.',','),
+        cmd.status||'',
+        cmd.tracking_number||'',
+        adr
+      ]);
+    });
+    var csv = rows.map(function(r){ return r.map(function(c){ return '"'+(String(c).replace(/"/g,'""'))+'"'; }).join(';'); }).join('\n');
+    var blob = new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8;'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'commandes-'+new Date().toISOString().slice(0,10)+'.csv';
+    a.click();
+  });
   zone.querySelectorAll('[data-bact]').forEach(function(b){
     b.addEventListener('click',async function(){
       var maj={status:b.getAttribute('data-bact')};
@@ -996,11 +1036,106 @@ async function chargerClientes() {
   zone.innerHTML=html;
 }
 
+async function chargerStats() {
+  if (!await isAdmin()) return;
+  var sb = getSB();
+  var now = new Date();
+  var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+  var weekStart = new Date(now.getTime() - 7*24*60*60*1000).toISOString();
+  var monthStart = new Date(now.getTime() - 30*24*60*60*1000).toISOString();
+
+  var todayRes = await sb.from('page_views').select('*', { count: 'exact', head: true }).gte('created_at', todayStart);
+  if (!todayRes.error) { var e1 = document.getElementById('kVisitesAuj'); if (e1) e1.textContent = todayRes.count || 0; }
+
+  var weekRes = await sb.from('page_views').select('*', { count: 'exact', head: true }).gte('created_at', weekStart);
+  if (!weekRes.error) { var e2 = document.getElementById('kVisitesSem'); if (e2) e2.textContent = weekRes.count || 0; }
+
+  var detailRes = await sb.from('page_views').select('path, country').gte('created_at', monthStart);
+  if (!detailRes.error && detailRes.data) {
+    var pages = {}, pays = {};
+    detailRes.data.forEach(function(v) {
+      pages[v.path] = (pages[v.path] || 0) + 1;
+      if (v.country) pays[v.country] = (pays[v.country] || 0) + 1;
+    });
+    var topPages = Object.entries(pages).sort(function(a,b){ return b[1]-a[1]; }).slice(0, 5);
+    var topPays = Object.entries(pays).sort(function(a,b){ return b[1]-a[1]; }).slice(0, 5);
+    var carteS = document.getElementById('carteStats');
+    if (carteS && (topPages.length || topPays.length)) {
+      var html = '';
+      if (topPages.length) {
+        html += '<div class="eyebrow" style="margin-bottom:6px">Pages — 30 derniers jours</div>';
+        topPages.forEach(function(p) {
+          var label = decodeURIComponent(p[0].replace(/.*\//, '') || 'accueil').replace('.html', '') || 'accueil';
+          html += '<div class="ligne-fi" style="font-size:15px"><span class="lab">/' + label + '</span><span class="val">' + p[1] + ' vues</span></div>';
+        });
+      }
+      if (topPays.length) {
+        html += '<div class="eyebrow" style="margin-bottom:6px; margin-top:14px">Pays visiteurs</div>';
+        topPays.forEach(function(c) {
+          html += '<div class="ligne-fi" style="font-size:15px"><span class="lab">' + c[0] + '</span><span class="val">' + c[1] + '</span></div>';
+        });
+      }
+      document.getElementById('statsContenu').innerHTML = html;
+      carteS.style.display = 'block';
+    }
+  }
+}
+
+async function chargerKpiSupabase() {
+  if (!await isAdmin()) return;
+  var sb = getSB();
+  var wRes = await sb.from('waitlist').select('*', { count: 'exact', head: true });
+  if (!wRes.error) {
+    var el = document.getElementById('kWaitlist');
+    if (el) el.textContent = wRes.count || 0;
+  }
+  var stockRes = await sb.from('products').select('id, slug, product_units(status)');
+  if (!stockRes.error && stockRes.data) {
+    var alertes = [];
+    (stockRes.data || []).forEach(function(p) {
+      var dispo = (p.product_units || []).filter(function(u){ return u.status === 'available'; }).length;
+      if (dispo <= 1) alertes.push({ nom: p.slug, dispo: dispo });
+    });
+    if (alertes.length) {
+      var carteA = document.getElementById('carteActions');
+      var listeA = document.getElementById('listeActions');
+      carteA.style.display = 'block';
+      alertes.forEach(function(a) {
+        var ligne = document.createElement('div');
+        ligne.className = 'ligne-fi';
+        ligne.style.fontSize = '16px';
+        ligne.innerHTML = '<span class="lab" style="color:var(--alerte)">⚠ Stock critique — ' + a.nom + ' : ' + (a.dispo === 0 ? 'épuisé' : 'dernier exemplaire') + '</span>';
+        listeA.insertBefore(ligne, listeA.firstChild);
+      });
+    }
+  }
+}
+
+var _realtimeInit = false;
+async function initRealtime() {
+  if (_realtimeInit) return;
+  if (!await isAdmin()) return;
+  _realtimeInit = true;
+  var sb = getSB();
+  sb.channel('orders-watch')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, function(payload) {
+      var total = payload.new && payload.new.total_cents ? ((payload.new.total_cents/100).toLocaleString('fr-FR',{minimumFractionDigits:0,maximumFractionDigits:2})+' €') : '';
+      var toast = document.createElement('div');
+      toast.style.cssText = 'position:fixed;bottom:calc(80px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:linear-gradient(120deg,var(--or),var(--rose));color:#1A0E14;padding:14px 22px;border-radius:16px;font-family:Montserrat,sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;font-weight:600;z-index:200;box-shadow:0 8px 30px rgba(232,194,122,.35);white-space:nowrap';
+      toast.textContent = '✦ Nouvelle commande' + (total ? ' · ' + total : '');
+      document.body.appendChild(toast);
+      try { var ac=new AudioContext(); var o=ac.createOscillator(); var g=ac.createGain(); o.connect(g); g.connect(ac.destination); o.frequency.setValueAtTime(880,ac.currentTime); o.frequency.exponentialRampToValueAtTime(440,ac.currentTime+0.3); g.gain.setValueAtTime(0.3,ac.currentTime); g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.4); o.start(); o.stop(ac.currentTime+0.4); } catch(e){}
+      setTimeout(function(){ toast.remove(); }, 5000);
+      if (_sbLoaded.boutique) { _sbLoaded.boutique=false; chargerBoutique(); }
+    })
+    .subscribe();
+}
+
 // Chargement paresseux des onglets Supabase au premier clic
 document.addEventListener('click', function(e) {
   var b = e.target.closest('[data-vue]'); if (!b) return;
   var v = b.getAttribute('data-vue');
-  if (v === 'boutique' && !_sbLoaded.boutique) { _sbLoaded.boutique=true; chargerBoutique(); }
+  if (v === 'boutique' && !_sbLoaded.boutique) { _sbLoaded.boutique=true; chargerBoutique(); initRealtime(); }
   else if (v === 'avis' && !_sbLoaded.avis) { _sbLoaded.avis=true; chargerAvis(); }
   else if (v === 'couture-dash' && !_sbLoaded['couture-dash']) { _sbLoaded['couture-dash']=true; chargerCoutureDash(); }
   else if (v === 'clientes' && !_sbLoaded.clientes) { _sbLoaded.clientes=true; chargerClientes(); }

@@ -388,7 +388,7 @@ async function chargerStats() {
   h += '<div class="horaire-grid">';
   byHour.forEach((n,i) => {
     const pct = Math.max(n / maxH * 100, 3);
-    h += '<div class="h-bar'+(i===heureMax?' pic':'')+' style="height:'+pct+'%"></div>';
+    h += '<div class="h-bar'+(i===heureMax?' pic':'')+'" style="height:'+pct+'%"></div>';
   });
   h += '</div><div class="h-labels"><span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>23h</span></div></div>';
 
