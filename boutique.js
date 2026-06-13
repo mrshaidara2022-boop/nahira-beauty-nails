@@ -138,7 +138,63 @@ const NAHIRA = (() => {
   const eur = c => (c / 100).toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + " €";
   const etoiles = n => "★".repeat(n) + "☆".repeat(5 - n);
 
-  document.addEventListener("DOMContentLoaded", () => { updateBadge(); trackView(); });
+  document.addEventListener("DOMContentLoaded", () => {
+    updateBadge();
+    trackView();
+
+    // Service worker (PWA)
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    }
+
+    // Manifest link (injecté si absent)
+    if (!document.querySelector('link[rel="manifest"]')) {
+      const ml = document.createElement("link");
+      ml.rel = "manifest"; ml.href = "manifest.json";
+      document.head.appendChild(ml);
+    }
+
+    // Bouton retour
+    const bPage = document.querySelector(".b-page");
+    if (bPage && history.length > 1) {
+      const retour = document.createElement("button");
+      retour.className = "b-retour";
+      retour.textContent = "← Retour";
+      retour.onclick = () => history.back();
+      bPage.insertBefore(retour, bPage.firstChild);
+    }
+
+    // Menu mobile (hamburger)
+    const nav = document.querySelector(".b-nav");
+    if (nav) {
+      const burger = document.createElement("button");
+      burger.className = "b-burger";
+      burger.setAttribute("aria-label", "Menu");
+      burger.textContent = "☰";
+
+      const mobileMenu = document.createElement("div");
+      mobileMenu.className = "b-menu-mobile";
+
+      nav.querySelectorAll(".b-links a").forEach(a => {
+        const link = a.cloneNode(true);
+        mobileMenu.appendChild(link);
+      });
+
+      nav.querySelector(".b-nav-inner").appendChild(burger);
+      nav.appendChild(mobileMenu);
+
+      burger.addEventListener("click", () => {
+        const isOpen = mobileMenu.classList.toggle("ouvert");
+        burger.textContent = isOpen ? "✕" : "☰";
+      });
+      mobileMenu.querySelectorAll("a").forEach(a => {
+        a.addEventListener("click", () => {
+          mobileMenu.classList.remove("ouvert");
+          burger.textContent = "☰";
+        });
+      });
+    }
+  });
 
   return {
     sb, getCart, addToCart, removeFromCart, clearCart,

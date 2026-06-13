@@ -43,6 +43,13 @@
     animation:pulse 1.4s ease infinite;
   }
   @keyframes pulse{0%,100%{opacity:.45}50%{opacity:1}}
+  .guide-visuel{margin:22px 0 4px; display:grid; grid-template-columns:auto 1fr; gap:14px; align-items:center}
+  @media(max-width:500px){.guide-visuel{grid-template-columns:1fr}}
+  .guide-visuel svg{border:1px solid var(--ligne); border-radius:12px; max-width:220px; width:100%}
+  .guide-checks{display:flex; flex-direction:column; gap:10px}
+  .guide-check{display:flex; align-items:flex-start; gap:10px}
+  .guide-check .gc-ic{min-width:26px; height:26px; background:rgba(232,194,122,.1); border:1px solid var(--or); border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:.85rem; color:var(--or-vif); flex:none}
+  .guide-check p{font-family:'Montserrat',sans-serif; font-size:.72rem; color:var(--texte-doux); line-height:1.55; margin:0}
 </style>
 </head>
 <body>
@@ -67,7 +74,7 @@
 <main class="b-page">
   <div class="colonne">
     <div style="text-align:center">
-      <p class="b-eyebrow">Exclusivité Atelier · Intelligence artificielle</p>
+      <p class="b-eyebrow">Exclusivité Atelier</p>
       <h1 class="b-titre">Trouver <span class="b-script">ma taille</span></h1>
       <p style="color:var(--texte-doux); margin-top:12px">
         Une photo de votre main, et notre Atelier estime la largeur de chacun de vos ongles.
@@ -81,6 +88,30 @@
         <div class="item"><span class="num">1</span><p>Posez votre main <strong style="color:var(--blanc)">bien à plat</strong> sur une table, ongles face à vous.</p></div>
         <div class="item"><span class="num">2</span><p>Posez une <strong style="color:var(--blanc)">carte bancaire</strong> (ou carte de fidélité au même format) juste à côté de votre main, sur la table. C'est notre règle de mesure.</p></div>
         <div class="item"><span class="num">3</span><p>Photographiez <strong style="color:var(--blanc)">du dessus</strong>, bien en face, avec une bonne lumière. Main et carte doivent être nettes.</p></div>
+      </div>
+
+      <div class="guide-visuel">
+        <svg viewBox="0 0 220 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Schéma de positionnement main et carte">
+          <rect width="220" height="150" rx="11" fill="#150E12"/>
+          <text x="110" y="17" text-anchor="middle" fill="rgba(255,247,250,.35)" font-size="7" font-family="Montserrat,sans-serif" letter-spacing="2">VUE DU DESSUS</text>
+          <rect x="140" y="38" width="68" height="43" rx="5" fill="rgba(232,194,122,.08)" stroke="#E8C27A" stroke-width="1.5"/>
+          <text x="174" y="57" text-anchor="middle" fill="#E8C27A" font-size="7.5" font-family="Montserrat,sans-serif" letter-spacing="1">CARTE</text>
+          <text x="174" y="68" text-anchor="middle" fill="rgba(232,194,122,.5)" font-size="6" font-family="Montserrat,sans-serif">85,60 mm</text>
+          <line x1="133" y1="59" x2="140" y2="59" stroke="rgba(232,194,122,.45)" stroke-width="1" stroke-dasharray="3,2"/>
+          <path d="M20,128 Q14,118 18,90 Q22,70 38,65 Q46,62 54,57 Q63,52 76,50 Q89,52 95,57 Q103,62 108,68 Q112,80 110,98 Q108,116 102,128 Z" fill="rgba(240,111,167,.07)" stroke="rgba(240,111,167,.38)" stroke-width="1.2"/>
+          <ellipse cx="39" cy="49" rx="7.5" ry="17" fill="rgba(240,111,167,.07)" stroke="rgba(240,111,167,.28)" stroke-width="1"/>
+          <ellipse cx="55" cy="41" rx="7.5" ry="19" fill="rgba(240,111,167,.07)" stroke="rgba(240,111,167,.28)" stroke-width="1"/>
+          <ellipse cx="76" cy="38" rx="7.5" ry="21" fill="rgba(240,111,167,.07)" stroke="rgba(240,111,167,.28)" stroke-width="1"/>
+          <ellipse cx="96" cy="42" rx="6.5" ry="18" fill="rgba(240,111,167,.07)" stroke="rgba(240,111,167,.28)" stroke-width="1"/>
+          <ellipse cx="110" cy="56" rx="5.5" ry="13" fill="rgba(240,111,167,.07)" stroke="rgba(240,111,167,.28)" stroke-width="1"/>
+          <text x="63" y="143" text-anchor="middle" fill="rgba(255,247,250,.3)" font-size="6.5" font-family="Montserrat,sans-serif" letter-spacing="1.5">MAIN À PLAT</text>
+        </svg>
+        <div class="guide-checks">
+          <div class="guide-check"><div class="gc-ic">✓</div><p>Main bien à plat sur une surface unie, ongles vers vous</p></div>
+          <div class="guide-check"><div class="gc-ic">✓</div><p>Carte bancaire posée dans le même plan, à côté de la main</p></div>
+          <div class="guide-check"><div class="gc-ic">✓</div><p>Photo du dessus, perpendiculaire — évitez les angles</p></div>
+          <div class="guide-check"><div class="gc-ic">✓</div><p>Bonne lumière, main et carte nettes sur la photo</p></div>
+        </div>
       </div>
 
       <label class="zone-photo" for="fichier" id="zone">

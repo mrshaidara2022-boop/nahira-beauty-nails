@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nahira Beauty Nails — Press On Nails faits main en France</title>
 <meta name="description" content="Press on nails haut de gamme faits main en France par une prothésiste diplômée. Collections limitées et numérotées. Drop 001 — Éclat Noir.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#060406">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Nahira Nails">
 <link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -236,9 +240,28 @@
     font-weight: 500;
   }
 
+  .nav-burger {
+    display: none; background: none; border: 1px solid rgba(240,111,167,0.35);
+    color: rgba(255,247,250,0.6); border-radius: 8px; padding: 9px 14px;
+    cursor: pointer; font-size: 1.1rem; line-height: 1;
+  }
+  .nav-mobile {
+    display: none; flex-direction: column;
+    border-top: 1px solid rgba(240,111,167,0.18); background: rgba(6,4,6,0.97);
+  }
+  .nav-mobile a {
+    font-family: 'Montserrat', sans-serif; font-size: 10px; letter-spacing: 3px;
+    text-transform: uppercase; color: rgba(255,247,250,0.6); text-decoration: none;
+    padding: 15px 24px; display: block; border-bottom: 1px solid rgba(240,111,167,0.10);
+    transition: color 0.2s, background 0.2s;
+  }
+  .nav-mobile a:last-child { border-bottom: none; }
+  .nav-mobile a:hover { color: var(--rose); background: rgba(240,111,167,0.04); }
+  .nav-mobile.ouvert { display: flex; }
   @media (max-width: 760px) {
     .nav-links { display: none; }
-    .nav-inner { grid-template-columns: 1fr; }
+    .nav-inner { grid-template-columns: 1fr auto; }
+    .nav-burger { display: block; }
   }
 
   /* ===== HERO ===== */
@@ -1016,10 +1039,10 @@
 <nav>
   <div class="nav-inner">
     <ul class="nav-links gauche">
-      <li><a href="#collection">Collection</a></li>
+      <li><a href="collection.html">Collection</a></li>
       <li><a href="#rituel">La pose</a></li>
     </ul>
-    <a href="#" class="nav-logo">
+    <a href="index.html" class="nav-logo">
       <span class="ligne-nb">Nahira <span>Beauty</span></span>
       <span class="ligne-nails">Nails</span>
     </a>
@@ -1029,6 +1052,15 @@
       <li><a href="compte.html">Compte</a></li>
       <li><a href="panier.html">Panier <span class="cart-badge" style="display:inline-flex;align-items:center;justify-content:center;min-width:17px;height:17px;padding:0 5px;background:var(--rose);color:var(--noir);border-radius:99px;font-size:.66rem;font-weight:600;vertical-align:middle"></span></a></li>
     </ul>
+    <button class="nav-burger" id="navBurger" aria-label="Menu">☰</button>
+  </div>
+  <div class="nav-mobile" id="navMobile">
+    <a href="collection.html">Collection</a>
+    <a href="#rituel">La pose</a>
+    <a href="taille.html">Ma taille</a>
+    <a href="couture.html">Couture</a>
+    <a href="compte.html">Compte</a>
+    <a href="panier.html">Panier</a>
   </div>
 </nav>
 
@@ -1426,7 +1458,9 @@
 <script src="boutique.js"></script>
 <script>
 (async function(){
+  // Panier badge
   document.querySelectorAll('.cart-badge').forEach(el => { el.textContent = NAHIRA.cartCount() > 0 ? NAHIRA.cartCount() : ''; if(!el.textContent) el.style.display='none'; });
+  // Stock en direct
   try {
     const stock = await NAHIRA.getAllStock();
     document.querySelectorAll('.badge-rarete[data-slug]').forEach(b => {
@@ -1434,6 +1468,29 @@
       if (typeof n === 'number') b.textContent = n > 0 ? n + ' / 5 disponibles' : 'Édition épuisée';
     });
   } catch(e) {}
+
+  // Menu hamburger mobile (spécifique à index.html)
+  const burger = document.getElementById('navBurger');
+  const mobile = document.getElementById('navMobile');
+  if (burger && mobile) {
+    burger.addEventListener('click', () => {
+      const open = mobile.classList.toggle('ouvert');
+      burger.textContent = open ? '✕' : '☰';
+    });
+    mobile.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+      mobile.classList.remove('ouvert'); burger.textContent = '☰';
+    }));
+  }
+
+  // Cartes produit entièrement cliquables
+  document.querySelectorAll('.carte-produit').forEach(card => {
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', e => {
+      if (e.target.closest('a')) return;
+      const btn = card.querySelector('.btn-acheter');
+      if (btn) window.location.href = btn.href;
+    });
+  });
 })();
 </script>
 </body>
