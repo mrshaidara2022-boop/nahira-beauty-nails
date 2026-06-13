@@ -508,17 +508,17 @@ function ecrireStock(d) {
 function etatInitial() {
   var posts = [
     [1, 'Semaine 1 · La naissance', "Teaser identité — logo, fumée rose, « quelque chose arrive »"],
-    [2, 'Semaine 1 · La naissance', 'Application du chrome sur Orage d\u2019Or (ASMR macro)'],
+    [2, 'Semaine 1 · La naissance', 'Application du chrome sur Orage d’Or (ASMR macro)'],
     [3, 'Semaine 1 · La naissance', 'Qui je suis — prothésiste diplômée, pourquoi cette marque'],
-    [4, 'Semaine 2 · Le savoir-faire', 'Sculpture des coulures d\u2019or 3D en gros plan'],
-    [5, 'Semaine 2 · Le savoir-faire', 'Une journée à l\u2019atelier — fabrication en accéléré'],
+    [4, 'Semaine 2 · Le savoir-faire', 'Sculpture des coulures d’or 3D en gros plan'],
+    [5, 'Semaine 2 · Le savoir-faire', 'Une journée à l’atelier — fabrication en accéléré'],
     [6, 'Semaine 2 · Le savoir-faire', 'Numérotation à la main des coffrets 1/5 à 5/5'],
-    [7, 'Semaine 3 · L\u2019univers', 'Révélation design 1 — Lait de Lune'],
-    [8, 'Semaine 3 · L\u2019univers', 'Révélation design 2 — French Or Fin'],
-    [9, 'Semaine 3 · L\u2019univers', 'Révélation pièce signature — Orage d\u2019Or'],
-    [10, 'Semaine 4 · Le lancement', 'Annonce date + heure d\u2019ouverture du drop'],
+    [7, 'Semaine 3 · L’univers', 'Révélation design 1 — Lait de Lune'],
+    [8, 'Semaine 3 · L’univers', 'Révélation design 2 — French Or Fin'],
+    [9, 'Semaine 3 · L’univers', 'Révélation pièce signature — Orage d’Or'],
+    [10, 'Semaine 4 · Le lancement', 'Annonce date + heure d’ouverture du drop'],
     [11, 'Semaine 4 · Le lancement', 'Compte à rebours — il reste 24h'],
-    [12, 'Semaine 4 · Le lancement', 'C\u2019est ouvert — lien en bio, 15 exemplaires']
+    [12, 'Semaine 4 · Le lancement', 'C’est ouvert — lien en bio, 15 exemplaires']
   ];
   return {
     reglages: { coutSet: 5, urssaf: 12.3, prix: { lait: 28, french: 30, orage: 44 } },
@@ -698,7 +698,7 @@ function rendreCommandes() {
   var liste = etat.commandes.slice().reverse().filter(function(c){ return filtreActif==='toutes' || c.statut===filtreActif; });
   var conteneur = document.getElementById('listeCommandes');
   if (!liste.length) {
-    conteneur.innerHTML = '<div class="vide"><div class="p">Rien pour l\u2019instant</div>Les commandes Stripe arrivent par email — note-les ici pour suivre préparation et expédition.</div>';
+    conteneur.innerHTML = '<div class="vide"><div class="p">Rien pour l’instant</div>Les commandes Stripe arrivent par email — note-les ici pour suivre préparation et expédition.</div>';
     return;
   }
   var labels = { a_preparer:'À préparer', expediee:'Expédiée', livree:'Livrée' };
@@ -969,7 +969,7 @@ async function chargerAvis() {
   var html='';
   data.forEach(function(a){
     var d=new Date(a.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
-    html+='<div class="bloc-sb"><div class="bl-haut"><strong style="font-size:17px;color:var(--blanc)">'+a.author_name.replace(/</g,'&lt;')+' <span style="color:var(--attente)">'+etoilesSB(a.rating)+'</span></strong><span class="pastille-sb '+(PSM[a.status]||'ps-attente')+'">'+(ETIQ[a.status]||a.status)+'</span></div>';
+    html+='<div class="bloc-sb"><div class="bl-haut"><strong style="font-size:17px;color:var(--blanc)">'+a.author_name.replace(/</g,'&lt;')+' <span style="color:var(--attente)">'+etoilesSB(a.rating)+'</span></strong><span class="pastille-sb '+(PSM[a.status]||'ps-attente')+'">'+( ETIQ[a.status]||a.status)+'</span></div>';
     html+='<div class="bl-meta">'+(a.products&&a.products.name||'')+' · '+d+' · '+a.email.replace(/</g,'&lt;')+'</div>';
     html+='<div class="bl-corps">'+a.comment.replace(/</g,'&lt;')+'</div>';
     html+='<div class="bl-actions">';
@@ -1002,7 +1002,7 @@ async function chargerCoutureDash() {
     var d=new Date(c.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'long'});
     var fiche='';
     try { var f=JSON.parse(c.ai_brief||'null'); if(f) fiche='<div class="bl-meta" style="border-left:2px solid var(--or);padding-left:12px;margin-top:8px"><strong>« '+f.titre+' »</strong><br>'+f.vision+'</div>'; } catch(e){}
-    html+='<div class="bloc-sb"><div class="bl-haut"><strong style="font-size:17px;color:var(--blanc)">'+c.name.replace(/</g,'&lt;')+'</strong><span class="pastille-sb '+(PSM[c.status]||'ps-attente')+'">'+(ETIQ[c.status]||c.status)+'</span></div>';
+    html+='<div class="bloc-sb"><div class="bl-haut"><strong style="font-size:17px;color:var(--blanc)">'+c.name.replace(/</g,'&lt;')+'</strong><span class="pastille-sb '+(PSM[c.status]||'ps-attente')+'">'+( ETIQ[c.status]||c.status)+'</span></div>';
     html+='<div class="bl-meta">'+d+' · '+c.email.replace(/</g,'&lt;')+(c.budget?' · <strong>'+c.budget+'</strong>':'')+'</div>';
     html+='<div class="bl-corps">'+c.brief.replace(/</g,'&lt;')+'</div>'+fiche;
     html+='<div class="bl-actions"><a class="btn-sb btn-or-sb" href="mailto:'+c.email+'?subject=Votre Commande Couture — Atelier Nahira ✦">✉ Répondre</a>';
