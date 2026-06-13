@@ -864,16 +864,16 @@ function getSB() {
   return _sb;
 }
 async function isAdmin() {
-  if (_sbAdmin !== null) return _sbAdmin;
-  var sb = getSB(); if (!sb) { _sbAdmin = false; return false; }
+  if (_sbAdmin === true) return true;
+  var sb = getSB(); if (!sb) return false;
   try {
-    var r = await sb.auth.getUser();
-    var u = r.data && r.data.user;
-    if (!u) { _sbAdmin = false; return false; }
+    var r = await sb.auth.getSession();
+    var u = r.data && r.data.session && r.data.session.user;
+    if (!u) return false;
     var d = await sb.from('admins').select('user_id').eq('user_id',u.id).maybeSingle();
-    _sbAdmin = !!(d.data);
-  } catch(e) { _sbAdmin = false; }
-  return _sbAdmin;
+    if (d.data) _sbAdmin = true;
+    return !!d.data;
+  } catch(e) { return false; }
 }
 function eurSB(c){ return (c/100).toLocaleString('fr-FR',{minimumFractionDigits:0,maximumFractionDigits:2})+' €'; }
 function etoilesSB(n){ return '★'.repeat(n)+'☆'.repeat(5-n); }
@@ -881,7 +881,7 @@ function authBlock(zone){ zone.innerHTML='<div class="auth-requis"><p>Connexion 
 
 async function chargerBoutique() {
   var zone = document.getElementById('boutique-zone');
-  if (!await isAdmin()) { authBlock(zone); return; }
+  if (!await isAdmin()) { authBlock(zone); _sbLoaded.boutique=false; return; }
   zone.innerHTML='<p style="color:var(--texte-faible)">Chargement…</p>';
   var sb = getSB();
   var res = await sb.from('orders').select('*, order_items(*, products(name), product_units:unit_id(serial_number))').neq('status','pending').order('created_at',{ascending:false});
@@ -916,7 +916,7 @@ async function chargerBoutique() {
 
 async function chargerAvis() {
   var zone=document.getElementById('avis-zone');
-  if (!await isAdmin()) { authBlock(zone); return; }
+  if (!await isAdmin()) { authBlock(zone); _sbLoaded.avis=false; return; }
   zone.innerHTML='<p style="color:var(--texte-faible)">Chargement…</p>';
   var sb=getSB();
   var res=await sb.from('reviews').select('*, products(name)').order('created_at',{ascending:false});
@@ -948,7 +948,7 @@ async function chargerAvis() {
 
 async function chargerCoutureDash() {
   var zone=document.getElementById('couture-zone');
-  if (!await isAdmin()) { authBlock(zone); return; }
+  if (!await isAdmin()) { authBlock(zone); _sbLoaded['couture-dash']=false; return; }
   zone.innerHTML='<p style="color:var(--texte-faible)">Chargement…</p>';
   var sb=getSB();
   var res=await sb.from('couture_requests').select('*').order('created_at',{ascending:false});
@@ -978,7 +978,7 @@ async function chargerCoutureDash() {
 
 async function chargerClientes() {
   var zone=document.getElementById('clientes-zone');
-  if (!await isAdmin()) { authBlock(zone); return; }
+  if (!await isAdmin()) { authBlock(zone); _sbLoaded.clientes=false; return; }
   zone.innerHTML='<p style="color:var(--texte-faible)">Chargement…</p>';
   var sb=getSB();
   var res=await sb.from('profiles').select('*').order('created_at',{ascending:false});
