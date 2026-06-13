@@ -136,7 +136,10 @@ const NAHIRA = (() => {
         sb.from("page_views").insert({ path, ref: document.referrer || null, country: country || null }).then(() => {});
       };
       setTimeout(() => insert(null), 2500);
-      fetch("https://ipapi.co/country_name/").then(r => r.text()).then(c => insert(c.trim())).catch(() => insert(null));
+      fetch("https://ipapi.co/country_name/").then(r => r.ok ? r.text() : null).then(c => {
+        const v = c && c.trim();
+        insert(v && v.length < 60 && !v.includes("{") && !v.includes("<") ? v : null);
+      }).catch(() => insert(null));
     } catch (e) {}
   }
 

@@ -388,7 +388,7 @@ async function chargerStats() {
   h += '<div class="horaire-grid">';
   byHour.forEach((n,i) => {
     const pct = Math.max(n / maxH * 100, 3);
-    h += '<div class="h-bar'+(i===heureMax?' pic':'')+'" style="height:'+pct+'%"></div>';
+    h += '<div class="h-bar'+(i===heureMax?' pic':'')+' style="height:'+pct+'%"></div>';
   });
   h += '</div><div class="h-labels"><span>0h</span><span>6h</span><span>12h</span><span>18h</span><span>23h</span></div></div>';
 
@@ -459,14 +459,16 @@ async function chargerStats() {
 
 /* ===== GARDE D'ACCÈS ===== */
 (async function(){
-  const { data: { user } } = await sb.auth.getUser();
+  const sess = await sb.auth.getSession();
+  const user = sess.data && sess.data.session && sess.data.session.user;
   const msg = document.getElementById("garde-msg");
   const btn = document.getElementById("garde-btn");
   if (!user) {
     msg.textContent = "Connectez-vous d'abord avec votre compte, puis revenez sur cette page.";
     btn.style.display = "inline-block"; return;
   }
-  const ok = await NAHIRA.isAdmin();
+  const { data: adminData } = await sb.from("admins").select("user_id").eq("user_id", user.id).maybeSingle();
+  const ok = !!adminData;
   if (!ok) {
     msg.textContent = "Accès réservé à la fondatrice. Cette tentative a été notée. ✦"; return;
   }
