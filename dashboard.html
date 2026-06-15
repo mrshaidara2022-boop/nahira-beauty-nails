@@ -266,6 +266,7 @@ nav.tabs button { flex:none; }
     <button data-vue="commandes"><span class="ic">⬩</span> Commandes</button>
     <button data-vue="finances"><span class="ic">◈</span> Finances</button>
     <button data-vue="contenu"><span class="ic">✎</span> Contenu</button>
+    <button data-vue="stats"><span class="ic">◉</span> Statistiques</button>
     <div style="height:1px;background:var(--bordure);margin:10px 6px"></div>
     <button data-vue="boutique"><span class="ic">◇</span> Boutique live</button>
     <button data-vue="avis"><span class="ic">★</span> Avis</button>
@@ -403,6 +404,13 @@ nav.tabs button { flex:none; }
       <div id="clientes-zone"><p style="color:var(--texte-faible)">Sélectionnez cet onglet pour charger…</p></div>
     </section>
 
+    <!-- ============ STATISTIQUES ============ -->
+    <section class="vue" id="vue-stats">
+      <div class="eyebrow">Trafic &amp; visiteurs</div>
+      <h2 class="section-titre">Statistiques</h2>
+      <div id="stats-zone"><p style="color:var(--texte-faible)">Sélectionnez cet onglet pour charger…</p></div>
+    </section>
+
     <!-- ============ CONTENU ============ -->
     <section class="vue" id="vue-contenu">
       <div class="eyebrow">Plan de lancement · 12 posts</div>
@@ -425,6 +433,7 @@ nav.tabs button { flex:none; }
   <button data-vue="commandes"><span class="ic">⬩</span>Cmd</button>
   <button data-vue="finances"><span class="ic">◈</span>Finances</button>
   <button data-vue="contenu"><span class="ic">✎</span>Contenu</button>
+  <button data-vue="stats"><span class="ic">◉</span>Stats</button>
   <div class="sep-tab"></div>
   <button data-vue="boutique"><span class="ic">◇</span>Live</button>
   <button data-vue="avis"><span class="ic">★</span>Avis</button>
@@ -870,7 +879,7 @@ chargerStats();
 
 /* ================= SUPABASE — Boutique Live, Avis, Couture, Clientes ================= */
 var _sb = null, _sbAdmin = null;
-var _sbLoaded = { boutique:false, avis:false, 'couture-dash':false, clientes:false };
+var _sbLoaded = { boutique:false, avis:false, 'couture-dash':false, clientes:false, stats:false };
 var _STATUTS = { pending:'En attente', paid:'Payée', preparing:'En préparation', shipped:'Expédiée', cancelled:'Annulée', refunded:'Remboursée' };
 
 function getSB() {
@@ -1081,6 +1090,53 @@ async function chargerStats() {
   }
 }
 
+async function chargerStatsTab() {
+  var zone = document.getElementById('stats-zone');
+  if (!await isAdmin()) { authBlock(zone); _sbLoaded.stats = false; return; }
+  zone.innerHTML = '<p style="color:var(--texte-faible)">Chargement…</p>';
+  var sb = getSB();
+  var now = new Date();
+  var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+  var weekStart = new Date(now.getTime() - 7*24*60*60*1000).toISOString();
+  var monthStart = new Date(now.getTime() - 30*24*60*60*1000).toISOString();
+  var todayRes = await sb.from('page_views').select('*', { count: 'exact', head: true }).gte('created_at', todayStart);
+  var weekRes  = await sb.from('page_views').select('*', { count: 'exact', head: true }).gte('created_at', weekStart);
+  var detailRes = await sb.from('page_views').select('path, country').gte('created_at', monthStart);
+  var todayCount = (!todayRes.error ? todayRes.count : 0) || 0;
+  var weekCount  = (!weekRes.error  ? weekRes.count  : 0) || 0;
+  var html = '<div class="grille-kpi" style="grid-template-columns:1fr 1fr">' +
+    '<div class="kpi"><div class="v">' + todayCount + '</div><div class="l">Visites aujourd\'hui</div></div>' +
+    '<div class="kpi"><div class="v">' + weekCount  + '</div><div class="l">Visites 7 jours</div></div>' +
+    '</div>';
+  if (!detailRes.error && detailRes.data && detailRes.data.length) {
+    var pages = {}, pays = {};
+    detailRes.data.forEach(function(v) {
+      pages[v.path] = (pages[v.path] || 0) + 1;
+      if (v.country) pays[v.country] = (pays[v.country] || 0) + 1;
+    });
+    var topPages = Object.entries(pages).sort(function(a,b){ return b[1]-a[1]; }).slice(0, 5);
+    var topPays  = Object.entries(pays).sort(function(a,b){ return b[1]-a[1]; }).slice(0, 5);
+    if (topPages.length) {
+      html += '<div class="carte"><h3>Pages — 30 derniers jours</h3>';
+      topPages.forEach(function(p) {
+        var label = decodeURIComponent(p[0].replace(/.*\//, '') || 'accueil').replace('.html','') || 'accueil';
+        html += '<div class="ligne-fi" style="font-size:15px"><span class="lab">/' + label + '</span><span class="val">' + p[1] + ' vues</span></div>';
+      });
+      html += '</div>';
+    }
+    if (topPays.length) {
+      html += '<div class="carte"><h3>Pays visiteurs</h3>';
+      topPays.forEach(function(c) {
+        html += '<div class="ligne-fi" style="font-size:15px"><span class="lab">' + c[0] + '</span><span class="val">' + c[1] + '</span></div>';
+      });
+      html += '</div>';
+    }
+  } else {
+    html += '<div class="vide"><div class="p">Aucune visite</div>Les visites enregistrées apparaîtront ici dès que des clientes visitent le site.</div>';
+  }
+  zone.innerHTML = html;
+}
+
 async function chargerKpiSupabase() {
   if (!await isAdmin()) return;
   var sb = getSB();
@@ -1139,6 +1195,7 @@ document.addEventListener('click', function(e) {
   else if (v === 'avis' && !_sbLoaded.avis) { _sbLoaded.avis=true; chargerAvis(); }
   else if (v === 'couture-dash' && !_sbLoaded['couture-dash']) { _sbLoaded['couture-dash']=true; chargerCoutureDash(); }
   else if (v === 'clientes' && !_sbLoaded.clientes) { _sbLoaded.clientes=true; chargerClientes(); }
+  else if (v === 'stats' && !_sbLoaded.stats) { _sbLoaded.stats=true; chargerStatsTab(); }
 });
 </script>
 </body>
