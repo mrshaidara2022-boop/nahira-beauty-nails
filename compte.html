@@ -40,6 +40,12 @@
   .commande .article{font-size:1.05rem; color:var(--blanc)}
   .commande .article small{font-family:'Montserrat',sans-serif; font-size:.72rem; color:var(--texte-doux); display:block; letter-spacing:.06em}
   .commande .total{font-family:'Montserrat',sans-serif; font-size:.8rem; color:var(--or-vif); margin-top:10px}
+  .btn-suppr-cmd{
+    display:block; background:none; border:none; cursor:pointer;
+    font-family:'Montserrat',sans-serif; font-size:.62rem; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--texte-faible); padding:8px 0 0; text-decoration:underline; transition:color .2s;
+  }
+  .btn-suppr-cmd:hover{color:#f0a3a3}
 </style>
 </head>
 <body>
@@ -271,9 +277,18 @@ async function chargerCommandes() {
       '<span class="statut ' + cmd.status + '">' + (STATUTS[cmd.status] || cmd.status) + '</span></div>' +
       articles +
       '<div class="total">Total : ' + NAHIRA.eur(cmd.total_cents) +
-      (cmd.tracking_number ? ' · Suivi : ' + cmd.tracking_number : '') + '</div>';
+      (cmd.tracking_number ? ' · Suivi : ' + cmd.tracking_number : '') + '</div>' +
+      '<button class="btn-suppr-cmd" data-id="' + cmd.id + '">Supprimer</button>';
+    div.querySelector('.btn-suppr-cmd').addEventListener('click', () => supprimerCommande(cmd.id));
     zone.appendChild(div);
   });
+}
+
+async function supprimerCommande(id) {
+  if (!confirm('Supprimer cette commande ? Cette action est définitive.')) return;
+  const { error } = await sb.from('orders').delete().eq('id', id);
+  if (error) { alert('Suppression impossible : ' + error.message); return; }
+  chargerCommandes();
 }
 
 async function init() {
