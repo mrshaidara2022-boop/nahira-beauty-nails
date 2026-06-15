@@ -278,8 +278,9 @@ async function chargerCommandes() {
       articles +
       '<div class="total">Total : ' + NAHIRA.eur(cmd.total_cents) +
       (cmd.tracking_number ? ' · Suivi : ' + cmd.tracking_number : '') + '</div>' +
-      '<button class="btn-suppr-cmd" data-id="' + cmd.id + '">Supprimer</button>';
-    div.querySelector('.btn-suppr-cmd').addEventListener('click', () => supprimerCommande(cmd.id));
+      (['cancelled', 'refunded'].includes(cmd.status) ? '<button class="btn-suppr-cmd" data-id="' + cmd.id + '">Supprimer</button>' : '');
+    const btnSuppr = div.querySelector('.btn-suppr-cmd');
+    if (btnSuppr) btnSuppr.addEventListener('click', () => supprimerCommande(cmd.id));
     zone.appendChild(div);
   });
 }
