@@ -208,7 +208,8 @@ nav.tabs button.actif .ic { filter:none; }
 /* ===== desktop ===== */
 @media (min-width:900px) {
   nav.tabs { display:none; }
-  .cote { display:flex; flex-direction:column; gap:4px; width:230px; flex:none; padding:28px 18px; border-right:1px solid var(--bordure); position:sticky; top:0; height:100dvh; }
+  .cote { display:flex; flex-direction:column; gap:4px; width:230px; flex:none; padding:28px 18px; border-right:1px solid var(--bordure); position:sticky; top:0; height:100dvh; overflow-y:auto; scrollbar-width:none; }
+  .cote::-webkit-scrollbar { display:none; }
   .cote .marque { margin-bottom:26px; padding:0 10px; }
   .cote .ligne-nb { font-family:'Cormorant Garamond', serif; font-weight:500; font-size:18px; letter-spacing:4px; text-transform:uppercase; color:var(--blanc); }
   .cote .ligne-nb span { background:linear-gradient(120deg, var(--or-vif), var(--rose-vif)); -webkit-background-clip:text; background-clip:text; color:transparent; }
@@ -924,6 +925,7 @@ async function chargerBoutique() {
     html+='<div class="bl-actions">';
     if(cmd.status==='paid') html+='<button class="btn-sb btn-or-sb" data-bid="'+cmd.id+'" data-bact="preparing">→ En préparation</button>';
     if(['paid','preparing'].includes(cmd.status)) html+='<input class="mini-input-dash" placeholder="N° de suivi" id="bsuivi-'+cmd.id+'" value="'+(cmd.tracking_number||'')+'"><button class="btn-sb btn-vert" data-bid="'+cmd.id+'" data-bact="shipped">✓ Expédiée</button>';
+    html+='<button class="btn-sb btn-rouge" data-bdel="'+cmd.id+'">Supprimer</button>';
     html+='</div></div>';
   });
   zone.innerHTML=html;
@@ -958,6 +960,13 @@ async function chargerBoutique() {
       var suivi=document.getElementById('bsuivi-'+b.getAttribute('data-bid'));
       if(suivi&&suivi.value.trim()) maj.tracking_number=suivi.value.trim();
       await getSB().from('orders').update(maj).eq('id',b.getAttribute('data-bid'));
+      _sbLoaded.boutique=false; chargerBoutique();
+    });
+  });
+  zone.querySelectorAll('[data-bdel]').forEach(function(b){
+    b.addEventListener('click',async function(){
+      if (!confirm('Supprimer cette commande ? Cette action est définitive.')) return;
+      await getSB().from('orders').delete().eq('id', b.getAttribute('data-bdel'));
       _sbLoaded.boutique=false; chargerBoutique();
     });
   });
