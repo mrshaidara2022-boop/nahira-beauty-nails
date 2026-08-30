@@ -341,7 +341,7 @@ const NAHIRA = (() => {
   }
 
   /* ─── HELPERS ─────────────────────────────────────────────────────────────── */
-  const eur = c => (c / 100).toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + " €";
+  const eur = c => (c / 100).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
   const etoiles = n => "★".repeat(n) + "☆".repeat(5 - n);
 
   /* ─── INIT DOM ─────────────────────────────────────────────────────────────── */
