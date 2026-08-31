@@ -86,6 +86,12 @@
 .cmd-suivi{font-family:'Montserrat',sans-serif;font-size:.68rem;color:var(--texte-doux)}
 .cmd-suivi a{color:var(--or);text-decoration:none}
 .cmd-suivi a:hover{color:var(--or-vif)}
+.btn-suppr-cmd{
+  background:none;border:none;cursor:pointer;
+  font-family:'Montserrat',sans-serif;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--texte-faible);padding:8px 0 0;text-decoration:underline;transition:color .2s;
+}
+.btn-suppr-cmd:hover{color:#f0a3a3}
 
 /* ─── Grille favoris ─────────────────────────────────────────────────── */
 .fav-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px}
@@ -509,9 +515,18 @@ async function chargerCommandes() {
       <div class="cmd-pied">
         <span class="cmd-total">Total : ${NAHIRA.eur(cmd.total_cents)}</span>
         ${suivi}
-      </div>`;
+      </div>
+      ${['cancelled','refunded'].includes(st) ? '<button class="btn-suppr-cmd">Supprimer</button>' : ''}`;
+    const btnSuppr = div.querySelector('.btn-suppr-cmd');
+    if (btnSuppr) btnSuppr.addEventListener('click', () => supprimerCommande(cmd.id));
     zone.appendChild(div);
   });
+}
+
+async function supprimerCommande(orderId) {
+  if (!confirm("Supprimer cette commande de votre historique ?")) return;
+  const { error } = await sb.from("orders").delete().eq("id", orderId).eq("user_id", currentUser.id);
+  if (!error) { tabCharge.commandes = false; chargerCommandes(); }
 }
 
 /* ── Onglet FAVORIS ──────────────────────────────────────────────────────── */
