@@ -1,7 +1,7 @@
 {
   "name": "Nahira Beauty Nails",
   "short_name": "Nahira Nails",
-  "description": "Press-on nails faits main en France — éditions limitées et numérotées.",
+  "description": "Press-on nails haut de gamme livrés en 48h — pose en 5 min, résultat salon, réutilisables.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
