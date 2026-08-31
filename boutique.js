@@ -281,11 +281,16 @@ const NAHIRA = (() => {
     const cart = getCart();
     if (cart.length === 0) throw new Error("Votre panier est vide.");
     const { data: { user } } = await sb.auth.getUser();
-    const payload = {
-      items: cart.map(it => ({
+    // Sanitize items: drop anything without a valid product_id, clamp quantity to integer ≥ 1
+    const validItems = cart
+      .filter(it => it.product_id)
+      .map(it => ({
         product_id: it.product_id,
-        quantity:   it.quantity || 1,
-      })),
+        quantity:   Math.max(1, Math.floor(Number(it.quantity) || 1)),
+      }));
+    if (validItems.length === 0) throw new Error("Votre panier est vide.");
+    const payload = {
+      items: validItems,
       email:       user?.email || null,
       user_id:     user?.id   || null,
       success_url: location.origin + "/merci.html",

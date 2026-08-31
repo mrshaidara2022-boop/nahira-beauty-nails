@@ -490,6 +490,13 @@
   }
 
   /* ── Init ────────────────────────────────────────────────────────────────── */
+  // Purge silencieuse des articles V1 sans product_id valide
+  (function purgeV1() {
+    const cart = NAHIRA.getCart();
+    const clean = cart.filter(it => it.product_id && it.price_cents);
+    if (clean.length < cart.length) NAHIRA.saveCart(clean);
+  })();
+
   rendre();
 
   // Vérification stock silencieuse en arrière-plan au chargement
