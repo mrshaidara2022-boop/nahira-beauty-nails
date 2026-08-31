@@ -240,6 +240,69 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
 .email-chip{font-family:'Montserrat',sans-serif;font-size:10px;color:var(--texte-doux);background:var(--carte-2);border:1px solid var(--bordure);border-radius:8px;padding:4px 10px;margin:3px 4px 3px 0;display:inline-block}
 .email-notifie{color:var(--texte-faible);text-decoration:line-through}
 
+/* COLLECTIONS / MOODS */
+.coll-carte{background:var(--carte);border:1px solid var(--bordure);border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
+.coll-cover{width:100%;height:120px;object-fit:cover;background:var(--carte-2);display:flex;align-items:center;justify-content:center;font-size:32px;flex:none}
+.coll-cover img{width:100%;height:120px;object-fit:cover}
+.coll-corps{padding:12px 14px;flex:1}
+.coll-nom{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:600;color:var(--blanc);margin-bottom:4px}
+.coll-meta{font-family:'Montserrat',sans-serif;font-size:10px;color:var(--texte-faible);margin-bottom:10px}
+.coll-actions{display:flex;gap:6px;margin-top:8px}
+.grille-coll{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:4px}
+
+/* CMS */
+.cms-champ{background:var(--carte);border:1px solid var(--bordure);border-radius:14px;padding:16px;margin-bottom:10px}
+.cms-label{font-family:'Montserrat',sans-serif;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--texte-faible);margin-bottom:6px}
+.cms-input{width:100%;background:var(--carte-2);border:1px solid var(--bordure);border-radius:8px;padding:10px 12px;color:var(--texte);font-family:'Cormorant Garamond',serif;font-size:16px;resize:vertical;outline:none;transition:border-color .2s}
+.cms-input:focus{border-color:var(--rose)}
+.cms-toggle{display:flex;align-items:center;gap:10px;cursor:pointer}
+.cms-toggle input[type=checkbox]{width:18px;height:18px;accent-color:var(--rose)}
+
+/* AVIS */
+.avis-card{background:var(--carte);border:1px solid var(--bordure);border-radius:16px;padding:14px 16px;margin-bottom:10px}
+.avis-haut{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.avis-auteur{font-size:15px;font-weight:600;color:var(--blanc)}
+.avis-etoiles{color:var(--or);letter-spacing:2px;font-size:14px}
+.avis-produit{font-family:'Montserrat',sans-serif;font-size:10px;color:var(--texte-faible);margin-bottom:8px}
+.avis-contenu{font-size:15px;color:var(--texte-doux);line-height:1.6;margin-bottom:12px}
+.avis-actions{display:flex;gap:8px;flex-wrap:wrap}
+.avis-reponse{background:var(--carte-2);border-left:2px solid var(--or);padding:8px 12px;border-radius:0 8px 8px 0;margin-top:8px;font-size:14px;color:var(--texte-doux)}
+
+/* IMPORT CSV */
+.import-zone{border:2px dashed var(--bordure);border-radius:16px;padding:32px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;position:relative;overflow:hidden}
+.import-zone:hover,.import-zone.survol{border-color:var(--rose);background:rgba(240,111,167,.04)}
+.import-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.import-table-wrap{overflow-x:auto;margin-top:14px}
+.import-table{width:100%;border-collapse:collapse;font-size:12px;font-family:'Montserrat',sans-serif}
+.import-table th{padding:6px 10px;text-align:left;color:var(--texte-faible);font-size:10px;letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--bordure);white-space:nowrap}
+.import-table td{padding:6px 10px;color:var(--texte-doux);border-bottom:1px solid rgba(240,111,167,.06);white-space:nowrap}
+.import-table tr:last-child td{border-bottom:none}
+.import-map-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:13px;flex-wrap:wrap}
+.import-map-row label{min-width:130px;color:var(--texte-doux)}
+
+/* PROMOTIONS */
+.promo-card{background:var(--carte);border:1px solid var(--bordure);border-radius:16px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.promo-code{font-family:'Montserrat',sans-serif;font-size:16px;font-weight:600;color:var(--or);letter-spacing:2px;flex:none}
+.promo-info{flex:1;min-width:0}
+.promo-val{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--blanc)}
+.promo-meta{font-family:'Montserrat',sans-serif;font-size:10px;color:var(--texte-faible);margin-top:2px}
+.promo-usage{font-family:'Montserrat',sans-serif;font-size:11px;color:var(--texte-doux)}
+.promo-actions{display:flex;gap:6px;flex:none}
+
+/* PARAMÈTRES */
+.param-section{background:var(--carte);border:1px solid var(--bordure);border-radius:16px;margin-bottom:16px;overflow:hidden}
+.param-titre{font-family:'Montserrat',sans-serif;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--texte-faible);padding:12px 16px;border-bottom:1px solid var(--bordure);background:var(--carte-2)}
+.param-ligne{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 16px;border-bottom:1px solid rgba(240,111,167,.06);flex-wrap:wrap}
+.param-ligne:last-child{border-bottom:none}
+.param-lbl{font-size:15px;color:var(--texte);flex:1}
+.param-desc{font-family:'Montserrat',sans-serif;font-size:10px;color:var(--texte-faible);margin-top:2px}
+.param-input{background:var(--carte-2);border:1px solid var(--bordure);border-radius:8px;padding:8px 12px;color:var(--texte);font-size:14px;width:140px;outline:none;transition:border-color .2s;font-family:'Montserrat',sans-serif}
+.param-input:focus{border-color:var(--rose)}
+.param-toggle{width:40px;height:22px;border-radius:11px;background:var(--carte-2);border:1px solid var(--bordure);cursor:pointer;position:relative;transition:background .2s;flex:none}
+.param-toggle.on{background:var(--rose)}
+.param-toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--blanc);transition:transform .2s}
+.param-toggle.on::after{transform:translateX(18px)}
+
 /* TOAST */
 .toast{position:fixed;bottom:calc(94px + var(--sb));left:50%;transform:translateX(-50%) translateY(16px);z-index:300;pointer-events:none;background:var(--carte-2);border:1px solid var(--bordure);border-radius:14px;padding:11px 22px;font-family:'Montserrat',sans-serif;font-size:12px;white-space:nowrap;opacity:0;transition:opacity .3s,transform .3s;max-width:calc(100vw - 40px);text-align:center}
 .toast.visible{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -309,13 +372,13 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
       <li class="cote-label">Phase 2</li>
       <button class="nav-item" data-nav="commandes" onclick="goTo('commandes')"><span class="nav-ico">◻</span>Commandes</button>
       <button class="nav-item" data-nav="reassort" onclick="goTo('reassort')"><span class="nav-ico">🔔</span>Réassort</button>
-      <button class="nav-item" data-nav="collections" onclick="goTo('collections')"><span class="nav-ico">▦</span>Collections<span class="nav-bientot">bientôt</span></button>
-      <button class="nav-item" data-nav="moods" onclick="goTo('moods')"><span class="nav-ico">✦</span>Moods<span class="nav-bientot">bientôt</span></button>
-      <button class="nav-item" data-nav="cms" onclick="goTo('cms')"><span class="nav-ico">▩</span>Site CMS<span class="nav-bientot">bientôt</span></button>
-      <button class="nav-item" data-nav="promotions" onclick="goTo('promotions')"><span class="nav-ico">%</span>Promotions<span class="nav-bientot">bientôt</span></button>
-      <button class="nav-item" data-nav="avis" onclick="goTo('avis')"><span class="nav-ico">★</span>Avis<span class="nav-bientot">bientôt</span></button>
-      <button class="nav-item" data-nav="import" onclick="goTo('import')"><span class="nav-ico">↑</span>Import CSV<span class="nav-bientot">bientôt</span></button>
-      <button class="nav-item" data-nav="parametres" onclick="goTo('parametres')"><span class="nav-ico">⚙</span>Paramètres<span class="nav-bientot">bientôt</span></button>
+      <button class="nav-item" data-nav="collections" onclick="goTo('collections')"><span class="nav-ico">▦</span>Collections</button>
+      <button class="nav-item" data-nav="moods" onclick="goTo('moods')"><span class="nav-ico">✦</span>Moods</button>
+      <button class="nav-item" data-nav="cms" onclick="goTo('cms')"><span class="nav-ico">▩</span>Site CMS</button>
+      <button class="nav-item" data-nav="promotions" onclick="goTo('promotions')"><span class="nav-ico">%</span>Promotions</button>
+      <button class="nav-item" data-nav="avis" onclick="goTo('avis')"><span class="nav-ico">★</span>Avis</button>
+      <button class="nav-item" data-nav="import" onclick="goTo('import')"><span class="nav-ico">↑</span>Import CSV</button>
+      <button class="nav-item" data-nav="parametres" onclick="goTo('parametres')"><span class="nav-ico">⚙</span>Paramètres</button>
     </ul>
     <div class="cote-footer">
       <div class="cote-email" id="cote-email"></div>
@@ -552,40 +615,225 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
         <div id="rs-liste" style="display:none"></div>
         <div id="rs-vide" class="etat-vide" style="display:none"><div class="ico">🔔</div><p>Aucune demande de réassort en attente.</p></div>
       </section>
+      <!-- COLLECTIONS -->
       <section class="section" id="s-collections" style="display:none">
-        <div class="eyebrow">Phase 2</div>
-        <h2 class="section-titre"><em>Collections</em></h2>
-        <div class="bientot"><div class="ico">▦</div><h3>Module Collections</h3><p>CRUD collections, associations produits — Phase 2.</p></div>
+        <div class="eyebrow">Administration</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap">
+          <h2 class="section-titre" style="margin-bottom:0"><em>Collections</em></h2>
+          <button class="btn btn-rose" onclick="ouvrirFormulaireCollection()">+ Nouvelle collection</button>
+        </div>
+        <div class="chargement" id="coll-loading">Chargement…</div>
+        <div class="grille-coll" id="coll-liste" style="display:none"></div>
+        <div id="coll-vide" class="etat-vide" style="display:none"><div class="ico">▦</div><p>Aucune collection. Créez-en une !</p></div>
+        <div id="coll-form-wrap" style="display:none;margin-top:16px">
+          <div class="carte">
+            <h3 id="coll-form-titre" style="margin-bottom:14px;font-family:'Cormorant Garamond',serif;font-size:20px">Nouvelle collection</h3>
+            <div class="form-grille" style="margin-bottom:10px">
+              <div><label class="prod-label">Nom <span style="color:var(--rose)">*</span></label><input class="prod-input" id="coll-nom" type="text" placeholder="Ex: Été Doré" oninput="autoSlugColl()"></div>
+              <div><label class="prod-label">Slug</label><input class="prod-input" id="coll-slug" type="text" placeholder="ete-dore"></div>
+            </div>
+            <div style="margin-bottom:10px"><label class="prod-label">Description</label><textarea class="prod-input" id="coll-desc" rows="3" style="resize:vertical" placeholder="Présentation de la collection…"></textarea></div>
+            <div style="margin-bottom:10px"><label class="prod-label">URL image de couverture</label><input class="prod-input" id="coll-img" type="url" placeholder="https://…"></div>
+            <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px"><input type="checkbox" id="coll-visible" checked style="accent-color:var(--rose);width:16px;height:16px"><label for="coll-visible" style="font-size:14px;color:var(--texte-doux);cursor:pointer">Visible sur le site</label></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-rose" onclick="sauvegarderCollection()">Enregistrer</button>
+              <button class="btn btn-sec" onclick="fermerFormulaireCollection()">Annuler</button>
+            </div>
+            <div id="coll-form-msg" style="margin-top:8px;font-size:13px;display:none"></div>
+          </div>
+        </div>
       </section>
+
+      <!-- MOODS -->
       <section class="section" id="s-moods" style="display:none">
-        <div class="eyebrow">Phase 2</div>
-        <h2 class="section-titre"><em>Moods</em></h2>
-        <div class="bientot"><div class="ico">✦</div><h3>Module Moods</h3><p>CRUD moods, associations produits — Phase 2.</p></div>
+        <div class="eyebrow">Administration</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap">
+          <h2 class="section-titre" style="margin-bottom:0"><em>Moods</em></h2>
+          <button class="btn btn-rose" onclick="ouvrirFormulaireMood()">+ Nouveau mood</button>
+        </div>
+        <div class="chargement" id="mood-loading">Chargement…</div>
+        <div class="grille-coll" id="mood-liste" style="display:none"></div>
+        <div id="mood-vide" class="etat-vide" style="display:none"><div class="ico">✦</div><p>Aucun mood. Créez-en un !</p></div>
+        <div id="mood-form-wrap" style="display:none;margin-top:16px">
+          <div class="carte">
+            <h3 id="mood-form-titre" style="margin-bottom:14px;font-family:'Cormorant Garamond',serif;font-size:20px">Nouveau mood</h3>
+            <div class="form-grille" style="margin-bottom:10px">
+              <div><label class="prod-label">Nom <span style="color:var(--rose)">*</span></label><input class="prod-input" id="mood-nom" type="text" placeholder="Ex: Minimaliste chic" oninput="autoSlugMood()"></div>
+              <div><label class="prod-label">Slug</label><input class="prod-input" id="mood-slug" type="text" placeholder="minimaliste-chic"></div>
+            </div>
+            <div style="margin-bottom:10px"><label class="prod-label">Description</label><textarea class="prod-input" id="mood-desc" rows="3" style="resize:vertical" placeholder="Ambiance, esthétique…"></textarea></div>
+            <div style="margin-bottom:10px"><label class="prod-label">URL image de couverture</label><input class="prod-input" id="mood-img" type="url" placeholder="https://…"></div>
+            <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px"><input type="checkbox" id="mood-visible" checked style="accent-color:var(--rose);width:16px;height:16px"><label for="mood-visible" style="font-size:14px;color:var(--texte-doux);cursor:pointer">Visible sur le site</label></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-rose" onclick="sauvegarderMood()">Enregistrer</button>
+              <button class="btn btn-sec" onclick="fermerFormulaireMood()">Annuler</button>
+            </div>
+            <div id="mood-form-msg" style="margin-top:8px;font-size:13px;display:none"></div>
+          </div>
+        </div>
       </section>
+
+      <!-- SITE CMS -->
       <section class="section" id="s-cms" style="display:none">
-        <div class="eyebrow">Phase 2</div>
-        <h2 class="section-titre">Site <em>CMS</em></h2>
-        <div class="bientot"><div class="ico">▩</div><h3>Module CMS</h3><p>Annonce, hero, concept, avantages, sections homepage — Phase 2.</p></div>
+        <div class="eyebrow">Administration</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap">
+          <h2 class="section-titre" style="margin-bottom:0">Site <em>CMS</em></h2>
+          <button class="btn btn-rose" onclick="sauvegarderCMS()">Enregistrer tout</button>
+        </div>
+        <div class="chargement" id="cms-loading">Chargement…</div>
+        <div id="cms-corps" style="display:none">
+          <div class="cms-champ">
+            <div class="cms-label">Annonce (bandeau haut de page)</div>
+            <textarea class="cms-input" id="cms-announcement" rows="2" placeholder="Ex: Livraison gratuite dès 40€…"></textarea>
+            <div style="margin-top:8px" class="cms-toggle"><input type="checkbox" id="cms-announcement-active"><label for="cms-announcement-active" style="font-size:14px;color:var(--texte-doux);cursor:pointer">Bandeau actif</label></div>
+          </div>
+          <div class="cms-champ">
+            <div class="cms-label">Hero — Titre principal</div>
+            <input class="cms-input" id="cms-hero-title" type="text" placeholder="Ex: Nahira Beauty Nails">
+          </div>
+          <div class="cms-champ">
+            <div class="cms-label">Hero — Sous-titre / tagline</div>
+            <input class="cms-input" id="cms-hero-sub" type="text" placeholder="Ex: Ongles faits main, livrés chez vous">
+          </div>
+          <div class="cms-champ">
+            <div class="cms-label">Section Concept</div>
+            <textarea class="cms-input" id="cms-concept" rows="4" placeholder="Texte de présentation de la marque…"></textarea>
+          </div>
+          <div class="cms-champ">
+            <div class="cms-label">Avantages (1 par ligne)</div>
+            <textarea class="cms-input" id="cms-avantages" rows="4" placeholder="Livraison rapide&#10;Emballage recyclé&#10;Satisfaite ou remboursée"></textarea>
+          </div>
+          <div class="cms-champ">
+            <div class="cms-label">Texte livraison (page panier)</div>
+            <textarea class="cms-input" id="cms-livraison" rows="2" placeholder="Ex: Expédié sous 48h…"></textarea>
+          </div>
+          <div id="cms-save-msg" style="font-size:13px;display:none;margin-top:8px"></div>
+        </div>
       </section>
+
+      <!-- PROMOTIONS -->
       <section class="section" id="s-promotions" style="display:none">
-        <div class="eyebrow">Phase 2</div>
-        <h2 class="section-titre"><em>Promotions</em></h2>
-        <div class="bientot"><div class="ico">%</div><h3>Module Promotions</h3><p>Prix barrés, dates, codes promo — Phase 2.</p></div>
+        <div class="eyebrow">Administration</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap">
+          <h2 class="section-titre" style="margin-bottom:0"><em>Promotions</em></h2>
+          <button class="btn btn-rose" onclick="ouvrirFormulairePromo()">+ Nouveau code</button>
+        </div>
+        <div class="chargement" id="promo-loading">Chargement…</div>
+        <div id="promo-liste" style="display:none"></div>
+        <div id="promo-vide" class="etat-vide" style="display:none"><div class="ico">%</div><p>Aucun code promo actif.</p></div>
+        <div id="promo-form-wrap" style="display:none;margin-top:16px">
+          <div class="carte">
+            <h3 style="margin-bottom:14px;font-family:'Cormorant Garamond',serif;font-size:20px">Nouveau code promo</h3>
+            <div class="form-grille" style="margin-bottom:10px">
+              <div><label class="prod-label">Code <span style="color:var(--rose)">*</span></label><input class="prod-input" id="promo-code" type="text" placeholder="EX: ROSE10" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
+              <div>
+                <label class="prod-label">Type</label>
+                <select class="prod-input" id="promo-type">
+                  <option value="percent">Pourcentage (%)</option>
+                  <option value="fixed">Montant fixe (€)</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-grille" style="margin-bottom:10px">
+              <div><label class="prod-label">Valeur <span style="color:var(--rose)">*</span></label><input class="prod-input" id="promo-valeur" type="number" min="1" placeholder="10"></div>
+              <div><label class="prod-label">Commande minimum (€)</label><input class="prod-input" id="promo-min" type="number" min="0" placeholder="0" step="0.01"></div>
+            </div>
+            <div class="form-grille" style="margin-bottom:10px">
+              <div><label class="prod-label">Limite d'utilisations</label><input class="prod-input" id="promo-limit" type="number" min="0" placeholder="Illimité (0)"></div>
+              <div><label class="prod-label">Valide jusqu'au</label><input class="prod-input" id="promo-end" type="date"></div>
+            </div>
+            <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px"><input type="checkbox" id="promo-actif" checked style="accent-color:var(--rose);width:16px;height:16px"><label for="promo-actif" style="font-size:14px;color:var(--texte-doux);cursor:pointer">Code actif</label></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-rose" onclick="sauvegarderPromo()">Créer</button>
+              <button class="btn btn-sec" onclick="fermerFormulairePromo()">Annuler</button>
+            </div>
+            <div id="promo-form-msg" style="margin-top:8px;font-size:13px;display:none"></div>
+          </div>
+        </div>
       </section>
+
+      <!-- AVIS -->
       <section class="section" id="s-avis" style="display:none">
-        <div class="eyebrow">Phase 2</div>
-        <h2 class="section-titre">Avis <em>clientes</em></h2>
-        <div class="bientot"><div class="ico">★</div><h3>Module Avis</h3><p>Modération, approbation, suppression — Phase 2.</p></div>
+        <div class="eyebrow">Administration</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap">
+          <h2 class="section-titre" style="margin-bottom:0">Avis <em>clientes</em></h2>
+          <select class="filtre-input" id="avis-filtre" onchange="renderAvis()" style="min-width:130px">
+            <option value="pending">En attente</option>
+            <option value="approved">Approuvés</option>
+            <option value="all">Tous</option>
+          </select>
+        </div>
+        <div class="chargement" id="avis-loading">Chargement…</div>
+        <div id="avis-liste" style="display:none"></div>
+        <div id="avis-vide" class="etat-vide" style="display:none"><div class="ico">★</div><p>Aucun avis dans cette catégorie.</p></div>
       </section>
+
+      <!-- IMPORT CSV -->
       <section class="section" id="s-import" style="display:none">
-        <div class="eyebrow">Phase 2</div>
-        <h2 class="section-titre">Import <em>CSV</em></h2>
-        <div class="bientot"><div class="ico">↑</div><h3>Module Import CSV</h3><p>Import ~104 références, mapping colonnes, preview, MAJ existants — Phase 2.</p></div>
+        <div class="eyebrow">Administration</div>
+        <h2 class="section-titre" style="margin-bottom:14px">Import <em>CSV</em></h2>
+        <div class="import-zone" id="import-zone" onclick="document.getElementById('import-file').click()">
+          <div style="font-size:36px;margin-bottom:10px">↑</div>
+          <p style="font-size:16px;color:var(--texte-doux)">Glissez votre CSV ici ou cliquez pour choisir</p>
+          <p style="font-size:12px;color:var(--texte-faible);margin-top:6px">Colonnes attendues : name, slug, sku, price, stock, description_short, shape, finish, is_visible</p>
+          <input type="file" id="import-file" accept=".csv,text/csv" style="position:absolute;inset:0;opacity:0;cursor:pointer" onchange="lireCSV(this)">
+        </div>
+        <div id="import-apercu" style="display:none;margin-top:16px">
+          <div class="carte">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+              <h3 id="import-titre" style="font-family:'Cormorant Garamond',serif;font-size:18px">Aperçu</h3>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-sec btn-sm" onclick="annulerImport()">✕ Annuler</button>
+                <button class="btn btn-rose" id="import-btn" onclick="lancerImport()">Importer</button>
+              </div>
+            </div>
+            <div id="import-mapping" style="margin-bottom:14px"></div>
+            <div class="import-table-wrap"><table class="import-table" id="import-table"></table></div>
+            <div id="import-msg" style="margin-top:10px;font-size:13px;display:none"></div>
+          </div>
+        </div>
       </section>
+
+      <!-- PARAMÈTRES -->
       <section class="section" id="s-parametres" style="display:none">
-        <div class="eyebrow">Phase 2</div>
-        <h2 class="section-titre"><em>Paramètres</em></h2>
-        <div class="bientot"><div class="ico">⚙</div><h3>Module Paramètres</h3><p>Livraison, seuils, textes généraux — Phase 2.</p></div>
+        <div class="eyebrow">Administration</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap">
+          <h2 class="section-titre" style="margin-bottom:0"><em>Paramètres</em></h2>
+          <button class="btn btn-rose" onclick="sauvegarderParametres()">Enregistrer</button>
+        </div>
+        <div class="chargement" id="param-loading">Chargement…</div>
+        <div id="param-corps" style="display:none">
+          <div class="param-section">
+            <div class="param-titre">Livraison</div>
+            <div class="param-ligne">
+              <div><div class="param-lbl">Frais de livraison</div><div class="param-desc">Montant facturé sous le seuil gratuit</div></div>
+              <input class="param-input" id="param-shipping-price" type="number" min="0" step="0.01" placeholder="5.90"> <span style="font-size:13px;color:var(--texte-faible)">€</span>
+            </div>
+            <div class="param-ligne">
+              <div><div class="param-lbl">Seuil livraison gratuite</div><div class="param-desc">Commande minimum pour livraison offerte</div></div>
+              <input class="param-input" id="param-shipping-threshold" type="number" min="0" step="0.01" placeholder="40.00"> <span style="font-size:13px;color:var(--texte-faible)">€</span>
+            </div>
+          </div>
+          <div class="param-section">
+            <div class="param-titre">Stock</div>
+            <div class="param-ligne">
+              <div><div class="param-lbl">Seuil stock bas</div><div class="param-desc">En dessous de ce niveau, alerte stock bas</div></div>
+              <input class="param-input" id="param-low-stock" type="number" min="0" placeholder="3"> <span style="font-size:13px;color:var(--texte-faible)">unités</span>
+            </div>
+          </div>
+          <div class="param-section">
+            <div class="param-titre">Boutique</div>
+            <div class="param-ligne">
+              <div><div class="param-lbl">Email contact</div><div class="param-desc">Adresse de réponse aux clientes</div></div>
+              <input class="param-input" id="param-email" type="email" placeholder="contact@nahira.fr" style="width:200px">
+            </div>
+            <div class="param-ligne">
+              <div><div class="param-lbl">Boutique ouverte</div><div class="param-desc">Désactiver pour passer en mode maintenance</div></div>
+              <button class="param-toggle on" id="param-shop-open" onclick="this.classList.toggle('on')"></button>
+            </div>
+          </div>
+          <div id="param-save-msg" style="font-size:13px;display:none;margin-top:8px"></div>
+        </div>
       </section>
 
     </div><!-- /#main -->
@@ -720,6 +968,13 @@ function goTo(id) {
   else if (id === 'stock') chargerStock();
   else if (id === 'commandes') chargerCommandes();
   else if (id === 'reassort') chargerReassort();
+  else if (id === 'collections') chargerCollections();
+  else if (id === 'moods') chargerMoods();
+  else if (id === 'cms') chargerCMS();
+  else if (id === 'promotions') chargerPromotions();
+  else if (id === 'avis') chargerAvis();
+  else if (id === 'import') chargerImport();
+  else if (id === 'parametres') chargerParametres();
 }
 
 function togglePlus() {
@@ -1688,6 +1943,703 @@ async function notifierReassort(productId, idx) {
     renderReassort();
   } catch(e) {
     alert('Erreur : ' + (e.message||e));
+  }
+}
+
+/* ====== COLLECTIONS ====== */
+var S_COLL = { data: [], editing: null };
+
+async function chargerCollections() {
+  document.getElementById('coll-loading').style.display = '';
+  document.getElementById('coll-liste').style.display = 'none';
+  document.getElementById('coll-vide').style.display = 'none';
+  fermerFormulaireCollection();
+  try {
+    var r = await NAHIRA.sb.from('collections')
+      .select('id,name,slug,description,cover_image_url,is_visible,sort_order,created_at')
+      .order('sort_order',{ascending:true});
+    if (r.error) throw r.error;
+    S_COLL.data = r.data || [];
+  } catch(e) {
+    document.getElementById('coll-loading').textContent = 'Erreur : '+(e.message||e);
+    return;
+  }
+  document.getElementById('coll-loading').style.display = 'none';
+  renderCollections();
+}
+
+function renderCollections() {
+  var el = document.getElementById('coll-liste');
+  var vide = document.getElementById('coll-vide');
+  if (!S_COLL.data.length) { vide.style.display = ''; el.style.display = 'none'; return; }
+  vide.style.display = 'none';
+  el.innerHTML = S_COLL.data.map(function(c) {
+    var imgHtml = c.cover_image_url
+      ? '<img src="'+esc(c.cover_image_url)+'" alt="">'
+      : '<span style="font-size:32px">▦</span>';
+    return '<div class="coll-carte">' +
+      '<div class="coll-cover">'+imgHtml+'</div>' +
+      '<div class="coll-corps">' +
+        '<div class="coll-nom">'+esc(c.name)+'</div>' +
+        '<div class="coll-meta">'+(c.is_visible?'<span style="color:var(--ok)">● Visible</span>':'<span style="color:var(--texte-faible)">● Masquée</span>')+
+          (c.description?' · '+esc(c.description).slice(0,40):'')+'</div>' +
+        '<div class="coll-actions">' +
+          '<button class="btn btn-sm btn-sec" onclick="editerCollection(\''+esc(c.id)+'\')">Modifier</button>' +
+          '<button class="btn btn-sm btn-danger" onclick="supprimerCollection(\''+esc(c.id)+'\',\''+esc(c.name)+'\')">Supprimer</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  el.style.display = '';
+}
+
+function ouvrirFormulaireCollection(id) {
+  var wrap = document.getElementById('coll-form-wrap');
+  document.getElementById('coll-form-msg').style.display = 'none';
+  if (id) {
+    var c = S_COLL.data.find(function(x){ return x.id===id; });
+    if (!c) return;
+    S_COLL.editing = id;
+    document.getElementById('coll-form-titre').textContent = 'Modifier la collection';
+    document.getElementById('coll-nom').value = c.name||'';
+    document.getElementById('coll-slug').value = c.slug||'';
+    document.getElementById('coll-desc').value = c.description||'';
+    document.getElementById('coll-img').value = c.cover_image_url||'';
+    document.getElementById('coll-visible').checked = !!c.is_visible;
+  } else {
+    S_COLL.editing = null;
+    document.getElementById('coll-form-titre').textContent = 'Nouvelle collection';
+    document.getElementById('coll-nom').value = '';
+    document.getElementById('coll-slug').value = '';
+    document.getElementById('coll-desc').value = '';
+    document.getElementById('coll-img').value = '';
+    document.getElementById('coll-visible').checked = true;
+  }
+  wrap.style.display = '';
+  wrap.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function fermerFormulaireCollection() {
+  document.getElementById('coll-form-wrap').style.display = 'none';
+  S_COLL.editing = null;
+}
+
+function editerCollection(id) { ouvrirFormulaireCollection(id); }
+
+function autoSlugColl() {
+  var slug = document.getElementById('coll-slug');
+  if (!slug.dataset.manual) slug.value = slugify(document.getElementById('coll-nom').value);
+}
+
+async function sauvegarderCollection() {
+  var nom = (document.getElementById('coll-nom').value||'').trim();
+  if (!nom) { afficherMsgColl('Le nom est requis.','err'); return; }
+  var data = {
+    name: nom,
+    slug: document.getElementById('coll-slug').value || slugify(nom),
+    description: document.getElementById('coll-desc').value.trim()||null,
+    cover_image_url: document.getElementById('coll-img').value.trim()||null,
+    is_visible: document.getElementById('coll-visible').checked,
+  };
+  try {
+    var r;
+    if (S_COLL.editing) {
+      r = await NAHIRA.sb.from('collections').update(data).eq('id',S_COLL.editing).select();
+    } else {
+      r = await NAHIRA.sb.from('collections').insert(data).select();
+    }
+    if (r.error) throw r.error;
+    fermerFormulaireCollection();
+    await chargerCollections();
+    toast(S_COLL.editing?'Collection modifiée.':'Collection créée.');
+  } catch(e) { afficherMsgColl('Erreur : '+(e.message||e),'err'); }
+}
+
+function afficherMsgColl(msg, type) {
+  var el = document.getElementById('coll-form-msg');
+  el.textContent = msg;
+  el.style.color = type==='err'?'var(--alerte)':'var(--or)';
+  el.style.display = '';
+}
+
+async function supprimerCollection(id, nom) {
+  if (!confirm('Supprimer la collection « '+nom+' » ?')) return;
+  try {
+    var r = await NAHIRA.sb.from('collections').delete().eq('id',id);
+    if (r.error) throw r.error;
+    S_COLL.data = S_COLL.data.filter(function(c){ return c.id!==id; });
+    renderCollections();
+    toast('Collection supprimée.');
+  } catch(e) { alert('Erreur : '+(e.message||e)); }
+}
+
+/* ====== MOODS ====== */
+var S_MOOD = { data: [], editing: null };
+
+async function chargerMoods() {
+  document.getElementById('mood-loading').style.display = '';
+  document.getElementById('mood-liste').style.display = 'none';
+  document.getElementById('mood-vide').style.display = 'none';
+  fermerFormulaireMood();
+  try {
+    var r = await NAHIRA.sb.from('moods')
+      .select('id,name,slug,description,cover_image_url,is_visible,sort_order,created_at')
+      .order('sort_order',{ascending:true});
+    if (r.error) throw r.error;
+    S_MOOD.data = r.data || [];
+  } catch(e) {
+    document.getElementById('mood-loading').textContent = 'Erreur : '+(e.message||e);
+    return;
+  }
+  document.getElementById('mood-loading').style.display = 'none';
+  renderMoods();
+}
+
+function renderMoods() {
+  var el = document.getElementById('mood-liste');
+  var vide = document.getElementById('mood-vide');
+  if (!S_MOOD.data.length) { vide.style.display = ''; el.style.display = 'none'; return; }
+  vide.style.display = 'none';
+  el.innerHTML = S_MOOD.data.map(function(m) {
+    var imgHtml = m.cover_image_url
+      ? '<img src="'+esc(m.cover_image_url)+'" alt="">'
+      : '<span style="font-size:32px">✦</span>';
+    return '<div class="coll-carte">' +
+      '<div class="coll-cover">'+imgHtml+'</div>' +
+      '<div class="coll-corps">' +
+        '<div class="coll-nom">'+esc(m.name)+'</div>' +
+        '<div class="coll-meta">'+(m.is_visible?'<span style="color:var(--ok)">● Visible</span>':'<span style="color:var(--texte-faible)">● Masqué</span>')+
+          (m.description?' · '+esc(m.description).slice(0,40):'')+'</div>' +
+        '<div class="coll-actions">' +
+          '<button class="btn btn-sm btn-sec" onclick="editerMood(\''+esc(m.id)+'\')">Modifier</button>' +
+          '<button class="btn btn-sm btn-danger" onclick="supprimerMood(\''+esc(m.id)+'\',\''+esc(m.name)+'\')">Supprimer</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  el.style.display = '';
+}
+
+function ouvrirFormulaireMood(id) {
+  var wrap = document.getElementById('mood-form-wrap');
+  document.getElementById('mood-form-msg').style.display = 'none';
+  if (id) {
+    var m = S_MOOD.data.find(function(x){ return x.id===id; });
+    if (!m) return;
+    S_MOOD.editing = id;
+    document.getElementById('mood-form-titre').textContent = 'Modifier le mood';
+    document.getElementById('mood-nom').value = m.name||'';
+    document.getElementById('mood-slug').value = m.slug||'';
+    document.getElementById('mood-desc').value = m.description||'';
+    document.getElementById('mood-img').value = m.cover_image_url||'';
+    document.getElementById('mood-visible').checked = !!m.is_visible;
+  } else {
+    S_MOOD.editing = null;
+    document.getElementById('mood-form-titre').textContent = 'Nouveau mood';
+    document.getElementById('mood-nom').value = '';
+    document.getElementById('mood-slug').value = '';
+    document.getElementById('mood-desc').value = '';
+    document.getElementById('mood-img').value = '';
+    document.getElementById('mood-visible').checked = true;
+  }
+  wrap.style.display = '';
+  wrap.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function fermerFormulaireMood() {
+  document.getElementById('mood-form-wrap').style.display = 'none';
+  S_MOOD.editing = null;
+}
+
+function editerMood(id) { ouvrirFormulaireMood(id); }
+
+function autoSlugMood() {
+  var slug = document.getElementById('mood-slug');
+  if (!slug.dataset.manual) slug.value = slugify(document.getElementById('mood-nom').value);
+}
+
+async function sauvegarderMood() {
+  var nom = (document.getElementById('mood-nom').value||'').trim();
+  if (!nom) { afficherMsgMood('Le nom est requis.','err'); return; }
+  var data = {
+    name: nom,
+    slug: document.getElementById('mood-slug').value || slugify(nom),
+    description: document.getElementById('mood-desc').value.trim()||null,
+    cover_image_url: document.getElementById('mood-img').value.trim()||null,
+    is_visible: document.getElementById('mood-visible').checked,
+  };
+  try {
+    var r;
+    if (S_MOOD.editing) {
+      r = await NAHIRA.sb.from('moods').update(data).eq('id',S_MOOD.editing).select();
+    } else {
+      r = await NAHIRA.sb.from('moods').insert(data).select();
+    }
+    if (r.error) throw r.error;
+    fermerFormulaireMood();
+    await chargerMoods();
+    toast(S_MOOD.editing?'Mood modifié.':'Mood créé.');
+  } catch(e) { afficherMsgMood('Erreur : '+(e.message||e),'err'); }
+}
+
+function afficherMsgMood(msg, type) {
+  var el = document.getElementById('mood-form-msg');
+  el.textContent = msg;
+  el.style.color = type==='err'?'var(--alerte)':'var(--or)';
+  el.style.display = '';
+}
+
+async function supprimerMood(id, nom) {
+  if (!confirm('Supprimer le mood « '+nom+' » ?')) return;
+  try {
+    var r = await NAHIRA.sb.from('moods').delete().eq('id',id);
+    if (r.error) throw r.error;
+    S_MOOD.data = S_MOOD.data.filter(function(m){ return m.id!==id; });
+    renderMoods();
+    toast('Mood supprimé.');
+  } catch(e) { alert('Erreur : '+(e.message||e)); }
+}
+
+/* ====== SITE CMS ====== */
+var CMS_KEYS = ['announcement','announcement_active','hero_title','hero_sub','concept','avantages','livraison'];
+
+async function chargerCMS() {
+  document.getElementById('cms-loading').style.display = '';
+  document.getElementById('cms-corps').style.display = 'none';
+  document.getElementById('cms-save-msg').style.display = 'none';
+  try {
+    var r = await NAHIRA.sb.from('site_settings').select('key,value').in('key',CMS_KEYS);
+    if (r.error) throw r.error;
+    var map = {};
+    (r.data||[]).forEach(function(row){ map[row.key] = row.value; });
+    document.getElementById('cms-announcement').value = map['announcement']||'';
+    document.getElementById('cms-announcement-active').checked = map['announcement_active']==='true';
+    document.getElementById('cms-hero-title').value = map['hero_title']||'';
+    document.getElementById('cms-hero-sub').value = map['hero_sub']||'';
+    document.getElementById('cms-concept').value = map['concept']||'';
+    document.getElementById('cms-avantages').value = map['avantages']||'';
+    document.getElementById('cms-livraison').value = map['livraison']||'';
+  } catch(e) {
+    document.getElementById('cms-loading').textContent = 'Erreur : '+(e.message||e);
+    return;
+  }
+  document.getElementById('cms-loading').style.display = 'none';
+  document.getElementById('cms-corps').style.display = '';
+}
+
+async function sauvegarderCMS() {
+  var msg = document.getElementById('cms-save-msg');
+  msg.style.display = 'none';
+  var rows = [
+    {key:'announcement', value:document.getElementById('cms-announcement').value},
+    {key:'announcement_active', value:String(document.getElementById('cms-announcement-active').checked)},
+    {key:'hero_title', value:document.getElementById('cms-hero-title').value},
+    {key:'hero_sub', value:document.getElementById('cms-hero-sub').value},
+    {key:'concept', value:document.getElementById('cms-concept').value},
+    {key:'avantages', value:document.getElementById('cms-avantages').value},
+    {key:'livraison', value:document.getElementById('cms-livraison').value},
+  ];
+  try {
+    var r = await NAHIRA.sb.from('site_settings').upsert(rows, {onConflict:'key'});
+    if (r.error) throw r.error;
+    msg.textContent = '✓ Paramètres CMS enregistrés.';
+    msg.style.color = 'var(--or)';
+    msg.style.display = '';
+    toast('CMS enregistré.');
+  } catch(e) {
+    msg.textContent = 'Erreur : '+(e.message||e);
+    msg.style.color = 'var(--alerte)';
+    msg.style.display = '';
+  }
+}
+
+/* ====== PROMOTIONS ====== */
+var S_PROMO = { data: [] };
+
+async function chargerPromotions() {
+  document.getElementById('promo-loading').style.display = '';
+  document.getElementById('promo-liste').style.display = 'none';
+  document.getElementById('promo-vide').style.display = 'none';
+  fermerFormulairePromo();
+  try {
+    var r = await NAHIRA.sb.from('discount_codes')
+      .select('id,code,type,value,min_order_cents,usage_limit,used_count,ends_at,is_active,created_at')
+      .order('created_at',{ascending:false});
+    if (r.error) throw r.error;
+    S_PROMO.data = r.data || [];
+  } catch(e) {
+    document.getElementById('promo-loading').textContent = 'Erreur : '+(e.message||e);
+    return;
+  }
+  document.getElementById('promo-loading').style.display = 'none';
+  renderPromotions();
+}
+
+function renderPromotions() {
+  var el = document.getElementById('promo-liste');
+  var vide = document.getElementById('promo-vide');
+  if (!S_PROMO.data.length) { vide.style.display = ''; el.style.display = 'none'; return; }
+  vide.style.display = 'none';
+  el.innerHTML = S_PROMO.data.map(function(p) {
+    var valAff = p.type==='percent' ? p.value+'%' : NAHIRA.eur ? NAHIRA.eur(p.value*100) : p.value+'€';
+    var usageAff = (p.usage_limit>0) ? (p.used_count||0)+'/'+p.usage_limit : (p.used_count||0)+' utilisations';
+    var expiry = p.ends_at ? 'Expire le '+fmtD(p.ends_at) : 'Sans expiration';
+    var min = p.min_order_cents ? 'Min '+NAHIRA.eur(p.min_order_cents) : 'Sans minimum';
+    return '<div class="promo-card">' +
+      '<div>' +
+        '<div class="promo-code">'+esc(p.code)+'</div>' +
+        '<div>'+(p.is_active?'<span class="badge badge-dispo">Actif</span>':'<span class="badge badge-epuise">Inactif</span>')+'</div>' +
+      '</div>' +
+      '<div class="promo-info">' +
+        '<div class="promo-val">-'+valAff+'</div>' +
+        '<div class="promo-meta">'+esc(min)+' · '+esc(expiry)+'</div>' +
+        '<div class="promo-usage">'+esc(usageAff)+'</div>' +
+      '</div>' +
+      '<div class="promo-actions">' +
+        '<button class="btn btn-sm '+(p.is_active?'btn-sec':'btn-rose')+'" onclick="togglePromo(\''+esc(p.id)+'\','+(p.is_active?'false':'true')+')">'+(p.is_active?'Désactiver':'Activer')+'</button>' +
+        '<button class="btn btn-sm btn-danger" onclick="supprimerPromo(\''+esc(p.id)+'\',\''+esc(p.code)+'\')">✕</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  el.style.display = '';
+}
+
+function ouvrirFormulairePromo() {
+  document.getElementById('promo-form-wrap').style.display = '';
+  document.getElementById('promo-form-msg').style.display = 'none';
+  document.getElementById('promo-code').value = '';
+  document.getElementById('promo-type').value = 'percent';
+  document.getElementById('promo-valeur').value = '';
+  document.getElementById('promo-min').value = '';
+  document.getElementById('promo-limit').value = '';
+  document.getElementById('promo-end').value = '';
+  document.getElementById('promo-actif').checked = true;
+  document.getElementById('promo-form-wrap').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function fermerFormulairePromo() {
+  document.getElementById('promo-form-wrap').style.display = 'none';
+}
+
+async function sauvegarderPromo() {
+  var code = (document.getElementById('promo-code').value||'').trim().toUpperCase();
+  var valeur = parseFloat(document.getElementById('promo-valeur').value)||0;
+  if (!code) { afficherMsgPromo('Le code est requis.','err'); return; }
+  if (!valeur) { afficherMsgPromo('La valeur est requise.','err'); return; }
+  var minCents = Math.round((parseFloat(document.getElementById('promo-min').value)||0)*100);
+  var limit = parseInt(document.getElementById('promo-limit').value)||0;
+  var end = document.getElementById('promo-end').value || null;
+  var data = {
+    code: code,
+    type: document.getElementById('promo-type').value,
+    value: valeur,
+    min_order_cents: minCents||null,
+    usage_limit: limit||null,
+    ends_at: end,
+    is_active: document.getElementById('promo-actif').checked,
+    used_count: 0,
+  };
+  try {
+    var r = await NAHIRA.sb.from('discount_codes').insert(data).select();
+    if (r.error) throw r.error;
+    fermerFormulairePromo();
+    await chargerPromotions();
+    toast('Code promo créé.');
+  } catch(e) { afficherMsgPromo('Erreur : '+(e.message||e),'err'); }
+}
+
+function afficherMsgPromo(msg, type) {
+  var el = document.getElementById('promo-form-msg');
+  el.textContent = msg;
+  el.style.color = type==='err'?'var(--alerte)':'var(--or)';
+  el.style.display = '';
+}
+
+async function togglePromo(id, actif) {
+  try {
+    var r = await NAHIRA.sb.from('discount_codes').update({is_active:actif}).eq('id',id);
+    if (r.error) throw r.error;
+    var p = S_PROMO.data.find(function(x){ return x.id===id; });
+    if (p) p.is_active = actif;
+    renderPromotions();
+    toast(actif?'Code activé.':'Code désactivé.');
+  } catch(e) { alert('Erreur : '+(e.message||e)); }
+}
+
+async function supprimerPromo(id, code) {
+  if (!confirm('Supprimer le code « '+code+' » ?')) return;
+  try {
+    var r = await NAHIRA.sb.from('discount_codes').delete().eq('id',id);
+    if (r.error) throw r.error;
+    S_PROMO.data = S_PROMO.data.filter(function(p){ return p.id!==id; });
+    renderPromotions();
+    toast('Code supprimé.');
+  } catch(e) { alert('Erreur : '+(e.message||e)); }
+}
+
+/* ====== AVIS ====== */
+var S_AVIS = { data: [] };
+
+async function chargerAvis() {
+  document.getElementById('avis-loading').style.display = '';
+  document.getElementById('avis-liste').style.display = 'none';
+  document.getElementById('avis-vide').style.display = 'none';
+  try {
+    var r = await NAHIRA.sb.from('reviews')
+      .select('id,author_name,email,rating,content,is_approved,reply,created_at,product_id,products(name)')
+      .order('created_at',{ascending:false})
+      .limit(100);
+    if (r.error) throw r.error;
+    S_AVIS.data = r.data || [];
+  } catch(e) {
+    document.getElementById('avis-loading').textContent = 'Erreur : '+(e.message||e);
+    return;
+  }
+  document.getElementById('avis-loading').style.display = 'none';
+  renderAvis();
+}
+
+function renderAvis() {
+  var filtre = document.getElementById('avis-filtre').value;
+  var liste = S_AVIS.data.filter(function(a) {
+    if (filtre==='pending') return !a.is_approved;
+    if (filtre==='approved') return a.is_approved;
+    return true;
+  });
+  var el = document.getElementById('avis-liste');
+  var vide = document.getElementById('avis-vide');
+  if (!liste.length) { vide.style.display = ''; el.style.display = 'none'; return; }
+  vide.style.display = 'none';
+  el.innerHTML = liste.map(function(a) {
+    var etoiles = '★'.repeat(Math.max(0,Math.min(5,a.rating||0)))+'☆'.repeat(5-Math.max(0,Math.min(5,a.rating||0)));
+    var prodNom = (a.products&&a.products.name) || '—';
+    return '<div class="avis-card" id="avis-'+esc(a.id)+'">' +
+      '<div class="avis-haut">' +
+        '<div>' +
+          '<div class="avis-auteur">'+esc(a.author_name||'Anonyme')+'</div>' +
+          '<div class="avis-etoiles">'+etoiles+'</div>' +
+        '</div>' +
+        '<div style="text-align:right;font-size:12px;color:var(--texte-faible)">'+fmtD(a.created_at)+'<br>'+(a.is_approved?'<span style="color:var(--ok)">Approuvé</span>':'<span style="color:var(--attente)">En attente</span>')+'</div>' +
+      '</div>' +
+      '<div class="avis-produit">'+esc(prodNom)+'</div>' +
+      '<div class="avis-contenu">'+esc(a.content||'—')+'</div>' +
+      (a.reply?'<div class="avis-reponse"><strong style="color:var(--or)">Réponse Nahira :</strong> '+esc(a.reply)+'</div>':'') +
+      '<div class="avis-actions">' +
+        (!a.is_approved?'<button class="btn btn-sm btn-rose" onclick="approuverAvis(\''+esc(a.id)+'\')">✓ Approuver</button>':'') +
+        (a.is_approved?'<button class="btn btn-sm btn-sec" onclick="masquerAvis(\''+esc(a.id)+'\')">Masquer</button>':'') +
+        '<button class="btn btn-sm btn-sec" onclick="ouvrirReponseAvis(\''+esc(a.id)+'\')">Répondre</button>' +
+        '<button class="btn btn-sm btn-danger" onclick="supprimerAvis(\''+esc(a.id)+'\')">Supprimer</button>' +
+      '</div>' +
+      '<div id="rep-form-'+esc(a.id)+'" style="display:none;margin-top:10px">' +
+        '<textarea class="prod-input" id="rep-txt-'+esc(a.id)+'" rows="2" placeholder="Votre réponse publique…" style="margin-bottom:6px;width:100%"></textarea>' +
+        '<div style="display:flex;gap:8px">' +
+          '<button class="btn btn-sm btn-rose" onclick="envoyerReponseAvis(\''+esc(a.id)+'\')">Publier</button>' +
+          '<button class="btn btn-sm btn-sec" onclick="document.getElementById(\'rep-form-'+esc(a.id)+'\').style.display=\'none\'">Annuler</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+  el.style.display = '';
+}
+
+async function approuverAvis(id) {
+  try {
+    var r = await NAHIRA.sb.from('reviews').update({is_approved:true}).eq('id',id);
+    if (r.error) throw r.error;
+    var a = S_AVIS.data.find(function(x){ return x.id===id; });
+    if (a) a.is_approved = true;
+    renderAvis(); toast('Avis approuvé.');
+  } catch(e) { alert('Erreur : '+(e.message||e)); }
+}
+
+async function masquerAvis(id) {
+  try {
+    var r = await NAHIRA.sb.from('reviews').update({is_approved:false}).eq('id',id);
+    if (r.error) throw r.error;
+    var a = S_AVIS.data.find(function(x){ return x.id===id; });
+    if (a) a.is_approved = false;
+    renderAvis(); toast('Avis masqué.');
+  } catch(e) { alert('Erreur : '+(e.message||e)); }
+}
+
+async function supprimerAvis(id) {
+  if (!confirm('Supprimer cet avis ?')) return;
+  try {
+    var r = await NAHIRA.sb.from('reviews').delete().eq('id',id);
+    if (r.error) throw r.error;
+    S_AVIS.data = S_AVIS.data.filter(function(a){ return a.id!==id; });
+    renderAvis(); toast('Avis supprimé.');
+  } catch(e) { alert('Erreur : '+(e.message||e)); }
+}
+
+function ouvrirReponseAvis(id) {
+  var form = document.getElementById('rep-form-'+id);
+  if (form) form.style.display = form.style.display==='none'?'':'none';
+}
+
+async function envoyerReponseAvis(id) {
+  var txt = (document.getElementById('rep-txt-'+id).value||'').trim();
+  if (!txt) return;
+  try {
+    var r = await NAHIRA.sb.from('reviews').update({reply:txt}).eq('id',id);
+    if (r.error) throw r.error;
+    var a = S_AVIS.data.find(function(x){ return x.id===id; });
+    if (a) a.reply = txt;
+    renderAvis(); toast('Réponse publiée.');
+  } catch(e) { alert('Erreur : '+(e.message||e)); }
+}
+
+/* ====== IMPORT CSV ====== */
+var S_IMPORT = { rows: [], headers: [], mapping: {} };
+var IMPORT_CHAMPS = ['name','slug','sku','price','stock','description_short','shape','finish','is_visible'];
+
+function chargerImport() {
+  document.getElementById('import-apercu').style.display = 'none';
+  S_IMPORT = { rows: [], headers: [], mapping: {} };
+}
+
+function lireCSV(input) {
+  var file = input.files && input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var text = e.target.result;
+    var lines = text.split(/\r?\n/).filter(function(l){ return l.trim(); });
+    if (lines.length < 2) { alert('CSV vide ou invalide.'); return; }
+    var sep = lines[0].includes(';') ? ';' : ',';
+    var headers = lines[0].split(sep).map(function(h){ return h.trim().replace(/^"|"$/g,''); });
+    var rows = lines.slice(1,6).map(function(l) {
+      return l.split(sep).map(function(v){ return v.trim().replace(/^"|"$/g,''); });
+    });
+    S_IMPORT.headers = headers;
+    S_IMPORT.rows = lines.slice(1).map(function(l){
+      return l.split(sep).map(function(v){ return v.trim().replace(/^"|"$/g,''); });
+    });
+    var autoMap = {};
+    IMPORT_CHAMPS.forEach(function(c) {
+      var idx = headers.findIndex(function(h){ return h.toLowerCase().replace(/[ _-]/g,'')===c.toLowerCase().replace(/[ _-]/g,''); });
+      autoMap[c] = idx >= 0 ? idx : -1;
+    });
+    S_IMPORT.mapping = autoMap;
+    document.getElementById('import-titre').textContent = 'Aperçu ('+S_IMPORT.rows.length+' lignes)';
+    renderImportMapping();
+    renderImportTable(headers, rows);
+    document.getElementById('import-msg').style.display = 'none';
+    document.getElementById('import-apercu').style.display = '';
+    input.value = '';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function renderImportMapping() {
+  var headers = S_IMPORT.headers;
+  var opts = '<option value="-1">— ignorer —</option>' +
+    headers.map(function(h,i){ return '<option value="'+i+'">'+esc(h)+'</option>'; }).join('');
+  document.getElementById('import-mapping').innerHTML = '<div style="margin-bottom:8px;font-family:\'Montserrat\',sans-serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--texte-faible)">Correspondance des colonnes</div>' +
+    IMPORT_CHAMPS.map(function(c) {
+      var val = S_IMPORT.mapping[c];
+      return '<div class="import-map-row"><label>'+esc(c)+'</label>' +
+        '<select class="filtre-input" onchange="S_IMPORT.mapping[\''+c+'\'] = parseInt(this.value)" style="flex:1;max-width:200px">' +
+        opts.replace('value="'+val+'"','value="'+val+'" selected') +
+        '</select></div>';
+    }).join('');
+}
+
+function renderImportTable(headers, rows) {
+  var table = document.getElementById('import-table');
+  table.innerHTML = '<thead><tr>'+headers.map(function(h){ return '<th>'+esc(h)+'</th>'; }).join('')+'</tr></thead>' +
+    '<tbody>'+rows.map(function(row){
+      return '<tr>'+row.map(function(v){ return '<td>'+esc(v||'')+'</td>'; }).join('')+'</tr>';
+    }).join('')+'</tbody>';
+}
+
+async function lancerImport() {
+  var btn = document.getElementById('import-btn');
+  var msg = document.getElementById('import-msg');
+  btn.disabled = true; btn.textContent = 'Import en cours…';
+  msg.style.display = 'none';
+  var m = S_IMPORT.mapping;
+  var rows = S_IMPORT.rows;
+  var batch = rows.map(function(r) {
+    function v(c){ var i=m[c]; return (i>=0&&r[i]!==undefined)?r[i]:null; }
+    var priceRaw = v('price');
+    var priceCents = priceRaw ? Math.round(parseFloat(priceRaw.replace(',','.'))*100)||0 : 0;
+    var obj = { name:v('name')||'', slug:v('slug')||slugify(v('name')||''), sku:v('sku')||null, price_cents:priceCents, stock:parseInt(v('stock'))||0, description_short:v('description_short')||null, shape:v('shape')||null, finish:v('finish')||null, is_visible:v('is_visible')!=='false'&&v('is_visible')!=='0' };
+    return obj;
+  }).filter(function(o){ return o.name; });
+  if (!batch.length) { msg.textContent = 'Aucune ligne valide (colonne name requise).'; msg.style.color='var(--alerte)'; msg.style.display=''; btn.disabled=false; btn.textContent='Importer'; return; }
+  try {
+    var r = await NAHIRA.sb.from('products').upsert(batch, {onConflict:'slug'});
+    if (r.error) throw r.error;
+    msg.textContent = '✓ '+batch.length+' produits importés / mis à jour.';
+    msg.style.color = 'var(--ok)';
+    msg.style.display = '';
+    toast('Import réussi : '+batch.length+' produits.');
+  } catch(e) {
+    msg.textContent = 'Erreur : '+(e.message||e);
+    msg.style.color = 'var(--alerte)';
+    msg.style.display = '';
+  }
+  btn.disabled = false; btn.textContent = 'Importer';
+}
+
+function annulerImport() {
+  document.getElementById('import-apercu').style.display = 'none';
+  S_IMPORT = { rows: [], headers: [], mapping: {} };
+}
+
+/* ====== PARAMÈTRES ====== */
+var PARAM_KEYS = ['shipping_price_cents','free_shipping_threshold_cents','low_stock_threshold','shop_email','shop_open'];
+
+async function chargerParametres() {
+  document.getElementById('param-loading').style.display = '';
+  document.getElementById('param-corps').style.display = 'none';
+  document.getElementById('param-save-msg').style.display = 'none';
+  try {
+    var r = await NAHIRA.sb.from('site_settings').select('key,value').in('key',PARAM_KEYS);
+    if (r.error) throw r.error;
+    var map = {};
+    (r.data||[]).forEach(function(row){ map[row.key]=row.value; });
+    document.getElementById('param-shipping-price').value = map['shipping_price_cents'] ? (parseInt(map['shipping_price_cents'])/100).toFixed(2) : '';
+    document.getElementById('param-shipping-threshold').value = map['free_shipping_threshold_cents'] ? (parseInt(map['free_shipping_threshold_cents'])/100).toFixed(2) : '';
+    document.getElementById('param-low-stock').value = map['low_stock_threshold']||'';
+    document.getElementById('param-email').value = map['shop_email']||'';
+    var tog = document.getElementById('param-shop-open');
+    if (map['shop_open']==='false') tog.classList.remove('on'); else tog.classList.add('on');
+  } catch(e) {
+    document.getElementById('param-loading').textContent = 'Erreur : '+(e.message||e);
+    return;
+  }
+  document.getElementById('param-loading').style.display = 'none';
+  document.getElementById('param-corps').style.display = '';
+}
+
+async function sauvegarderParametres() {
+  var msg = document.getElementById('param-save-msg');
+  msg.style.display = 'none';
+  var shippingPrice = Math.round((parseFloat(document.getElementById('param-shipping-price').value)||0)*100);
+  var threshold = Math.round((parseFloat(document.getElementById('param-shipping-threshold').value)||0)*100);
+  var lowStock = parseInt(document.getElementById('param-low-stock').value)||3;
+  var email = document.getElementById('param-email').value.trim();
+  var shopOpen = document.getElementById('param-shop-open').classList.contains('on');
+  var rows = [
+    {key:'shipping_price_cents', value:String(shippingPrice)},
+    {key:'free_shipping_threshold_cents', value:String(threshold)},
+    {key:'low_stock_threshold', value:String(lowStock)},
+    {key:'shop_email', value:email},
+    {key:'shop_open', value:String(shopOpen)},
+  ];
+  try {
+    var r = await NAHIRA.sb.from('site_settings').upsert(rows,{onConflict:'key'});
+    if (r.error) throw r.error;
+    msg.textContent = '✓ Paramètres enregistrés.';
+    msg.style.color = 'var(--or)';
+    msg.style.display = '';
+    toast('Paramètres enregistrés.');
+  } catch(e) {
+    msg.textContent = 'Erreur : '+(e.message||e);
+    msg.style.color = 'var(--alerte)';
+    msg.style.display = '';
   }
 }
 
