@@ -216,6 +216,30 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
 .bientot h3{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--blanc);margin-bottom:8px}
 .bientot p{font-family:'Montserrat',sans-serif;font-size:11px;color:var(--texte-faible);max-width:280px;margin:0 auto;line-height:1.6}
 
+/* COMMANDES */
+.cmd-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin:10px 0}
+.cmd-info-item{display:flex;flex-direction:column;gap:2px}
+.cmd-info-item .lbl{font-family:'Montserrat',sans-serif;font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:var(--texte-faible)}
+.cmd-info-item .val{font-size:15px;color:var(--texte);word-break:break-all}
+.cmd-detail-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(240,111,167,.06)}
+.cmd-detail-item:last-child{border-bottom:none}
+.cmd-item-img{width:38px;height:38px;border-radius:8px;background:var(--carte-2);object-fit:cover;flex:none;display:flex;align-items:center;justify-content:center;font-size:14px;overflow:hidden}
+.cmd-item-img img{width:38px;height:38px;object-fit:cover;border-radius:8px}
+
+/* RÉASSORT */
+.reassort-card{background:var(--carte);border:1px solid var(--bordure);border-radius:16px;margin-bottom:10px;overflow:hidden}
+.reassort-haut{display:flex;align-items:center;gap:12px;padding:12px 14px;cursor:pointer;flex-wrap:wrap}
+.reassort-rang{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:var(--texte-faible);min-width:26px;flex:none}
+.reassort-rang.top{color:var(--or)}
+.reassort-count{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:var(--blanc);text-align:right;white-space:nowrap}
+.reassort-count small{font-size:11px;color:var(--texte-faible);font-family:'Montserrat',sans-serif}
+.reassort-barre{height:3px;background:rgba(255,247,250,.06);margin:0 14px 0}
+.reassort-fill{height:100%;background:linear-gradient(90deg,var(--or),var(--rose))}
+.reassort-emails{border-top:1px solid var(--bordure);padding:12px 14px;display:none}
+.reassort-emails.ouvert{display:block}
+.email-chip{font-family:'Montserrat',sans-serif;font-size:10px;color:var(--texte-doux);background:var(--carte-2);border:1px solid var(--bordure);border-radius:8px;padding:4px 10px;margin:3px 4px 3px 0;display:inline-block}
+.email-notifie{color:var(--texte-faible);text-decoration:line-through}
+
 /* TOAST */
 .toast{position:fixed;bottom:calc(94px + var(--sb));left:50%;transform:translateX(-50%) translateY(16px);z-index:300;pointer-events:none;background:var(--carte-2);border:1px solid var(--bordure);border-radius:14px;padding:11px 22px;font-family:'Montserrat',sans-serif;font-size:12px;white-space:nowrap;opacity:0;transition:opacity .3s,transform .3s;max-width:calc(100vw - 40px);text-align:center}
 .toast.visible{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -283,8 +307,8 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
       <button class="nav-item" data-nav="stock" onclick="goTo('stock')"><span class="nav-ico">▤</span>Stock</button>
       <div class="cote-sep"></div>
       <li class="cote-label">Phase 2</li>
-      <button class="nav-item" data-nav="commandes" onclick="goTo('commandes')"><span class="nav-ico">◻</span>Commandes<span class="nav-bientot">bientôt</span></button>
-      <button class="nav-item" data-nav="reassort" onclick="goTo('reassort')"><span class="nav-ico">🔔</span>Réassort<span class="nav-bientot">bientôt</span></button>
+      <button class="nav-item" data-nav="commandes" onclick="goTo('commandes')"><span class="nav-ico">◻</span>Commandes</button>
+      <button class="nav-item" data-nav="reassort" onclick="goTo('reassort')"><span class="nav-ico">🔔</span>Réassort</button>
       <button class="nav-item" data-nav="collections" onclick="goTo('collections')"><span class="nav-ico">▦</span>Collections<span class="nav-bientot">bientôt</span></button>
       <button class="nav-item" data-nav="moods" onclick="goTo('moods')"><span class="nav-ico">✦</span>Moods<span class="nav-bientot">bientôt</span></button>
       <button class="nav-item" data-nav="cms" onclick="goTo('cms')"><span class="nav-ico">▩</span>Site CMS<span class="nav-bientot">bientôt</span></button>
@@ -428,16 +452,105 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
         </div>
       </section>
 
-      <!-- STUBS PHASE 2 -->
+      <!-- COMMANDES -->
       <section class="section" id="s-commandes" style="display:none">
-        <div class="eyebrow">Phase 2</div>
-        <h2 class="section-titre"><em>Commandes</em></h2>
-        <div class="bientot"><div class="ico">📦</div><h3>Module Commandes</h3><p>Gestion des commandes NBN-XXXXXX, statuts, notes, suivi, export CSV — Phase 2.</p></div>
+        <div class="eyebrow">Administration</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap">
+          <h2 class="section-titre" style="margin-bottom:0"><em>Commandes</em></h2>
+          <button class="btn btn-sm btn-sec" onclick="exportCmdCSV()">↓ Export CSV</button>
+        </div>
+        <!-- Barre filtres -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center">
+          <input class="filtre-input" id="cmd-search" type="search" placeholder="Ref. NBN, email…" oninput="renderCommandes()" style="flex:1;min-width:160px;max-width:280px">
+          <select class="filtre-input" id="cmd-statut" onchange="renderCommandes()" style="min-width:130px">
+            <option value="">Tous statuts</option>
+            <option value="pending">En attente</option>
+            <option value="confirmed">Confirmée</option>
+            <option value="shipped">Expédiée</option>
+            <option value="delivered">Livrée</option>
+            <option value="cancelled">Annulée</option>
+          </select>
+          <select class="filtre-input" id="cmd-paiement" onchange="renderCommandes()" style="min-width:130px">
+            <option value="">Tout paiement</option>
+            <option value="paid">Payée</option>
+            <option value="pending">En attente</option>
+            <option value="failed">Échouée</option>
+          </select>
+        </div>
+        <div class="chargement" id="cmd-loading">Chargement…</div>
+        <div id="cmd-liste" class="cmd-liste" style="display:none"></div>
+        <div id="cmd-vide" class="etat-vide" style="display:none"><div class="ico">📦</div><p>Aucune commande trouvée.</p></div>
+        <!-- Détail commande -->
+        <div id="cmd-detail" style="display:none;margin-top:16px">
+          <div class="carte">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+              <h3 id="cmd-detail-ref" style="margin:0;font-family:'Cormorant Garamond',serif;font-size:22px"></h3>
+              <button class="btn btn-sm btn-sec" onclick="fermerDetail()">✕ Fermer</button>
+            </div>
+            <div class="cmd-info-grid" id="cmd-detail-info"></div>
+            <div style="margin:14px 0 8px"><strong style="font-family:'Montserrat',sans-serif;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--texte-faible)">Articles</strong></div>
+            <div id="cmd-detail-items"></div>
+            <div style="margin-top:12px;display:flex;justify-content:flex-end">
+              <div style="text-align:right">
+                <div style="font-size:13px;color:var(--texte-faible)">Livraison : <span id="cmd-total-shipping">—</span></div>
+                <div style="font-size:18px;font-weight:700;color:var(--blanc)">Total : <span id="cmd-total-ttc">—</span></div>
+              </div>
+            </div>
+            <!-- Édition statut + suivi + notes -->
+            <div style="margin-top:16px;border-top:1px solid var(--bordure);padding-top:14px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-bottom:10px">
+                <div>
+                  <label class="prod-label">Statut préparation</label>
+                  <select class="prod-input" id="edit-statut">
+                    <option value="pending">En attente</option>
+                    <option value="confirmed">Confirmée</option>
+                    <option value="shipped">Expédiée</option>
+                    <option value="delivered">Livrée</option>
+                    <option value="cancelled">Annulée</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="prod-label">Statut paiement</label>
+                  <select class="prod-input" id="edit-paiement">
+                    <option value="pending">En attente</option>
+                    <option value="paid">Payée</option>
+                    <option value="failed">Échouée</option>
+                  </select>
+                </div>
+              </div>
+              <div style="margin-bottom:10px">
+                <label class="prod-label">Numéro de suivi</label>
+                <input class="prod-input" id="edit-tracking" type="text" placeholder="Ex: 1Z999AA10123456784">
+              </div>
+              <div style="margin-bottom:12px">
+                <label class="prod-label">Notes internes</label>
+                <textarea class="prod-input" id="edit-notes" rows="3" placeholder="Notes visibles uniquement en admin…" style="resize:vertical"></textarea>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-rose" id="cmd-save-btn" onclick="enregistrerCommande()">Enregistrer</button>
+              </div>
+              <div id="cmd-save-msg" style="margin-top:8px;font-size:13px;display:none"></div>
+            </div>
+          </div>
+        </div>
       </section>
+
+      <!-- RÉASSORT -->
       <section class="section" id="s-reassort" style="display:none">
-        <div class="eyebrow">Phase 2</div>
-        <h2 class="section-titre"><em>Réassort</em></h2>
-        <div class="bientot"><div class="ico">🔔</div><h3>Module Réassort</h3><p>Demandes de réassort par produit, classement, emails, statuts — Phase 2.</p></div>
+        <div class="eyebrow">Administration</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap">
+          <h2 class="section-titre" style="margin-bottom:0"><em>Réassort</em></h2>
+          <button class="btn btn-sm btn-sec" onclick="chargerReassort()">↻ Actualiser</button>
+        </div>
+        <div class="grille-kpi" id="rs-kpi" style="display:none">
+          <div class="kpi"><div class="v" id="rs-kpi-total">—</div><div class="l">Demandes total</div></div>
+          <div class="kpi alerte"><div class="v" id="rs-kpi-attente">—</div><div class="l">En attente</div></div>
+          <div class="kpi"><div class="v" id="rs-kpi-notifie">—</div><div class="l">Notifiées</div></div>
+          <div class="kpi"><div class="v" id="rs-kpi-produits">—</div><div class="l">Produits concernés</div></div>
+        </div>
+        <div class="chargement" id="rs-loading">Chargement…</div>
+        <div id="rs-liste" style="display:none"></div>
+        <div id="rs-vide" class="etat-vide" style="display:none"><div class="ico">🔔</div><p>Aucune demande de réassort en attente.</p></div>
       </section>
       <section class="section" id="s-collections" style="display:none">
         <div class="eyebrow">Phase 2</div>
@@ -605,6 +718,8 @@ function goTo(id) {
   else if (id === 'produits') chargerProduits();
   else if (id === 'images') chargerImages();
   else if (id === 'stock') chargerStock();
+  else if (id === 'commandes') chargerCommandes();
+  else if (id === 'reassort') chargerReassort();
 }
 
 function togglePlus() {
@@ -1272,6 +1387,308 @@ async function voirHisto(productId, nom) {
 
 function fermerHistorique() {
   document.getElementById('histo-wrap').style.display = 'none';
+}
+
+/* ====== COMMANDES ====== */
+var S_CMDS = { data: [], selected: null };
+
+async function chargerCommandes() {
+  document.getElementById('cmd-loading').style.display = '';
+  document.getElementById('cmd-liste').style.display = 'none';
+  document.getElementById('cmd-vide').style.display = 'none';
+  document.getElementById('cmd-detail').style.display = 'none';
+  try {
+    var r = await NAHIRA.sb.from('orders')
+      .select('id,status,payment_status,total_cents,shipping_cents,customer_email,shipping_name,shipping_address,shipping_city,shipping_zip,shipping_country,tracking_number,admin_notes,created_at')
+      .order('created_at', {ascending: false})
+      .limit(200);
+    if (r.error) throw r.error;
+    S_CMDS.data = r.data || [];
+  } catch(e) {
+    document.getElementById('cmd-loading').textContent = 'Erreur de chargement : ' + (e.message||e);
+    return;
+  }
+  document.getElementById('cmd-loading').style.display = 'none';
+  renderCommandes();
+}
+
+function cmdRef(id) {
+  return 'NBN-' + (id||'').replace(/-/g,'').slice(0,6).toUpperCase();
+}
+
+function renderCommandes() {
+  var q = (document.getElementById('cmd-search').value||'').toLowerCase().trim();
+  var fs = document.getElementById('cmd-statut').value;
+  var fp = document.getElementById('cmd-paiement').value;
+  var liste = S_CMDS.data.filter(function(c) {
+    if (fs && c.status !== fs) return false;
+    if (fp && c.payment_status !== fp) return false;
+    if (q) {
+      var ref = cmdRef(c.id).toLowerCase();
+      var email = (c.customer_email||'').toLowerCase();
+      var nom = (c.shipping_name||'').toLowerCase();
+      if (!ref.includes(q) && !email.includes(q) && !nom.includes(q)) return false;
+    }
+    return true;
+  });
+  var el = document.getElementById('cmd-liste');
+  var vide = document.getElementById('cmd-vide');
+  if (!liste.length) { el.style.display = 'none'; vide.style.display = ''; return; }
+  vide.style.display = 'none';
+  el.innerHTML = liste.map(function(c) { return cmdLigne(c); }).join('');
+  el.style.display = '';
+}
+
+function cmdLigne(c) {
+  var ref = cmdRef(c.id);
+  var total = NAHIRA.eur ? NAHIRA.eur(c.total_cents) : ((c.total_cents||0)/100).toFixed(2)+'€';
+  return '<div class="cmd-ligne" onclick="voirCommande(\'' + esc(c.id) + '\')" style="cursor:pointer">' +
+    '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
+      '<span style="font-family:\'Cormorant Garamond\',serif;font-size:16px;font-weight:600;color:var(--blanc)">' + esc(ref) + '</span>' +
+      badgeStatut(c.status) +
+      (c.payment_status === 'paid' ? '<span class="badge badge-dispo">Payée</span>' : c.payment_status === 'failed' ? '<span class="badge badge-epuise">Échouée</span>' : '<span class="badge badge-low">Paiement en attente</span>') +
+    '</div>' +
+    '<div style="display:flex;align-items:center;gap:12px;justify-content:space-between;margin-top:6px;flex-wrap:wrap">' +
+      '<span style="font-size:13px;color:var(--texte-doux)">' + esc(c.customer_email||'—') + '</span>' +
+      '<span style="font-family:\'Cormorant Garamond\',serif;font-size:18px;font-weight:600;color:var(--or)">' + total + '</span>' +
+    '</div>' +
+    '<div style="font-size:11px;color:var(--texte-faible);margin-top:4px">' + fmtDH(c.created_at) + '</div>' +
+  '</div>';
+}
+
+async function voirCommande(id) {
+  S_CMDS.selected = id;
+  var c = S_CMDS.data.find(function(x){ return x.id === id; });
+  if (!c) return;
+  var ref = cmdRef(c.id);
+  var total = NAHIRA.eur ? NAHIRA.eur(c.total_cents) : ((c.total_cents||0)/100).toFixed(2)+'€';
+  var shipping = NAHIRA.eur ? NAHIRA.eur(c.shipping_cents) : ((c.shipping_cents||0)/100).toFixed(2)+'€';
+
+  document.getElementById('cmd-detail-ref').textContent = ref;
+  document.getElementById('cmd-total-ttc').textContent = total;
+  document.getElementById('cmd-total-shipping').textContent = shipping;
+
+  var info = [
+    {l:'Cliente', v: esc(c.customer_email||'—')},
+    {l:'Date', v: fmtDH(c.created_at)},
+    {l:'Destinataire', v: esc(c.shipping_name||'—')},
+    {l:'Adresse', v: esc([c.shipping_address,c.shipping_zip,c.shipping_city,c.shipping_country].filter(Boolean).join(', ')||'—')},
+  ];
+  document.getElementById('cmd-detail-info').innerHTML = info.map(function(x){
+    return '<div class="cmd-info-item"><span class="lbl">'+x.l+'</span><span class="val">'+x.v+'</span></div>';
+  }).join('');
+
+  document.getElementById('edit-statut').value = c.status || 'pending';
+  document.getElementById('edit-paiement').value = c.payment_status || 'pending';
+  document.getElementById('edit-tracking').value = c.tracking_number || '';
+  document.getElementById('edit-notes').value = c.admin_notes || '';
+  document.getElementById('cmd-save-msg').style.display = 'none';
+
+  var itemsEl = document.getElementById('cmd-detail-items');
+  itemsEl.innerHTML = '<div class="chargement">Chargement articles…</div>';
+
+  var detail = document.getElementById('cmd-detail');
+  detail.style.display = '';
+  detail.scrollIntoView({behavior:'smooth', block:'start'});
+
+  try {
+    var r = await NAHIRA.sb.from('order_items')
+      .select('product_name_snapshot,quantity,unit_price_cents,image_url_snapshot')
+      .eq('order_id', id);
+    if (r.error) throw r.error;
+    var items = r.data || [];
+    if (!items.length) { itemsEl.innerHTML = '<div style="color:var(--texte-faible);font-size:13px">Aucun article trouvé.</div>'; return; }
+    itemsEl.innerHTML = items.map(function(item) {
+      var prix = NAHIRA.eur ? NAHIRA.eur(item.unit_price_cents * item.quantity) : ((item.unit_price_cents * item.quantity)/100).toFixed(2)+'€';
+      var imgHtml = item.image_url_snapshot
+        ? '<img src="' + esc(item.image_url_snapshot) + '" alt="">'
+        : '<span style="font-size:18px">🛍️</span>';
+      return '<div class="cmd-detail-item">' +
+        '<div class="cmd-item-img">' + imgHtml + '</div>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:14px;color:var(--blanc)">' + esc(item.product_name_snapshot||'—') + '</div>' +
+          '<div style="font-size:12px;color:var(--texte-faible)">×' + item.quantity + '</div>' +
+        '</div>' +
+        '<div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;font-weight:600;color:var(--or)">' + prix + '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    itemsEl.innerHTML = '<div style="color:var(--texte-faible);font-size:13px">Erreur articles : ' + esc(e.message) + '</div>';
+  }
+}
+
+async function enregistrerCommande() {
+  var id = S_CMDS.selected;
+  if (!id) return;
+  var btn = document.getElementById('cmd-save-btn');
+  var msg = document.getElementById('cmd-save-msg');
+  btn.disabled = true; btn.textContent = 'Enregistrement…';
+  msg.style.display = 'none';
+  var updates = {
+    status: document.getElementById('edit-statut').value,
+    payment_status: document.getElementById('edit-paiement').value,
+    tracking_number: document.getElementById('edit-tracking').value || null,
+    admin_notes: document.getElementById('edit-notes').value || null,
+  };
+  try {
+    var r = await NAHIRA.sb.from('orders').update(updates).eq('id', id);
+    if (r.error) throw r.error;
+    var idx = S_CMDS.data.findIndex(function(x){ return x.id === id; });
+    if (idx !== -1) Object.assign(S_CMDS.data[idx], updates);
+    msg.textContent = '✓ Commande mise à jour.';
+    msg.style.color = 'var(--or)';
+    msg.style.display = '';
+    renderCommandes();
+  } catch(e) {
+    msg.textContent = 'Erreur : ' + (e.message||e);
+    msg.style.color = 'var(--rose)';
+    msg.style.display = '';
+  }
+  btn.disabled = false; btn.textContent = 'Enregistrer';
+}
+
+function fermerDetail() {
+  document.getElementById('cmd-detail').style.display = 'none';
+  S_CMDS.selected = null;
+}
+
+function exportCmdCSV() {
+  var data = S_CMDS.data;
+  if (!data.length) { alert('Aucune commande à exporter.'); return; }
+  var entetes = ['Référence','Date','Email','Nom','Adresse','Ville','CP','Pays','Statut','Paiement','Suivi','Total €','Livraison €','Notes'];
+  var lignes = data.map(function(c) {
+    return [
+      cmdRef(c.id), fmtD(c.created_at),
+      c.customer_email||'', c.shipping_name||'',
+      c.shipping_address||'', c.shipping_city||'', c.shipping_zip||'', c.shipping_country||'',
+      c.status||'', c.payment_status||'', c.tracking_number||'',
+      ((c.total_cents||0)/100).toFixed(2), ((c.shipping_cents||0)/100).toFixed(2),
+      (c.admin_notes||'').replace(/"/g,'""')
+    ].map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join(',');
+  });
+  var csv = '﻿' + [entetes.join(',')].concat(lignes).join('\n');
+  var a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'commandes-nahira-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+/* ====== RÉASSORT ====== */
+var S_RS = { data: [] };
+
+async function chargerReassort() {
+  document.getElementById('rs-loading').style.display = '';
+  document.getElementById('rs-liste').style.display = 'none';
+  document.getElementById('rs-vide').style.display = 'none';
+  document.getElementById('rs-kpi').style.display = 'none';
+  try {
+    var r = await NAHIRA.sb.from('restock_alerts')
+      .select('id,email,created_at,notified_at,product_id,products(id,name,slug,stock,image_url,product_images(url,position))')
+      .order('created_at', {ascending: false});
+    if (r.error) throw r.error;
+    S_RS.data = r.data || [];
+  } catch(e) {
+    document.getElementById('rs-loading').textContent = 'Erreur : ' + (e.message||e);
+    return;
+  }
+  document.getElementById('rs-loading').style.display = 'none';
+  renderReassort();
+}
+
+function renderReassort() {
+  var data = S_RS.data;
+  var vide = document.getElementById('rs-vide');
+  var liste = document.getElementById('rs-liste');
+  var kpi = document.getElementById('rs-kpi');
+
+  if (!data.length) { vide.style.display = ''; liste.style.display = 'none'; kpi.style.display = 'none'; return; }
+
+  var total = data.length;
+  var attente = data.filter(function(x){ return !x.notified_at; }).length;
+  var notifie = data.filter(function(x){ return x.notified_at; }).length;
+
+  var grouped = {};
+  data.forEach(function(a) {
+    var pid = a.product_id;
+    if (!grouped[pid]) grouped[pid] = { prod: a.products, alerts: [] };
+    grouped[pid].alerts.push(a);
+  });
+  var sorted = Object.values(grouped).sort(function(a,b){ return b.alerts.length - a.alerts.length; });
+  var produits = sorted.length;
+
+  document.getElementById('rs-kpi-total').textContent = total;
+  document.getElementById('rs-kpi-attente').textContent = attente;
+  document.getElementById('rs-kpi-notifie').textContent = notifie;
+  document.getElementById('rs-kpi-produits').textContent = produits;
+  kpi.style.display = '';
+
+  var max = sorted[0] ? sorted[0].alerts.length : 1;
+  liste.innerHTML = sorted.map(function(g, idx) {
+    var prod = g.prod || {};
+    var alerts = g.alerts;
+    var pending = alerts.filter(function(a){ return !a.notified_at; });
+    var notified = alerts.filter(function(a){ return a.notified_at; });
+    var count = alerts.length;
+    var rang = idx + 1;
+    var pct = Math.round((count / max) * 100);
+    var isTop = rang <= 3;
+    var imgUrl = (prod.product_images && prod.product_images.length)
+      ? prod.product_images.sort(function(a,b){ return a.position-b.position; })[0].url
+      : (prod.image_url||null);
+    var imgHtml = imgUrl
+      ? '<img src="' + esc(imgUrl) + '" alt="" style="width:36px;height:36px;border-radius:8px;object-fit:cover">'
+      : '<span style="font-size:20px">💅</span>';
+    var emailHtml = alerts.map(function(a) {
+      var nc = a.notified_at ? ' email-notifie' : '';
+      return '<span class="email-chip' + nc + '">' + esc(a.email) + (a.notified_at ? ' ✓' : '') + '</span>';
+    }).join('');
+    var prodId = prod.id || (alerts[0]&&alerts[0].product_id);
+    return '<div class="reassort-card">' +
+      '<div class="reassort-haut" onclick="toggleEmails(\'rs-emails-'+idx+'\')">' +
+        '<span class="reassort-rang' + (isTop?' top':'') + '">' + rang + '</span>' +
+        '<div style="width:36px;height:36px;border-radius:8px;background:var(--carte-2);flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden">' + imgHtml + '</div>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:15px;color:var(--blanc);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(prod.name||'Produit supprimé') + '</div>' +
+          '<div style="font-size:11px;color:var(--texte-faible);margin-top:2px">' +
+            '<span style="color:var(--attente)">' + pending.length + ' en attente</span>' +
+            (notified.length ? ' · ' + notified.length + ' notifiée(s)' : '') +
+          '</div>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">' +
+          '<span class="reassort-count">' + count + '<small> dem.</small></span>' +
+          (pending.length && prodId
+            ? '<button class="btn btn-sm btn-rose" onclick="event.stopPropagation();notifierReassort(\'' + esc(prodId) + '\',' + idx + ')" style="font-size:10px;padding:4px 10px">Notifier ' + pending.length + '</button>'
+            : '') +
+        '</div>' +
+      '</div>' +
+      '<div class="reassort-barre"><div class="reassort-fill" style="width:' + pct + '%"></div></div>' +
+      '<div class="reassort-emails" id="rs-emails-' + idx + '">' + emailHtml + '</div>' +
+    '</div>';
+  }).join('');
+  liste.style.display = '';
+}
+
+function toggleEmails(id) {
+  var el = document.getElementById(id);
+  if (el) el.classList.toggle('ouvert');
+}
+
+async function notifierReassort(productId, idx) {
+  if (!confirm('Marquer les demandes en attente pour ce produit comme notifiées ?')) return;
+  var now = new Date().toISOString();
+  try {
+    var r = await NAHIRA.sb.from('restock_alerts')
+      .update({notified_at: now})
+      .eq('product_id', productId)
+      .is('notified_at', null);
+    if (r.error) throw r.error;
+    S_RS.data.forEach(function(a) {
+      if (a.product_id === productId && !a.notified_at) a.notified_at = now;
+    });
+    renderReassort();
+  } catch(e) {
+    alert('Erreur : ' + (e.message||e));
+  }
 }
 
 /* ====== DÉMARRAGE ====== */
