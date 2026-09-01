@@ -379,6 +379,14 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
       <button class="nav-item" data-nav="avis" onclick="goTo('avis')"><span class="nav-ico">★</span>Avis</button>
       <button class="nav-item" data-nav="import" onclick="goTo('import')"><span class="nav-ico">↑</span>Import CSV</button>
       <button class="nav-item" data-nav="parametres" onclick="goTo('parametres')"><span class="nav-ico">⚙</span>Paramètres</button>
+      <div class="cote-sep"></div>
+      <li class="cote-label">Academy</li>
+      <button class="nav-item" data-nav="ac-formations" onclick="goTo('ac-formations')"><span class="nav-ico">🎓</span>Formations</button>
+      <button class="nav-item" data-nav="ac-contenu" onclick="goTo('ac-contenu')"><span class="nav-ico">📋</span>Contenu</button>
+      <button class="nav-item" data-nav="ac-quiz" onclick="goTo('ac-quiz')"><span class="nav-ico">❓</span>Quiz</button>
+      <button class="nav-item" data-nav="ac-eleves" onclick="goTo('ac-eleves')"><span class="nav-ico">👥</span>Élèves</button>
+      <button class="nav-item" data-nav="ac-progression" onclick="goTo('ac-progression')"><span class="nav-ico">📊</span>Progression</button>
+      <button class="nav-item" data-nav="ac-attestations" onclick="goTo('ac-attestations')"><span class="nav-ico">✦</span>Attestations</button>
     </ul>
     <div class="cote-footer">
       <div class="cote-email" id="cote-email"></div>
@@ -836,6 +844,76 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
         </div>
       </section>
 
+      <!-- ═══ ACADEMY : FORMATIONS ═══════════════════════════════════════════ -->
+      <section class="section" id="s-ac-formations" style="display:none">
+        <div class="eyebrow">Academy</div>
+        <h2 class="section-titre"><em>Formations</em></h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center">
+          <button class="btn btn-primaire btn-sm" onclick="acFormNouveau()">+ Nouvelle formation</button>
+        </div>
+        <div id="ac-form-liste" class="chargement">Chargement…</div>
+      </section>
+
+      <!-- ═══ ACADEMY : CONTENU ════════════════════════════════════════════════ -->
+      <section class="section" id="s-ac-contenu" style="display:none">
+        <div class="eyebrow">Academy</div>
+        <h2 class="section-titre">Contenu <em>de la formation</em></h2>
+        <div class="filtres-barre" style="margin-bottom:16px">
+          <select class="filtre-select" id="ac-contenu-select" onchange="acContenuCharger(this.value)" style="flex:1">
+            <option value="">— Choisir une formation —</option>
+          </select>
+        </div>
+        <div id="ac-contenu-corps">
+          <p style="font-family:'Montserrat',sans-serif;font-size:11px;color:var(--texte-faible)">Sélectionnez une formation pour gérer ses modules et leçons.</p>
+        </div>
+      </section>
+
+      <!-- ═══ ACADEMY : QUIZ ═══════════════════════════════════════════════════ -->
+      <section class="section" id="s-ac-quiz" style="display:none">
+        <div class="eyebrow">Academy</div>
+        <h2 class="section-titre">Quiz <em>& questions</em></h2>
+        <div class="filtres-barre" style="margin-bottom:16px">
+          <select class="filtre-select" id="ac-quiz-select" onchange="acQuizCharger(this.value)" style="flex:1">
+            <option value="">— Choisir une formation —</option>
+          </select>
+        </div>
+        <div id="ac-quiz-corps">
+          <p style="font-family:'Montserrat',sans-serif;font-size:11px;color:var(--texte-faible)">Sélectionnez une formation pour gérer ses questions de quiz.</p>
+        </div>
+      </section>
+
+      <!-- ═══ ACADEMY : ÉLÈVES ═════════════════════════════════════════════════ -->
+      <section class="section" id="s-ac-eleves" style="display:none">
+        <div class="eyebrow">Academy</div>
+        <h2 class="section-titre"><em>Élèves</em> inscrites</h2>
+        <div class="filtres-barre">
+          <select class="filtre-select" id="ac-eleves-filtre" onchange="acElevesCharger()" style="flex:1">
+            <option value="">Toutes les formations</option>
+          </select>
+        </div>
+        <div id="ac-eleves-liste" class="chargement">Chargement…</div>
+      </section>
+
+      <!-- ═══ ACADEMY : PROGRESSION ════════════════════════════════════════════ -->
+      <section class="section" id="s-ac-progression" style="display:none">
+        <div class="eyebrow">Academy</div>
+        <h2 class="section-titre">Suivi de <em>progression</em></h2>
+        <div class="filtres-barre">
+          <select class="filtre-select" id="ac-prog-filtre" onchange="acProgCharger()" style="flex:1">
+            <option value="">Toutes les formations</option>
+          </select>
+        </div>
+        <div id="ac-prog-liste" class="chargement">Chargement…</div>
+      </section>
+
+      <!-- ═══ ACADEMY : ATTESTATIONS ═══════════════════════════════════════════ -->
+      <section class="section" id="s-ac-attestations" style="display:none">
+        <div class="eyebrow">Academy</div>
+        <h2 class="section-titre"><em>Attestations</em> délivrées</h2>
+        <div id="ac-cert-stats" style="margin-bottom:14px"></div>
+        <div id="ac-cert-liste" class="chargement">Chargement…</div>
+      </section>
+
     </div><!-- /#main -->
   </div><!-- /.app-main -->
 
@@ -856,6 +934,11 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
     <button class="plus-item" onclick="goTo('promotions')"><span class="ico">%</span>Promotions</button>
     <button class="plus-item" onclick="goTo('avis')"><span class="ico">★</span>Avis</button>
     <button class="plus-item" onclick="goTo('parametres')"><span class="ico">⚙</span>Paramètres</button>
+    <button class="plus-item" onclick="goTo('ac-formations')"><span class="ico">🎓</span>Formations</button>
+    <button class="plus-item" onclick="goTo('ac-contenu')"><span class="ico">📋</span>Contenu</button>
+    <button class="plus-item" onclick="goTo('ac-quiz')"><span class="ico">❓</span>Quiz</button>
+    <button class="plus-item" onclick="goTo('ac-eleves')"><span class="ico">👥</span>Élèves</button>
+    <button class="plus-item" onclick="goTo('ac-attestations')"><span class="ico">✦</span>Attestations</button>
   </div>
 
 </div><!-- /#app -->
@@ -943,7 +1026,10 @@ var sectionLabels = {
   tableau:'Tableau de bord', produits:'Produits', images:'Images', stock:'Stock',
   commandes:'Commandes', reassort:'Réassort', collections:'Collections',
   moods:'Moods', cms:'Site CMS', promotions:'Promotions',
-  avis:'Avis', import:'Import CSV', parametres:'Paramètres'
+  avis:'Avis', import:'Import CSV', parametres:'Paramètres',
+  'ac-formations':'Academy — Formations', 'ac-contenu':'Academy — Contenu',
+  'ac-quiz':'Academy — Quiz', 'ac-eleves':'Academy — Élèves',
+  'ac-progression':'Academy — Progression', 'ac-attestations':'Academy — Attestations',
 };
 
 function goTo(id) {
@@ -975,6 +1061,12 @@ function goTo(id) {
   else if (id === 'avis') chargerAvis();
   else if (id === 'import') chargerImport();
   else if (id === 'parametres') chargerParametres();
+  else if (id === 'ac-formations') acFormCharger();
+  else if (id === 'ac-contenu') acContenuInit();
+  else if (id === 'ac-quiz') acQuizInit();
+  else if (id === 'ac-eleves') acElevesInit();
+  else if (id === 'ac-progression') acProgInit();
+  else if (id === 'ac-attestations') acAttestationsCharger();
 }
 
 function togglePlus() {
@@ -2641,6 +2733,480 @@ async function sauvegarderParametres() {
     msg.style.color = 'var(--alerte)';
     msg.style.display = '';
   }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   ACADEMY — state partagé
+   ══════════════════════════════════════════════════════════════════════ */
+var AC = { cours: [], coursId: null };
+
+async function acChargerCours() {
+  if (AC.cours.length) return AC.cours;
+  var r = await NAHIRA.sb.from('academy_courses')
+    .select('id,slug,title,is_published,passing_score,price_cents:product_id(price_cents),duration_minutes,created_at')
+    .order('sort_order');
+  AC.cours = r.data || [];
+  return AC.cours;
+}
+
+function acE(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function acEur(c) { return (c/100).toLocaleString('fr-FR',{style:'currency',currency:'EUR'}); }
+
+/* ─── Populer les <select> de formations ─── */
+async function acPopulateSelects() {
+  var cours = await acChargerCours();
+  ['ac-contenu-select','ac-quiz-select','ac-eleves-filtre','ac-prog-filtre'].forEach(function(id) {
+    var sel = document.getElementById(id);
+    if (!sel) return;
+    var first = sel.options[0];
+    sel.innerHTML = '';
+    sel.appendChild(first);
+    cours.forEach(function(c) {
+      var opt = document.createElement('option');
+      opt.value = c.id;
+      opt.textContent = c.title;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   FORMATIONS — liste / création / publication
+   ══════════════════════════════════════════════════════════════════════ */
+async function acFormCharger() {
+  var zone = document.getElementById('ac-form-liste');
+  zone.innerHTML = '<div class="chargement">Chargement…</div>';
+  AC.cours = [];
+  var cours = await acChargerCours();
+  acPopulateSelects();
+
+  if (!cours.length) {
+    zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);padding:20px 0">Aucune formation. Créez-en une pour commencer.</p>';
+    return;
+  }
+  zone.innerHTML = cours.map(function(c) {
+    var pub = c.is_published;
+    var dur = c.duration_minutes ? Math.round(c.duration_minutes/60) + 'h' : '—';
+    return '<div class="prod-ligne" style="align-items:center;gap:12px;padding:12px 14px">' +
+      '<div class="prod-vignette" style="background:linear-gradient(135deg,var(--rose),var(--or))">🎓</div>' +
+      '<div class="prod-info"><div class="prod-nom">' + acE(c.title) + '</div>' +
+      '<div class="prod-sku">' + acE(c.slug) + ' · ' + dur + ' · Score min ' + (c.passing_score||70) + '%</div></div>' +
+      '<span class="badge ' + (pub ? 'badge-dispo' : 'badge-masque') + '">' + (pub ? 'Publiée' : 'Masquée') + '</span>' +
+      '<div style="display:flex;gap:6px;flex:none">' +
+      '<button class="btn btn-sec btn-sm" onclick="acFormEditer(\'' + c.id + '\')">Modifier</button>' +
+      '<button class="btn btn-sm ' + (pub ? 'btn-danger' : 'btn-primaire') + '" onclick="acFormTogglePublish(\'' + c.id + '\',' + pub + ')">' + (pub ? 'Masquer' : 'Publier') + '</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+async function acFormTogglePublish(id, actuel) {
+  var r = await NAHIRA.sb.from('academy_courses').update({is_published: !actuel}).eq('id', id);
+  if (r.error) { toast('Erreur : ' + r.error.message, 'err'); return; }
+  AC.cours = [];
+  toast(actuel ? 'Formation masquée.' : 'Formation publiée ✦');
+  acFormCharger();
+}
+
+function acFormNouveau() {
+  modalOuvrir('Nouvelle formation', acFormFormHtml({}),
+    '<button class="btn btn-primaire" onclick="acFormSauvegarder(null)">Créer la formation</button>');
+}
+
+async function acFormEditer(id) {
+  var cours = await acChargerCours();
+  var c = cours.find(function(x){ return x.id === id; }) || {};
+  modalOuvrir('Modifier — ' + c.title, acFormFormHtml(c),
+    '<button class="btn btn-primaire" onclick="acFormSauvegarder(\'' + id + '\')">Enregistrer</button>');
+}
+
+function acFormFormHtml(c) {
+  return '<div class="form-grille" style="display:flex;flex-direction:column;gap:12px">' +
+    '<div><label class="param-lbl">Titre *</label><input class="param-input" id="ac-f-titre" value="' + acE(c.title||'') + '" style="width:100%"></div>' +
+    '<div><label class="param-lbl">Sous-titre</label><input class="param-input" id="ac-f-sous" value="' + acE(c.subtitle||'') + '" style="width:100%"></div>' +
+    '<div><label class="param-lbl">Slug (URL)</label><input class="param-input" id="ac-f-slug" value="' + acE(c.slug||'') + '" style="width:100%"></div>' +
+    '<div><label class="param-lbl">Durée totale (minutes)</label><input class="param-input" id="ac-f-dur" type="number" value="' + (c.duration_minutes||'') + '" style="width:100%"></div>' +
+    '<div><label class="param-lbl">Score minimum pour certification (%)</label><input class="param-input" id="ac-f-score" type="number" min="0" max="100" value="' + (c.passing_score||70) + '" style="width:100%"></div>' +
+    '<div><label class="param-lbl">URL de la couverture</label><input class="param-input" id="ac-f-cover" value="' + acE(c.cover_url||'') + '" style="width:100%"></div>' +
+    '</div>';
+}
+
+async function acFormSauvegarder(id) {
+  var titre = document.getElementById('ac-f-titre').value.trim();
+  var sous   = document.getElementById('ac-f-sous').value.trim();
+  var slug   = document.getElementById('ac-f-slug').value.trim() || slugify(titre);
+  var dur    = parseInt(document.getElementById('ac-f-dur').value) || null;
+  var score  = parseInt(document.getElementById('ac-f-score').value) || 70;
+  var cover  = document.getElementById('ac-f-cover').value.trim() || null;
+  if (!titre || !slug) { toast('Titre et slug requis.', 'err'); return; }
+  var data = { title:titre, subtitle:sous||null, slug, duration_minutes:dur, passing_score:score, cover_url:cover };
+  var r = id
+    ? await NAHIRA.sb.from('academy_courses').update(data).eq('id', id)
+    : await NAHIRA.sb.from('academy_courses').insert({...data, is_published:false});
+  if (r.error) { toast('Erreur : ' + r.error.message, 'err'); return; }
+  modalFermer();
+  AC.cours = [];
+  toast(id ? 'Formation mise à jour.' : 'Formation créée ✦');
+  acFormCharger();
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   CONTENU — modules & leçons
+   ══════════════════════════════════════════════════════════════════════ */
+async function acContenuInit() {
+  await acChargerCours();
+  acPopulateSelects();
+}
+
+async function acContenuCharger(coursId) {
+  var zone = document.getElementById('ac-contenu-corps');
+  if (!coursId) { zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible)">Sélectionnez une formation.</p>'; return; }
+  zone.innerHTML = '<div class="chargement">Chargement…</div>';
+  AC.coursId = coursId;
+
+  var r = await NAHIRA.sb.from('academy_modules')
+    .select('id,title,sort_order,academy_lessons(id,title,is_preview,duration_minutes,sort_order)')
+    .eq('course_id', coursId).order('sort_order');
+  var modules = r.data || [];
+
+  var html = '<div style="display:flex;gap:8px;margin-bottom:14px">' +
+    '<button class="btn btn-primaire btn-sm" onclick="acModuleNouveau()">+ Nouveau module</button></div>';
+
+  if (!modules.length) {
+    html += '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible)">Aucun module. Créez-en un pour commencer.</p>';
+  } else {
+    html += modules.map(function(mod, mi) {
+      var lessons = (mod.academy_lessons||[]).sort(function(a,b){return a.sort_order-b.sort_order;});
+      var lHtml = lessons.length
+        ? lessons.map(function(l) {
+            return '<div class="prod-ligne" style="margin:4px 0;padding:8px 12px;gap:10px">' +
+              '<div style="font-size:12px;flex:none;color:var(--texte-faible)">' + (l.is_preview ? '👁' : '🔒') + '</div>' +
+              '<div class="prod-info"><div class="prod-nom" style="font-size:15px">' + acE(l.title) + '</div>' +
+              '<div class="prod-sku">' + (l.duration_minutes ? l.duration_minutes + ' min' : '—') + '</div></div>' +
+              '<div style="display:flex;gap:5px;flex:none">' +
+              '<button class="btn btn-sec btn-sm" onclick="acLeconEditer(\'' + mod.id + '\',\'' + l.id + '\')">Modifier</button>' +
+              '<button class="btn btn-danger btn-sm" onclick="acLeconSupprimer(\'' + l.id + '\')">✕</button>' +
+              '</div></div>';
+          }).join('')
+        : '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);padding:8px 12px">Aucune leçon.</p>';
+      return '<div class="carte" style="margin-bottom:12px">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">' +
+        '<div><div class="eyebrow" style="margin-bottom:2px">Module ' + (mi+1) + '</div>' +
+        '<h3 style="margin:0;font-size:18px">' + acE(mod.title) + '</h3></div>' +
+        '<div style="display:flex;gap:6px">' +
+        '<button class="btn btn-primaire btn-sm" onclick="acLeconNouveau(\'' + mod.id + '\')">+ Leçon</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="acModuleSupprimer(\'' + mod.id + '\')">✕</button>' +
+        '</div></div>' + lHtml + '</div>';
+    }).join('');
+  }
+  zone.innerHTML = html;
+}
+
+function acModuleNouveau() {
+  if (!AC.coursId) return;
+  modalOuvrir('Nouveau module',
+    '<div style="display:flex;flex-direction:column;gap:12px"><div><label class="param-lbl">Titre du module *</label><input class="param-input" id="ac-mod-titre" style="width:100%"></div>' +
+    '<div><label class="param-lbl">Ordre d\'affichage</label><input class="param-input" id="ac-mod-ordre" type="number" value="0" style="width:100%"></div></div>',
+    '<button class="btn btn-primaire" onclick="acModuleSauvegarder()">Créer le module</button>');
+}
+
+async function acModuleSauvegarder() {
+  var titre = document.getElementById('ac-mod-titre').value.trim();
+  var ordre = parseInt(document.getElementById('ac-mod-ordre').value)||0;
+  if (!titre) { toast('Titre requis.','err'); return; }
+  var r = await NAHIRA.sb.from('academy_modules').insert({course_id:AC.coursId, title:titre, sort_order:ordre});
+  if (r.error) { toast('Erreur : '+r.error.message,'err'); return; }
+  modalFermer(); toast('Module créé ✦'); acContenuCharger(AC.coursId);
+}
+
+async function acModuleSupprimer(id) {
+  if (!confirm('Supprimer ce module et toutes ses leçons ?')) return;
+  var r = await NAHIRA.sb.from('academy_modules').delete().eq('id',id);
+  if (r.error) { toast('Erreur : '+r.error.message,'err'); return; }
+  toast('Module supprimé.'); acContenuCharger(AC.coursId);
+}
+
+function acLeconNouveau(moduleId) {
+  modalOuvrir('Nouvelle leçon', acLeconFormHtml(moduleId, {}),
+    '<button class="btn btn-primaire" onclick="acLeconSauvegarder(\'' + moduleId + '\',null)">Créer la leçon</button>');
+}
+
+async function acLeconEditer(moduleId, id) {
+  var r = await NAHIRA.sb.from('academy_lessons').select('*').eq('id',id).single();
+  var l = r.data || {};
+  modalOuvrir('Modifier la leçon', acLeconFormHtml(moduleId, l),
+    '<button class="btn btn-primaire" onclick="acLeconSauvegarder(\'' + moduleId + '\',\'' + id + '\')">Enregistrer</button>');
+}
+
+function acLeconFormHtml(moduleId, l) {
+  var cb = l.content_blocks ? JSON.stringify(l.content_blocks, null, 2) : '[]';
+  return '<div style="display:flex;flex-direction:column;gap:12px">' +
+    '<div><label class="param-lbl">Titre *</label><input class="param-input" id="ac-l-titre" value="' + acE(l.title||'') + '" style="width:100%"></div>' +
+    '<div><label class="param-lbl">URL vidéo (YouTube / Vimeo / MP4)</label><input class="param-input" id="ac-l-video" value="' + acE(l.video_url||'') + '" style="width:100%"></div>' +
+    '<div><label class="param-lbl">Durée (minutes)</label><input class="param-input" id="ac-l-dur" type="number" value="' + (l.duration_minutes||'') + '" style="width:100%"></div>' +
+    '<div><label class="param-lbl">Ordre d\'affichage</label><input class="param-input" id="ac-l-ordre" type="number" value="' + (l.sort_order||0) + '" style="width:100%"></div>' +
+    '<div style="display:flex;align-items:center;gap:10px"><label class="param-lbl">Aperçu gratuit</label>' +
+    '<button class="param-toggle ' + (l.is_preview?'on':'') + '" id="ac-l-preview" onclick="this.classList.toggle(\'on\')"></button></div>' +
+    '<div><label class="param-lbl">Blocs de contenu (JSON)</label><textarea class="param-input" id="ac-l-blocks" rows="8" style="width:100%;font-family:monospace;font-size:11px">' + acE(cb) + '</textarea></div>' +
+    '</div>';
+}
+
+async function acLeconSauvegarder(moduleId, id) {
+  var titre  = document.getElementById('ac-l-titre').value.trim();
+  var video  = document.getElementById('ac-l-video').value.trim() || null;
+  var dur    = parseInt(document.getElementById('ac-l-dur').value)||null;
+  var ordre  = parseInt(document.getElementById('ac-l-ordre').value)||0;
+  var prev   = document.getElementById('ac-l-preview').classList.contains('on');
+  var cbRaw  = document.getElementById('ac-l-blocks').value.trim();
+  if (!titre) { toast('Titre requis.','err'); return; }
+  var blocks;
+  try { blocks = JSON.parse(cbRaw); } catch { toast('JSON des blocs invalide.','err'); return; }
+  var data = { title:titre, video_url:video, duration_minutes:dur, sort_order:ordre, is_preview:prev, content_blocks:blocks, course_id:AC.coursId, module_id:moduleId };
+  var r = id
+    ? await NAHIRA.sb.from('academy_lessons').update(data).eq('id',id)
+    : await NAHIRA.sb.from('academy_lessons').insert(data);
+  if (r.error) { toast('Erreur : '+r.error.message,'err'); return; }
+  modalFermer(); toast(id?'Leçon mise à jour.':'Leçon créée ✦'); acContenuCharger(AC.coursId);
+}
+
+async function acLeconSupprimer(id) {
+  if (!confirm('Supprimer cette leçon ?')) return;
+  var r = await NAHIRA.sb.from('academy_lessons').delete().eq('id',id);
+  if (r.error) { toast('Erreur : '+r.error.message,'err'); return; }
+  toast('Leçon supprimée.'); acContenuCharger(AC.coursId);
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   QUIZ — questions
+   ══════════════════════════════════════════════════════════════════════ */
+async function acQuizInit() {
+  await acChargerCours();
+  acPopulateSelects();
+}
+
+async function acQuizCharger(coursId) {
+  var zone = document.getElementById('ac-quiz-corps');
+  if (!coursId) { zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible)">Sélectionnez une formation.</p>'; return; }
+  zone.innerHTML = '<div class="chargement">Chargement…</div>';
+  AC.coursId = coursId;
+
+  var r = await NAHIRA.sb.from('academy_quiz_questions')
+    .select('id,question,options,correct_index,explanation,sort_order')
+    .eq('course_id', coursId).order('sort_order');
+  var qs = r.data || [];
+
+  var html = '<div style="display:flex;gap:8px;margin-bottom:14px">' +
+    '<button class="btn btn-primaire btn-sm" onclick="acQuizNouveau()">+ Ajouter une question</button></div>';
+
+  if (!qs.length) {
+    html += '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible)">Aucune question. Ajoutez-en pour activer le quiz.</p>';
+  } else {
+    html += qs.map(function(q, qi) {
+      var opts = Array.isArray(q.options) ? q.options : [];
+      var optsHtml = opts.map(function(o,i) {
+        var txt = typeof o === 'object' ? o.text : o;
+        return '<div style="font-family:Montserrat,sans-serif;font-size:11px;padding:3px 6px;border-radius:6px;' + (i===q.correct_index?'background:rgba(127,216,164,.15);color:var(--ok)':'color:var(--texte-faible)') + '">' + (i===q.correct_index?'✓ ':'') + acE(String(txt)) + '</div>';
+      }).join('');
+      return '<div class="carte" style="margin-bottom:10px">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">' +
+        '<div style="flex:1"><div class="eyebrow" style="margin-bottom:4px">Q' + (qi+1) + '</div>' +
+        '<div style="font-size:16px;color:var(--blanc);margin-bottom:10px">' + acE(q.question) + '</div>' +
+        optsHtml +
+        (q.explanation ? '<div style="font-family:Montserrat,sans-serif;font-size:10px;color:var(--texte-faible);margin-top:8px;font-style:italic">💡 ' + acE(q.explanation) + '</div>' : '') +
+        '</div>' +
+        '<div style="display:flex;gap:5px;flex:none">' +
+        '<button class="btn btn-sec btn-sm" onclick="acQuizEditer(\'' + q.id + '\')">Modifier</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="acQuizSupprimer(\'' + q.id + '\')">✕</button>' +
+        '</div></div></div>';
+    }).join('');
+  }
+  zone.innerHTML = html;
+}
+
+function acQuizFormHtml(q) {
+  q = q || {};
+  var opts = Array.isArray(q.options) ? q.options : ['','','',''];
+  while (opts.length < 2) opts.push('');
+  return '<div style="display:flex;flex-direction:column;gap:12px">' +
+    '<div><label class="param-lbl">Question *</label><input class="param-input" id="ac-q-question" value="' + acE(q.question||'') + '" style="width:100%"></div>' +
+    opts.map(function(o,i){
+      var txt = typeof o === 'object' ? o.text : o;
+      return '<div><label class="param-lbl">Option ' + (i+1) + '</label><input class="param-input" id="ac-q-opt-' + i + '" value="' + acE(txt||'') + '" style="width:100%"></div>';
+    }).join('') +
+    '<div><label class="param-lbl">Réponse correcte (numéro, 1 = première option)</label>' +
+    '<input class="param-input" id="ac-q-correct" type="number" min="1" max="' + opts.length + '" value="' + ((q.correct_index||0)+1) + '" style="width:80px"></div>' +
+    '<div><label class="param-lbl">Explication (affichée après correction)</label><input class="param-input" id="ac-q-expl" value="' + acE(q.explanation||'') + '" style="width:100%"></div>' +
+    '<div><label class="param-lbl">Ordre d\'affichage</label><input class="param-input" id="ac-q-ordre" type="number" value="' + (q.sort_order||0) + '" style="width:80px"></div>' +
+    '</div>';
+}
+
+function acQuizNouveau() {
+  modalOuvrir('Nouvelle question', acQuizFormHtml(null),
+    '<button class="btn btn-primaire" onclick="acQuizSauvegarder(null)">Créer la question</button>');
+}
+
+async function acQuizEditer(id) {
+  var r = await NAHIRA.sb.from('academy_quiz_questions').select('*').eq('id',id).single();
+  modalOuvrir('Modifier la question', acQuizFormHtml(r.data||{}),
+    '<button class="btn btn-primaire" onclick="acQuizSauvegarder(\'' + id + '\')">Enregistrer</button>');
+}
+
+async function acQuizSauvegarder(id) {
+  var question = document.getElementById('ac-q-question').value.trim();
+  if (!question) { toast('Question requise.','err'); return; }
+  var opts = [];
+  for (var i=0; i<4; i++) {
+    var el = document.getElementById('ac-q-opt-'+i);
+    if (el && el.value.trim()) opts.push(el.value.trim());
+  }
+  if (opts.length < 2) { toast('Au moins 2 options requises.','err'); return; }
+  var correct = (parseInt(document.getElementById('ac-q-correct').value)||1) - 1;
+  if (correct < 0 || correct >= opts.length) { toast('Numéro de réponse invalide.','err'); return; }
+  var expl = document.getElementById('ac-q-expl').value.trim()||null;
+  var ordre = parseInt(document.getElementById('ac-q-ordre').value)||0;
+  var data = { course_id:AC.coursId, question, options:opts, correct_index:correct, explanation:expl, sort_order:ordre };
+  var r = id
+    ? await NAHIRA.sb.from('academy_quiz_questions').update(data).eq('id',id)
+    : await NAHIRA.sb.from('academy_quiz_questions').insert(data);
+  if (r.error) { toast('Erreur : '+r.error.message,'err'); return; }
+  modalFermer(); toast(id?'Question mise à jour.':'Question ajoutée ✦'); acQuizCharger(AC.coursId);
+}
+
+async function acQuizSupprimer(id) {
+  if (!confirm('Supprimer cette question ?')) return;
+  var r = await NAHIRA.sb.from('academy_quiz_questions').delete().eq('id',id);
+  if (r.error) { toast('Erreur : '+r.error.message,'err'); return; }
+  toast('Question supprimée.'); acQuizCharger(AC.coursId);
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   ÉLÈVES — inscriptions
+   ══════════════════════════════════════════════════════════════════════ */
+async function acElevesInit() {
+  await acChargerCours();
+  acPopulateSelects();
+  acElevesCharger();
+}
+
+async function acElevesCharger() {
+  var zone = document.getElementById('ac-eleves-liste');
+  zone.innerHTML = '<div class="chargement">Chargement…</div>';
+  var filtre = document.getElementById('ac-eleves-filtre').value;
+  var q = NAHIRA.sb.from('academy_enrollments')
+    .select('id,enrolled_at,user_id,academy_courses(title)')
+    .order('enrolled_at',{ascending:false}).limit(100);
+  if (filtre) q = q.eq('course_id', filtre);
+  var r = await q;
+  var rows = r.data || [];
+  if (!rows.length) { zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);padding:20px 0">Aucune inscription.</p>'; return; }
+  zone.innerHTML = '<table style="width:100%;border-collapse:collapse;font-family:Montserrat,sans-serif;font-size:12px">' +
+    '<thead><tr style="border-bottom:1px solid var(--bordure);color:var(--texte-faible)">' +
+    '<th style="text-align:left;padding:8px 6px;font-weight:500">Utilisateur</th>' +
+    '<th style="text-align:left;padding:8px 6px;font-weight:500">Formation</th>' +
+    '<th style="text-align:left;padding:8px 6px;font-weight:500">Date</th>' +
+    '<th style="padding:8px 6px"></th></tr></thead><tbody>' +
+    rows.map(function(e) {
+      var uid = e.user_id ? e.user_id.slice(0,8) + '…' : '—';
+      return '<tr style="border-bottom:1px solid rgba(240,111,167,.06)">' +
+        '<td style="padding:9px 6px;color:var(--texte-doux)">' + acE(uid) + '</td>' +
+        '<td style="padding:9px 6px;color:var(--texte)">' + acE(e.academy_courses?.title||'—') + '</td>' +
+        '<td style="padding:9px 6px;color:var(--texte-faible)">' + fmtD(e.enrolled_at) + '</td>' +
+        '<td style="padding:9px 6px;text-align:right"><button class="btn btn-sec btn-sm" onclick="acProgVoir(\'' + e.user_id + '\')">Voir progression</button></td>' +
+        '</tr>';
+    }).join('') + '</tbody></table>';
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   PROGRESSION — par élève
+   ══════════════════════════════════════════════════════════════════════ */
+async function acProgInit() {
+  await acChargerCours();
+  acPopulateSelects();
+  acProgCharger();
+}
+
+async function acProgCharger() {
+  var zone = document.getElementById('ac-prog-liste');
+  zone.innerHTML = '<div class="chargement">Chargement…</div>';
+  var filtre = document.getElementById('ac-prog-filtre').value;
+
+  // For each enrollment, count progress
+  var q = NAHIRA.sb.from('academy_enrollments')
+    .select('user_id,course_id,enrolled_at,academy_courses(id,title,academy_modules(academy_lessons(id)))')
+    .order('enrolled_at',{ascending:false}).limit(50);
+  if (filtre) q = q.eq('course_id', filtre);
+  var r = await q;
+  var enrollments = r.data || [];
+  if (!enrollments.length) { zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);padding:20px 0">Aucune inscription.</p>'; return; }
+
+  // Batch progress counts
+  var html = '<div style="display:flex;flex-direction:column;gap:8px">';
+  for (var enr of enrollments) {
+    var cours = enr.academy_courses;
+    var total = (cours?.academy_modules||[]).reduce(function(s,m){return s+(m.academy_lessons||[]).length;},0);
+    var rp = await NAHIRA.sb.from('academy_progress').select('lesson_id',{count:'exact'})
+      .eq('user_id',enr.user_id).eq('course_id',enr.course_id).not('completed_at','is',null);
+    var done = rp.count||0;
+    var pct = total ? Math.round(done/total*100) : 0;
+    var uid = enr.user_id ? enr.user_id.slice(0,8)+'…' : '—';
+    html += '<div class="prod-ligne" style="align-items:center;gap:12px;flex-wrap:wrap">' +
+      '<div class="prod-info">' +
+      '<div class="prod-nom" style="font-size:15px">' + acE(cours?.title||'—') + '</div>' +
+      '<div class="prod-sku">Élève ' + acE(uid) + ' · ' + fmtD(enr.enrolled_at) + '</div>' +
+      '</div>' +
+      '<div style="flex:1;min-width:120px">' +
+      '<div style="height:4px;background:rgba(255,247,250,.1);border-radius:2px;overflow:hidden;margin-bottom:3px">' +
+      '<div style="width:' + pct + '%;height:100%;background:linear-gradient(90deg,var(--rose),var(--or));border-radius:2px"></div></div>' +
+      '<div style="font-family:Montserrat,sans-serif;font-size:10px;color:var(--texte-faible)">' + done + '/' + total + ' leçons · ' + pct + '%</div>' +
+      '</div>' +
+      (pct===100?'<span class="badge badge-dispo">Complété</span>':'') +
+      '</div>';
+  }
+  html += '</div>';
+  zone.innerHTML = html;
+}
+
+function acProgVoir(userId) {
+  var sel = document.getElementById('ac-prog-filtre');
+  if (sel) sel.value = '';
+  goTo('ac-progression');
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   ATTESTATIONS — certificats délivrés
+   ══════════════════════════════════════════════════════════════════════ */
+async function acAttestationsCharger() {
+  var zone = document.getElementById('ac-cert-liste');
+  var stats = document.getElementById('ac-cert-stats');
+  zone.innerHTML = '<div class="chargement">Chargement…</div>';
+  stats.innerHTML = '';
+
+  var r = await NAHIRA.sb.from('academy_certificates')
+    .select('id,reference,recipient_name,issued_at,course_id,academy_courses(title)')
+    .order('issued_at',{ascending:false}).limit(100);
+  var certs = r.data || [];
+
+  stats.innerHTML = '<div class="grille-kpi" style="margin-bottom:14px">' +
+    '<div class="kpi"><div class="v">' + certs.length + '</div><div class="l">Attestations délivrées</div></div></div>';
+
+  if (!certs.length) { zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);padding:20px 0">Aucun certificat pour le moment.</p>'; return; }
+
+  zone.innerHTML = '<table style="width:100%;border-collapse:collapse;font-family:Montserrat,sans-serif;font-size:12px">' +
+    '<thead><tr style="border-bottom:1px solid var(--bordure);color:var(--texte-faible)">' +
+    '<th style="text-align:left;padding:8px 6px;font-weight:500">Référence</th>' +
+    '<th style="text-align:left;padding:8px 6px;font-weight:500">Bénéficiaire</th>' +
+    '<th style="text-align:left;padding:8px 6px;font-weight:500">Formation</th>' +
+    '<th style="text-align:left;padding:8px 6px;font-weight:500">Date</th>' +
+    '<th style="padding:8px 6px"></th></tr></thead><tbody>' +
+    certs.map(function(c) {
+      return '<tr style="border-bottom:1px solid rgba(240,111,167,.06)">' +
+        '<td style="padding:9px 6px;color:var(--or);font-weight:500">' + acE(c.reference) + '</td>' +
+        '<td style="padding:9px 6px;color:var(--texte)">' + acE(c.recipient_name||'—') + '</td>' +
+        '<td style="padding:9px 6px;color:var(--texte-doux)">' + acE(c.academy_courses?.title||'—') + '</td>' +
+        '<td style="padding:9px 6px;color:var(--texte-faible)">' + fmtD(c.issued_at) + '</td>' +
+        '<td style="padding:9px 6px;text-align:right">' +
+        '<a class="btn btn-sec btn-sm" href="certificat.html?ref=' + encodeURIComponent(c.reference) + '" target="_blank">Voir ↗</a>' +
+        '</td></tr>';
+    }).join('') + '</tbody></table>';
 }
 
 /* ====== DÉMARRAGE ====== */
