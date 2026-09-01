@@ -189,15 +189,17 @@
 
 /* ── Responsive ──────────────────────────────────────────────── */
 @media(max-width:640px){
-  .grille{grid-template-columns:repeat(2,1fr); gap:13px}
-  .carte-infos{padding:13px 13px 15px}
-  .carte-nom{font-size:1.15rem}
+  .grille{grid-template-columns:1fr; gap:20px}
+  .carte-infos{padding:20px 20px 22px}
+  .carte-nom{font-size:1.5rem}
+  .carte-desc{font-size:.86rem}
+  .carte-prix{font-size:1.35rem}
+  .carte-badges-top{top:14px; left:14px; gap:6px}
+  .badge-carte{font-size:.6rem; padding:6px 13px}
+  .carte-fav{top:14px; right:14px; width:40px; height:40px}
   .barre-filtres{gap:7px}
   .meta-resultats{flex-direction:column; align-items:flex-start; gap:8px}
   .entete-col{padding:24px 0 20px}
-}
-@media(max-width:360px){
-  .grille{grid-template-columns:1fr}
 }
 </style>
 </head>
