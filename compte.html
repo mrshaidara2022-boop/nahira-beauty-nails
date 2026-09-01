@@ -161,6 +161,42 @@
 .profil-val{font-size:1.05rem;color:var(--blanc)}
 .msg-mdp{margin:10px 0}
 
+/* ─── Mes formations ─────────────────────────────────────────────────── */
+.form-card{
+  border:1px solid var(--ligne);border-radius:16px;overflow:hidden;
+  background:var(--carte);margin-bottom:14px;transition:border-color .3s;
+}
+.form-card:hover{border-color:rgba(240,111,167,.3)}
+.form-card-inner{display:flex;align-items:stretch}
+.form-card-img-wrap{position:relative;flex-shrink:0;width:120px}
+.form-card-img{width:120px;height:100%;min-height:140px;object-fit:cover;display:block}
+.form-card-ph{width:120px;min-height:140px;background:var(--noir-2);display:flex;align-items:center;justify-content:center;color:var(--texte-faible);font-size:1.2rem}
+.form-badge-certif{
+  position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+  font-family:'Montserrat',sans-serif;font-size:6.5px;letter-spacing:2px;text-transform:uppercase;font-weight:700;
+  padding:4px 10px;border-radius:99px;white-space:nowrap;
+  background:rgba(184,148,74,.15);color:var(--or-vif);border:1px solid rgba(184,148,74,.4);
+}
+.form-card-body{flex:1;padding:18px 20px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.form-card-titre{font-family:'Cormorant Garamond',serif;font-size:1.15rem;color:var(--blanc);line-height:1.25}
+.form-card-meta{font-family:'Montserrat',sans-serif;font-size:.63rem;color:var(--texte-faible);letter-spacing:.08em}
+.form-progress-wrap{display:flex;flex-direction:column;gap:5px}
+.form-progress-bar{height:3px;background:rgba(255,247,250,.08);border-radius:99px;overflow:hidden}
+.form-progress-fill{height:100%;background:var(--rose);border-radius:99px;transition:width .4s ease}
+.form-progress-label{font-family:'Montserrat',sans-serif;font-size:.62rem;color:var(--texte-faible);letter-spacing:.05em}
+.form-card-actions{display:flex;flex-direction:column;gap:8px;margin-top:auto}
+.form-certif-lien{
+  font-family:'Montserrat',sans-serif;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--or);text-decoration:none;
+}
+.form-certif-lien:hover{color:var(--or-vif)}
+@media(max-width:520px){
+  .form-card-inner{flex-direction:column}
+  .form-card-img-wrap{width:100%}
+  .form-card-img{width:100%;height:180px;min-height:auto;object-fit:cover}
+  .form-card-ph{width:100%;height:120px;min-height:auto}
+}
+
 /* ─── État vide ──────────────────────────────────────────────────────── */
 .etat-vide{text-align:center;padding:64px 24px;display:flex;flex-direction:column;align-items:center;gap:14px}
 .etat-vide-icon{font-size:40px}
@@ -261,6 +297,9 @@
       <button class="tab-btn" role="tab" data-tab="alertes" aria-selected="false" aria-controls="tab-alertes">
         Alertes<span class="tab-badge" id="badge-alertes" aria-hidden="true"></span>
       </button>
+      <button class="tab-btn" role="tab" data-tab="formations" aria-selected="false" aria-controls="tab-formations">
+        Formations<span class="tab-badge" id="badge-formations" aria-hidden="true"></span>
+      </button>
       <button class="tab-btn" role="tab" data-tab="profil" aria-selected="false" aria-controls="tab-profil">
         Profil
       </button>
@@ -279,6 +318,11 @@
     <!-- Panneau : Alertes -->
     <div id="tab-alertes" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-alertes" style="display:none">
       <div id="liste-alertes"></div>
+    </div>
+
+    <!-- Panneau : Formations -->
+    <div id="tab-formations" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-formations" style="display:none">
+      <div id="liste-formations"></div>
     </div>
 
     <!-- Panneau : Profil -->
@@ -416,7 +460,7 @@ document.getElementById("btn-deconnexion").addEventListener("click", async () =>
 });
 
 /* ── Navigation par onglets ──────────────────────────────────────────────── */
-const TABS = ["commandes", "favoris", "alertes", "profil"];
+const TABS = ["commandes", "favoris", "alertes", "formations", "profil"];
 const tabCharge = {};
 
 document.querySelectorAll(".tab-btn").forEach(btn => {
@@ -432,8 +476,10 @@ function ouvrirTab(nom) {
     const panel = document.getElementById("tab-" + t);
     if (panel) panel.style.display = t === nom ? "block" : "none";
   });
-  if (nom === "favoris" && !tabCharge.favoris) { chargerFavoris(); tabCharge.favoris = true; }
-  if (nom === "alertes" && !tabCharge.alertes) { chargerAlertes(); tabCharge.alertes = true; }
+  if (nom === "commandes"  && !tabCharge.commandes)  { chargerCommandes();  tabCharge.commandes  = true; }
+  if (nom === "favoris"    && !tabCharge.favoris)    { chargerFavoris();    tabCharge.favoris    = true; }
+  if (nom === "alertes"    && !tabCharge.alertes)    { chargerAlertes();    tabCharge.alertes    = true; }
+  if (nom === "formations" && !tabCharge.formations) { chargerFormations(); tabCharge.formations = true; }
 }
 
 function majBadge(tab, n) {
@@ -681,6 +727,94 @@ async function chargerAlertes() {
   });
 }
 
+/* ── Onglet FORMATIONS ───────────────────────────────────────────────────── */
+async function chargerFormations() {
+  const zone = document.getElementById("liste-formations");
+  zone.innerHTML = chargement("Chargement de vos formations…");
+
+  const { data: enrollments, error } = await sb
+    .from("academy_enrollments")
+    .select(`
+      id, enrolled_at, course_id,
+      academy_courses (id, slug, title, cover_url, duration_hours,
+        academy_modules (
+          academy_lessons (id)
+        )
+      )
+    `)
+    .eq("user_id", currentUser.id)
+    .order("enrolled_at", { ascending: false });
+
+  if (error) { zone.innerHTML = chargement("Impossible de charger vos formations."); return; }
+  if (!enrollments || enrollments.length === 0) {
+    zone.innerHTML = etatVide("🎓", "Aucune formation pour le moment",
+      "Découvrez les masterclasses disponibles à l'Academy.", "academy.html", "Voir l'Academy");
+    return;
+  }
+
+  const courseIds = enrollments.map(e => e.course_id);
+
+  const [{ data: progressRows }, { data: certs }] = await Promise.all([
+    sb.from("academy_progress")
+      .select("lesson_id, course_id")
+      .eq("user_id", currentUser.id)
+      .in("course_id", courseIds)
+      .not("completed_at", "is", null),
+    sb.from("academy_certificates")
+      .select("course_id, certificate_reference, issued_at")
+      .eq("user_id", currentUser.id)
+      .in("course_id", courseIds),
+  ]);
+
+  const progressByCourse = {};
+  (progressRows || []).forEach(p => {
+    progressByCourse[p.course_id] = (progressByCourse[p.course_id] || 0) + 1;
+  });
+  const certByCourse = {};
+  (certs || []).forEach(c => { certByCourse[c.course_id] = c; });
+
+  majBadge("formations", enrollments.length);
+  zone.innerHTML = "";
+
+  enrollments.forEach(enr => {
+    const cours = enr.academy_courses;
+    if (!cours) return;
+
+    const totalLessons = (cours.academy_modules || []).reduce(
+      (sum, mod) => sum + (mod.academy_lessons || []).length, 0
+    );
+    const completedLessons = progressByCourse[enr.course_id] || 0;
+    const pct = totalLessons > 0 ? Math.round(completedLessons / totalLessons * 100) : 0;
+    const cert = certByCourse[enr.course_id];
+    const ctaLabel = pct === 0 ? "Commencer la formation" : pct === 100 ? "Revoir la formation" : "Continuer la formation";
+
+    const div = document.createElement("div");
+    div.className = "form-card";
+    div.innerHTML = `
+      <div class="form-card-inner">
+        <div class="form-card-img-wrap">
+          ${cours.cover_url
+            ? `<img class="form-card-img" src="${escH(cours.cover_url)}" alt="${escH(cours.title)}" loading="lazy">`
+            : `<div class="form-card-ph">✦</div>`}
+          ${cert ? `<span class="form-badge-certif">Certifiée ✦</span>` : ""}
+        </div>
+        <div class="form-card-body">
+          <div class="form-card-titre">${escH(cours.title)}</div>
+          ${cours.duration_hours ? `<div class="form-card-meta">${cours.duration_hours}h de contenu</div>` : ""}
+          <div class="form-progress-wrap">
+            <div class="form-progress-bar"><div class="form-progress-fill" style="width:${pct}%"></div></div>
+            <span class="form-progress-label">${completedLessons} / ${totalLessons} leçon${totalLessons !== 1 ? "s" : ""} · ${pct}%</span>
+          </div>
+          <div class="form-card-actions">
+            <a class="btn btn-or" href="lecon.html?course=${encodeURIComponent(cours.slug)}" style="font-size:.72rem;padding:11px 20px;text-align:center">${escH(ctaLabel)} →</a>
+            ${cert ? `<a class="form-certif-lien" href="certificat.html?ref=${encodeURIComponent(cert.certificate_reference)}" target="_blank">Télécharger mon certificat ↗</a>` : ""}
+          </div>
+        </div>
+      </div>`;
+    zone.appendChild(div);
+  });
+}
+
 /* ── Onglet PROFIL ───────────────────────────────────────────────────────── */
 function afficherProfil() {
   const nom = currentUser.user_metadata?.full_name || "—";
@@ -716,9 +850,17 @@ async function init() {
   document.getElementById("hello-email").textContent = user.email;
   afficherProfil();
 
-  tabCharge.commandes = true;
-  chargerCommandes();
-  ouvrirTab("commandes");
+  const tabParam = new URLSearchParams(location.search).get("tab");
+  const tabInit = TABS.includes(tabParam) ? tabParam : "commandes";
+
+  if (tabInit === "formations") {
+    tabCharge.formations = true;
+    chargerFormations();
+  } else {
+    tabCharge.commandes = true;
+    chargerCommandes();
+  }
+  ouvrirTab(tabInit);
 }
 init();
 </script>
