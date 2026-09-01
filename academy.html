@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nahira Academy — Formations Nail Art</title>
+<meta name="description" content="Apprenez les techniques professionnelles de nail art avec Nahira Beauty Studio. Masterclasses en ligne, quiz, certificat inclus.">
+<meta property="og:site_name" content="Nahira Beauty Nails">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Nahira Academy — Formations Nail Art Pro">
+<meta property="og:description" content="Masterclasses en ligne : techniques professionnelles, quiz et certificat inclus.">
+<meta property="og:image" content="https://nahirabeautynails.fr/og.jpg">
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ── Reset & tokens Academy ──────────────────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+:root{
+  /* Nav (dark, même que boutique) */
+  --n-noir:#060406; --n-ligne:rgba(232,194,122,.16);
+  --n-texte-doux:rgba(255,247,250,.6); --n-rose:#F06FA7; --n-or:#E8C27A;
+  --n-blanc:#FFF7FA; --n-rose-vif:#FF7EB6;
+  /* Academy — palette ivoire/rose/or */
+  --fond:#FDFBF8;
+  --fond-2:#F7F1EA;
+  --fond-3:#F0E8DE;
+  --carte:#FFFFFF;
+  --texte:#1C1612;
+  --texte-doux:#6B5E52;
+  --texte-pale:#A89A8E;
+  --rose:#B85C7A;
+  --rose-poudre:#D4899A;
+  --rose-pale:#F2E0E6;
+  --or:#9A7A40;
+  --or-vif:#B8944A;
+  --or-pale:#F0E4CC;
+  --ligne:rgba(154,122,64,.15);
+  --ombre:rgba(28,22,18,.08);
+}
+body{
+  background:var(--fond); color:var(--texte);
+  font-family:'Cormorant Garamond',serif; font-size:18px; line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+
+/* ── Nav sombre identique boutique ──────────────────────────────────────── */
+.b-nav{
+  position:sticky; top:0; z-index:50;
+  background:rgba(6,4,6,.88); backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--n-ligne);
+}
+.b-nav-inner{
+  max-width:1100px; margin:0 auto; padding:14px 22px;
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+}
+.b-logo{text-decoration:none; text-align:center; line-height:1.05}
+.b-logo .l1{font-family:'Cormorant Garamond',serif; font-size:1.05rem; letter-spacing:.06em; color:var(--n-blanc)}
+.b-logo .l1 span{color:var(--n-rose)}
+.b-logo .l2{font-family:'Parisienne',cursive; color:var(--n-or); font-size:1.05rem; display:block}
+.b-links{display:flex; gap:20px; list-style:none; align-items:center}
+.b-links a{
+  font-family:'Montserrat',sans-serif; font-size:.72rem; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--n-texte-doux); text-decoration:none; transition:color .25s;
+}
+.b-links a:hover,.b-links a.actif{color:var(--n-or)}
+.cart-badge{
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:18px; height:18px; padding:0 5px; margin-left:4px;
+  background:var(--n-rose); color:var(--n-noir); border-radius:99px;
+  font-size:.68rem; font-weight:600; vertical-align:middle;
+}
+.cart-badge:empty{display:none}
+.b-burger{
+  display:none; background:none; border:1px solid var(--n-ligne); color:var(--n-texte-doux);
+  border-radius:8px; padding:8px 13px; cursor:pointer; font-size:1.05rem; line-height:1; flex:none;
+}
+.b-menu-mobile{
+  display:none; flex-direction:column;
+  border-top:1px solid var(--n-ligne); background:rgba(6,4,6,.97);
+}
+.b-menu-mobile a{
+  font-family:'Montserrat',sans-serif; font-size:.78rem; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--n-texte-doux); text-decoration:none; padding:14px 22px; display:block;
+  border-bottom:1px solid rgba(232,194,122,.08); transition:color .2s;
+}
+.b-menu-mobile a:hover{color:var(--n-rose)}
+.b-menu-mobile.ouvert{display:flex}
+@media(max-width:680px){
+  .b-burger{display:block}
+  .b-links{display:none !important}
+}
+
+/* ── Hero Academy ────────────────────────────────────────────────────────── */
+.ac-hero{
+  background:linear-gradient(160deg, var(--fond) 0%, var(--fond-2) 60%, var(--or-pale) 100%);
+  padding:72px 22px 60px; text-align:center; position:relative; overflow:hidden;
+}
+.ac-hero::before{
+  content:''; position:absolute; inset:0;
+  background-image:
+    radial-gradient(1px 1px at 15% 30%, rgba(154,122,64,.4), transparent),
+    radial-gradient(1.5px 1.5px at 75% 20%, rgba(184,92,122,.3), transparent),
+    radial-gradient(1px 1px at 45% 70%, rgba(154,122,64,.3), transparent),
+    radial-gradient(1px 1px at 85% 65%, rgba(184,92,122,.2), transparent);
+  background-size:400px 400px; pointer-events:none;
+}
+.ac-hero-inner{max-width:680px; margin:0 auto; position:relative}
+.ac-eyebrow{
+  font-family:'Montserrat',sans-serif; font-size:.65rem; letter-spacing:.35em; text-transform:uppercase;
+  color:var(--or-vif); margin-bottom:16px;
+  display:inline-flex; align-items:center; gap:10px;
+}
+.ac-eyebrow::before,.ac-eyebrow::after{content:''; display:block; width:28px; height:1px; background:var(--or-vif); opacity:.6}
+.ac-hero h1{
+  font-family:'Cormorant Garamond',serif; font-weight:300; font-size:clamp(2.4rem,7vw,4rem);
+  line-height:1.05; color:var(--texte); margin-bottom:4px;
+}
+.ac-hero h1 em{font-style:italic; color:var(--rose)}
+.ac-script{
+  font-family:'Parisienne',cursive; font-size:clamp(1.8rem,5vw,2.8rem);
+  color:var(--or-vif); display:block; margin-bottom:18px;
+}
+.ac-hero-sub{
+  font-family:'Montserrat',sans-serif; font-size:.88rem; line-height:1.8;
+  color:var(--texte-doux); max-width:480px; margin:0 auto 32px; letter-spacing:.02em;
+}
+.ac-hero-stats{
+  display:flex; justify-content:center; gap:36px; flex-wrap:wrap;
+  padding-top:28px; border-top:1px solid var(--ligne);
+}
+.ac-hero-stat .n{
+  font-family:'Cormorant Garamond',serif; font-size:1.9rem; font-weight:300; color:var(--or-vif);
+  display:block; line-height:1;
+}
+.ac-hero-stat .l{
+  font-family:'Montserrat',sans-serif; font-size:.65rem; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--texte-pale); display:block; margin-top:4px;
+}
+
+/* ── Section commune ─────────────────────────────────────────────────────── */
+.ac-section{padding:64px 22px}
+.ac-section.alt{background:var(--fond-2)}
+.ac-container{max-width:1100px; margin:0 auto}
+.ac-titre-section{
+  font-family:'Cormorant Garamond',serif; font-weight:300;
+  font-size:clamp(1.5rem,4vw,2.2rem); color:var(--texte); margin-bottom:10px;
+}
+.ac-titre-section em{font-style:italic; color:var(--rose)}
+.ac-ornement{
+  width:40px; height:1px; background:linear-gradient(90deg, var(--or-vif), transparent);
+  margin:14px 0 32px;
+}
+
+/* ── Grille formations ────────────────────────────────────────────────────── */
+.ac-grille{
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(300px,1fr));
+  gap:28px;
+}
+.ac-card{
+  background:var(--carte); border:1px solid var(--ligne);
+  border-radius:20px; overflow:hidden;
+  box-shadow:0 4px 24px var(--ombre);
+  transition:transform .3s, box-shadow .3s;
+  display:flex; flex-direction:column;
+}
+.ac-card:hover{transform:translateY(-4px); box-shadow:0 12px 40px rgba(154,122,64,.12)}
+.ac-card-cover{
+  width:100%; aspect-ratio:16/9; background:var(--fond-3);
+  display:flex; align-items:center; justify-content:center;
+  position:relative; overflow:hidden;
+}
+.ac-card-cover img{width:100%; height:100%; object-fit:cover}
+.ac-card-cover-placeholder{
+  font-family:'Parisienne',cursive; font-size:3rem; color:var(--rose-poudre); opacity:.5;
+}
+.ac-card-badge{
+  position:absolute; top:14px; left:14px;
+  font-family:'Montserrat',sans-serif; font-size:.58rem; letter-spacing:.18em; text-transform:uppercase;
+  padding:5px 12px; border-radius:99px; font-weight:600;
+}
+.ac-badge-new{background:var(--rose); color:#fff}
+.ac-badge-gratuit{background:var(--or-vif); color:#fff}
+.ac-card-body{padding:22px 22px 26px; flex:1; display:flex; flex-direction:column}
+.ac-card-level{
+  font-family:'Montserrat',sans-serif; font-size:.6rem; letter-spacing:.22em; text-transform:uppercase;
+  color:var(--or-vif); margin-bottom:8px;
+}
+.ac-card-title{
+  font-family:'Cormorant Garamond',serif; font-weight:400;
+  font-size:1.35rem; line-height:1.2; color:var(--texte); margin-bottom:10px;
+}
+.ac-card-sub{
+  font-family:'Montserrat',sans-serif; font-size:.78rem; line-height:1.7;
+  color:var(--texte-doux); flex:1; margin-bottom:16px;
+}
+.ac-card-meta{
+  display:flex; gap:14px; flex-wrap:wrap; margin-bottom:18px;
+}
+.ac-meta-item{
+  font-family:'Montserrat',sans-serif; font-size:.65rem; letter-spacing:.1em;
+  color:var(--texte-pale); display:flex; align-items:center; gap:5px;
+}
+.ac-card-footer{
+  display:flex; align-items:center; justify-content:space-between;
+  padding-top:16px; border-top:1px solid var(--ligne);
+}
+.ac-prix{
+  font-family:'Cormorant Garamond',serif; font-size:1.6rem;
+  font-weight:400; color:var(--texte);
+}
+.ac-prix small{font-size:.9rem; color:var(--texte-pale); font-family:'Montserrat',sans-serif}
+.ac-btn{
+  font-family:'Montserrat',sans-serif; font-size:.7rem; letter-spacing:.18em; text-transform:uppercase;
+  padding:11px 22px; border-radius:99px; border:none; cursor:pointer;
+  background:linear-gradient(135deg, var(--rose), var(--rose-poudre));
+  color:#fff; font-weight:500; transition:all .3s; text-decoration:none; display:inline-block;
+}
+.ac-btn:hover{transform:translateY(-1px); box-shadow:0 6px 20px rgba(184,92,122,.3)}
+.ac-btn.or{background:linear-gradient(135deg, var(--or-vif), #D4A860); color:#fff}
+.ac-btn.or:hover{box-shadow:0 6px 20px rgba(154,122,64,.3)}
+
+/* ── State vide / chargement ─────────────────────────────────────────────── */
+.ac-skeleton{
+  background:var(--carte); border:1px solid var(--ligne); border-radius:20px;
+  overflow:hidden; box-shadow:0 4px 24px var(--ombre);
+}
+.skel-cover{width:100%; aspect-ratio:16/9; background:var(--fond-3); animation:shimmer 1.6s infinite}
+.skel-body{padding:22px}
+.skel-line{height:12px; border-radius:6px; background:var(--fond-3); margin-bottom:10px; animation:shimmer 1.6s infinite}
+.skel-line.l{width:70%}
+.skel-line.s{width:40%}
+@keyframes shimmer{0%,100%{opacity:.5}50%{opacity:1}}
+
+.ac-vide{
+  text-align:center; padding:60px 0; max-width:480px; margin:0 auto;
+}
+.ac-vide-icon{font-size:3rem; margin-bottom:18px; opacity:.5}
+.ac-vide h3{
+  font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:300;
+  color:var(--texte-doux); margin-bottom:10px;
+}
+.ac-vide p{
+  font-family:'Montserrat',sans-serif; font-size:.82rem; color:var(--texte-pale);
+  line-height:1.8;
+}
+
+/* ── Avantages ───────────────────────────────────────────────────────────── */
+.ac-avantages{
+  display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr));
+  gap:20px; margin-top:40px;
+}
+.ac-avantage{
+  background:var(--carte); border:1px solid var(--ligne); border-radius:16px;
+  padding:24px 20px; text-align:center;
+}
+.ac-avantage-icon{font-size:1.8rem; margin-bottom:12px}
+.ac-avantage h4{
+  font-family:'Cormorant Garamond',serif; font-size:1.05rem; font-weight:400;
+  color:var(--texte); margin-bottom:6px;
+}
+.ac-avantage p{
+  font-family:'Montserrat',sans-serif; font-size:.75rem; color:var(--texte-doux);
+  line-height:1.7;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.ac-footer{
+  border-top:1px solid var(--ligne); padding:30px 22px 50px;
+  text-align:center; color:var(--texte-pale);
+  font-family:'Montserrat',sans-serif; font-size:.72rem; letter-spacing:.08em;
+  background:var(--fond);
+}
+.ac-footer a{color:var(--texte-pale)}
+.ac-footer a:hover{color:var(--or-vif)}
+.ac-footer .liens{display:flex; gap:16px; justify-content:center; flex-wrap:wrap; margin-top:10px}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media(max-width:640px){
+  .ac-hero{padding:52px 16px 44px}
+  .ac-hero-stats{gap:22px}
+  .ac-section{padding:44px 16px}
+  .ac-grille{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ── Nav ────────────────────────────────────────────────────────────── -->
+<nav class="b-nav" role="navigation" aria-label="Navigation principale">
+  <div class="b-nav-inner">
+    <a href="index.html" class="b-logo" aria-label="Nahira Beauty Nails — Accueil">
+      <span class="l1">Nahira <span>Beauty</span></span>
+      <span class="l2">Nails</span>
+    </a>
+    <ul class="b-links" aria-label="Navigation">
+      <li><a href="collection.html">Collection</a></li>
+      <li><a href="academy.html" class="actif">Academy</a></li>
+      <li><a href="compte.html">Compte</a></li>
+      <li><a href="panier.html">Panier<span class="cart-badge" id="cart-badge-nav"></span></a></li>
+    </ul>
+    <button class="b-burger" id="navBurger" aria-label="Ouvrir le menu" aria-expanded="false">☰</button>
+  </div>
+  <div class="b-menu-mobile" id="navMobile">
+    <a href="collection.html">Collection</a>
+    <a href="academy.html">Academy</a>
+    <a href="compte.html">Compte</a>
+    <a href="panier.html">Panier</a>
+  </div>
+</nav>
+
+<!-- ── Hero ───────────────────────────────────────────────────────────── -->
+<header class="ac-hero">
+  <div class="ac-hero-inner">
+    <div class="ac-eyebrow">Formations en ligne</div>
+    <h1>Apprenez <em>l'art</em> des ongles</h1>
+    <span class="ac-script">par Nahira</span>
+    <p class="ac-hero-sub">
+      Des masterclasses professionnelles pour maîtriser les techniques nail art
+      — à votre rythme, depuis chez vous, avec quiz et certificat inclus.
+    </p>
+    <div class="ac-hero-stats" id="acStats" hidden>
+      <div class="ac-hero-stat">
+        <span class="n" id="statFormations">1</span>
+        <span class="l">Formation</span>
+      </div>
+      <div class="ac-hero-stat">
+        <span class="n">∞</span>
+        <span class="l">Accès à vie</span>
+      </div>
+      <div class="ac-hero-stat">
+        <span class="n">✦</span>
+        <span class="l">Certificat inclus</span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ── Formations ─────────────────────────────────────────────────────── -->
+<section class="ac-section">
+  <div class="ac-container">
+    <div class="ac-titre-section">Les <em>formations</em></div>
+    <div class="ac-ornement"></div>
+    <div class="ac-grille" id="formationsGrid">
+      <!-- Squelettes de chargement -->
+      <div class="ac-skeleton">
+        <div class="skel-cover"></div>
+        <div class="skel-body">
+          <div class="skel-line s"></div>
+          <div class="skel-line l"></div>
+          <div class="skel-line"></div>
+        </div>
+      </div>
+      <div class="ac-skeleton">
+        <div class="skel-cover"></div>
+        <div class="skel-body">
+          <div class="skel-line s"></div>
+          <div class="skel-line l"></div>
+          <div class="skel-line"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Avantages ──────────────────────────────────────────────────────── -->
+<section class="ac-section alt">
+  <div class="ac-container">
+    <div class="ac-titre-section">Pourquoi <em>Nahira Academy</em>&nbsp;?</div>
+    <div class="ac-ornement"></div>
+    <div class="ac-avantages">
+      <div class="ac-avantage">
+        <div class="ac-avantage-icon">🎓</div>
+        <h4>Certificat de réussite</h4>
+        <p>Après réussite du quiz final, recevez votre attestation personnalisée et téléchargeable.</p>
+      </div>
+      <div class="ac-avantage">
+        <div class="ac-avantage-icon">📋</div>
+        <h4>Quiz & progression</h4>
+        <p>Validez vos acquis avec un quiz interactif. Votre progression est sauvegardée à chaque leçon.</p>
+      </div>
+      <div class="ac-avantage">
+        <div class="ac-avantage-icon">📦</div>
+        <h4>Matériel inclus</h4>
+        <p>Chaque formation liste le matériel recommandé, téléchargeable depuis votre espace élève.</p>
+      </div>
+      <div class="ac-avantage">
+        <div class="ac-avantage-icon">♾️</div>
+        <h4>Accès à vie</h4>
+        <p>Achetez une fois, accédez pour toujours. Revenez réviser à votre rythme, sans limite.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ─────────────────────────────────────────────────────────── -->
+<footer class="ac-footer">
+  <div>Nahira Beauty Nails — Tous droits réservés © 2026</div>
+  <div class="liens">
+    <a href="index.html">Accueil</a>
+    <a href="collection.html">Collection</a>
+    <a href="cgv.html">CGV</a>
+    <a href="compte.html">Mon compte</a>
+  </div>
+</footer>
+
+<script>
+const SUPABASE_URL     = "https://mxbmjtzrggahbwahxmkp.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14Ym1qdHpyZ2dhaGJ3YWh4bWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyMzc5NDQsImV4cCI6MjA5NjgxMzk0NH0.iTibkVCaTZYoMzQO4TQvddlKeZY40vNcfJ-kEgIHXpE";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ── Nav burger ──────────────────────────────────────────────────────────
+const burger = document.getElementById('navBurger');
+const mobileMenu = document.getElementById('navMobile');
+burger?.addEventListener('click', () => {
+  const open = mobileMenu.classList.toggle('ouvert');
+  burger.setAttribute('aria-expanded', open ? 'true' : 'false');
+  burger.textContent = open ? '✕' : '☰';
+});
+
+// ── Badge panier ────────────────────────────────────────────────────────
+function updateBadge() {
+  try {
+    const cart = JSON.parse(localStorage.getItem('nahira_cart') || '[]');
+    const total = cart.reduce((s, it) => s + (it.quantity || 1), 0);
+    document.querySelectorAll('.cart-badge').forEach(b => b.textContent = total || '');
+  } catch {}
+}
+updateBadge();
+
+// ── Charger les formations ──────────────────────────────────────────────
+function niveauLabel(level) {
+  return { debutant: 'Débutant', intermediaire: 'Intermédiaire', avance: 'Avancé' }[level] || '';
+}
+function formatPrice(cents) {
+  return (cents / 100).toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' });
+}
+function formatDuration(min) {
+  if (!min) return '';
+  const h = Math.floor(min / 60), m = min % 60;
+  return h ? `${h}h${m ? String(m).padStart(2,'0') : ''}` : `${m} min`;
+}
+
+async function loadFormations() {
+  const grid = document.getElementById('formationsGrid');
+  const stats = document.getElementById('acStats');
+  const statN = document.getElementById('statFormations');
+
+  const { data: courses, error } = await sb
+    .from('academy_courses')
+    .select('id, slug, title, subtitle, cover_url, level, duration_minutes, passing_score, is_free, sort_order, product_id, products(price_cents)')
+    .eq('is_published', true)
+    .order('sort_order');
+
+  if (error) {
+    grid.innerHTML = '<div class="ac-vide"><div class="ac-vide-icon">⚠️</div><h3>Impossible de charger les formations</h3><p>Veuillez réessayer dans quelques instants.</p></div>';
+    return;
+  }
+
+  if (!courses || courses.length === 0) {
+    grid.innerHTML = `<div class="ac-vide" style="grid-column:1/-1">
+      <div class="ac-vide-icon">✨</div>
+      <h3>Prochainement…</h3>
+      <p>Nos premières masterclasses arrivent bientôt.<br>Revenez très vite !</p>
+    </div>`;
+    return;
+  }
+
+  statN.textContent = courses.length;
+  stats.hidden = false;
+
+  grid.innerHTML = courses.map(c => {
+    const price = c.is_free ? 'Gratuit' : (c.products?.price_cents ? formatPrice(c.products.price_cents) : '');
+    const cover = c.cover_url
+      ? `<img src="${c.cover_url}" alt="${c.title}" loading="lazy">`
+      : `<div class="ac-card-cover-placeholder">✦</div>`;
+    const badgeHtml = c.is_free
+      ? `<div class="ac-card-badge ac-badge-gratuit">Gratuit</div>`
+      : `<div class="ac-card-badge ac-badge-new">Nouveau</div>`;
+    const meta = [
+      c.level ? `<span class="ac-meta-item">📊 ${niveauLabel(c.level)}</span>` : '',
+      c.duration_minutes ? `<span class="ac-meta-item">⏱ ${formatDuration(c.duration_minutes)}</span>` : '',
+      `<span class="ac-meta-item">🎓 Certificat inclus</span>`,
+    ].filter(Boolean).join('');
+
+    return `<a href="formation.html?slug=${c.slug}" class="ac-card" aria-label="${c.title}">
+      <div class="ac-card-cover">${cover}${badgeHtml}</div>
+      <div class="ac-card-body">
+        ${c.level ? `<div class="ac-card-level">${niveauLabel(c.level)}</div>` : ''}
+        <h2 class="ac-card-title">${c.title}</h2>
+        ${c.subtitle ? `<p class="ac-card-sub">${c.subtitle}</p>` : ''}
+        <div class="ac-card-meta">${meta}</div>
+        <div class="ac-card-footer">
+          <div class="ac-prix">${price}</div>
+          <span class="ac-btn">Découvrir →</span>
+        </div>
+      </div>
+    </a>`;
+  }).join('');
+}
+
+loadFormations();
+</script>
+</body>
+</html>
