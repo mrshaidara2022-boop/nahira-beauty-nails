@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Certificat — Nahira Academy</title>
+<meta name="description" content="Certificat d'attestation de formation — Nahira Academy.">
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400;1,500&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --ivoire:#FDFBF8;--ivoire-2:#F5EFE6;--ivoire-3:#EDE4D8;
+  --rose:#B85C7A;--rose-pale:#F2E0E6;
+  --or:#9A7A40;--or-vif:#B8944A;--or-pale:#F0E4CC;
+  --texte:#1C1410;--texte-doux:#6B5040;--texte-pale:#A8906A;
+  --ligne:rgba(154,122,64,.2);--ombre:rgba(28,20,16,.08);
+}
+body{
+  background:var(--ivoire-2);color:var(--texte);
+  font-family:'Cormorant Garamond',serif;
+  min-height:100vh;padding:32px 16px 64px;
+  -webkit-font-smoothing:antialiased;
+}
+img{max-width:100%;display:block}
+
+/* ── Nav screen-only ── */
+.cert-nav{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  max-width:900px;margin:0 auto 28px;padding:0 4px;
+}
+.cert-nav-logo{text-decoration:none;line-height:1.1}
+.cert-nav-logo .l1{font-family:'Cormorant Garamond',serif;font-size:.95rem;color:var(--texte-doux)}
+.cert-nav-logo .l1 span{color:var(--rose)}
+.cert-nav-logo .l2{font-family:'Parisienne',cursive;color:var(--or-vif);font-size:.95rem}
+.cert-nav-actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn{
+  font-family:'Montserrat',sans-serif;font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;
+  padding:11px 22px;border-radius:99px;cursor:pointer;text-decoration:none;
+  display:inline-flex;align-items:center;gap:6px;transition:all .25s;border:none;
+}
+.btn-or{background:linear-gradient(135deg,var(--or-vif),#D4A860);color:#fff;font-weight:600;box-shadow:0 4px 16px rgba(154,122,64,.25)}
+.btn-or:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(154,122,64,.35)}
+.btn-ghost{border:1px solid var(--ligne);background:transparent;color:var(--texte-doux)}
+.btn-ghost:hover{border-color:var(--or);color:var(--texte)}
+
+/* ── Loading / error ── */
+#chargement,#introuvable{
+  text-align:center;padding:80px 20px;
+  font-family:'Montserrat',sans-serif;font-size:.85rem;color:var(--texte-pale);
+  letter-spacing:.08em;line-height:1.8;
+}
+#introuvable a{color:var(--or-vif);text-decoration:none}
+
+/* ── Certificat (screen) ── */
+.cert-wrap{max-width:760px;margin:0 auto;position:relative}
+
+.cert{
+  background:var(--ivoire);
+  border:1px solid rgba(154,122,64,.25);
+  border-radius:24px;
+  padding:56px 52px 52px;
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 8px 40px var(--ombre),0 1px 0 rgba(255,255,255,.9) inset;
+}
+
+/* Coin décoratif */
+.cert::before,.cert::after{
+  content:"";position:absolute;width:80px;height:80px;
+  border:1px solid rgba(154,122,64,.18);
+}
+.cert::before{top:18px;left:18px;border-right:none;border-bottom:none;border-radius:8px 0 0 0}
+.cert::after{bottom:18px;right:18px;border-left:none;border-top:none;border-radius:0 0 8px 0}
+
+/* Bande supérieure */
+.cert-band{
+  display:flex;align-items:center;justify-content:center;gap:14px;
+  margin-bottom:36px;
+}
+.cert-band-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--or),transparent)}
+.cert-band-text{
+  font-family:'Montserrat',sans-serif;font-size:.6rem;letter-spacing:.4em;text-transform:uppercase;
+  color:var(--or-vif);white-space:nowrap;
+}
+
+/* Logo */
+.cert-logo{text-align:center;margin-bottom:32px}
+.cert-logo-script{font-family:'Parisienne',cursive;color:var(--rose);font-size:2.6rem;line-height:1;display:block}
+.cert-logo-sub{
+  font-family:'Montserrat',sans-serif;font-size:.58rem;letter-spacing:.5em;
+  text-transform:uppercase;color:var(--texte-pale);margin-top:4px;display:block;
+}
+
+/* Corps */
+.cert-body{text-align:center}
+.cert-atteste{
+  font-family:'Montserrat',sans-serif;font-size:.62rem;letter-spacing:.3em;
+  text-transform:uppercase;color:var(--texte-pale);margin-bottom:16px;
+}
+.cert-nom{
+  font-family:'Cormorant Garamond',serif;font-weight:300;font-style:italic;
+  font-size:clamp(1.8rem,5vw,3rem);color:var(--texte);line-height:1.05;
+  margin-bottom:22px;
+}
+.cert-a-complete{
+  font-family:'Montserrat',sans-serif;font-size:.68rem;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--texte-pale);margin-bottom:10px;
+}
+.cert-formation{
+  font-family:'Cormorant Garamond',serif;font-weight:400;
+  font-size:clamp(1.1rem,3vw,1.55rem);color:var(--or-vif);
+  line-height:1.2;margin-bottom:28px;
+}
+.cert-divider{
+  display:flex;align-items:center;justify-content:center;gap:14px;margin:24px auto;max-width:400px;
+}
+.cert-divider span{font-family:'Parisienne',cursive;color:var(--or-vif);font-size:1.1rem}
+.cert-divider::before,.cert-divider::after{content:"";flex:1;height:1px;background:var(--ligne)}
+
+/* Grille infos */
+.cert-meta{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:0;
+  border:1px solid var(--ligne);border-radius:12px;overflow:hidden;
+  margin:28px auto;max-width:540px;
+}
+.cert-meta-item{padding:14px 18px;text-align:center;border-right:1px solid var(--ligne)}
+.cert-meta-item:last-child{border-right:none}
+.cert-meta-label{
+  font-family:'Montserrat',sans-serif;font-size:.56rem;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--texte-pale);margin-bottom:6px;
+}
+.cert-meta-val{font-family:'Cormorant Garamond',serif;font-size:1.05rem;color:var(--texte)}
+
+/* Mention légale */
+.cert-legal{
+  font-family:'Montserrat',sans-serif;font-size:.62rem;color:var(--texte-pale);
+  line-height:1.7;margin:24px auto 0;max-width:520px;
+  border-top:1px solid var(--ligne);padding-top:18px;
+}
+
+/* Signature zone */
+.cert-sig-zone{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  margin-top:32px;flex-wrap:wrap;gap:16px;
+}
+.cert-sig{text-align:center}
+.cert-sig-script{font-family:'Parisienne',cursive;font-size:2rem;color:var(--rose);line-height:1;margin-bottom:4px}
+.cert-sig-label{font-family:'Montserrat',sans-serif;font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--texte-pale)}
+.cert-ref{text-align:right}
+.cert-ref-num{font-family:'Montserrat',sans-serif;font-size:.72rem;letter-spacing:.1em;color:var(--or-vif);font-weight:600}
+.cert-ref-label{font-family:'Montserrat',sans-serif;font-size:.58rem;letter-spacing:.18em;text-transform:uppercase;color:var(--texte-pale);margin-top:3px}
+
+/* Sceau */
+.cert-sceau{
+  display:inline-flex;flex-direction:column;align-items:center;
+  width:90px;text-align:center;
+}
+.cert-sceau-ring{
+  width:70px;height:70px;border-radius:50%;
+  border:2px solid var(--or-vif);
+  display:flex;align-items:center;justify-content:center;
+  background:var(--or-pale);
+  font-family:'Parisienne',cursive;font-size:1.8rem;color:var(--or-vif);
+  margin-bottom:5px;
+}
+.cert-sceau-label{font-family:'Montserrat',sans-serif;font-size:.52rem;letter-spacing:.2em;text-transform:uppercase;color:var(--or)}
+
+/* ── Print styles ── */
+@media print{
+  body{background:#fff;padding:0}
+  .cert-nav,#introuvable,[hidden]{display:none!important}
+  .cert-wrap{max-width:100%}
+  .cert{
+    border-radius:0;border:none;
+    box-shadow:none;padding:30mm 28mm;
+    page-break-inside:avoid;
+  }
+  .cert::before,.cert::after{display:none}
+  .cert-nom{font-size:2.8rem}
+}
+
+@media(max-width:520px){
+  .cert{padding:36px 24px 32px}
+  .cert-meta{grid-template-columns:1fr}
+  .cert-meta-item{border-right:none;border-bottom:1px solid var(--ligne)}
+  .cert-meta-item:last-child{border-bottom:none}
+  .cert-sig-zone{flex-direction:column;align-items:center;text-align:center}
+  .cert-ref{text-align:center}
+}
+</style>
+</head>
+<body>
+
+<!-- Nav (screen only) -->
+<nav class="cert-nav">
+  <a href="academy.html" class="cert-nav-logo">
+    <span class="l1">Nahira <span>Academy</span></span>
+    <span class="l2">✦</span>
+  </a>
+  <div class="cert-nav-actions">
+    <button class="btn btn-or" onclick="window.print()">Imprimer / Enregistrer ↓</button>
+    <a class="btn btn-ghost" href="compte.html?tab=formations">Mes formations</a>
+  </div>
+</nav>
+
+<p id="chargement">Génération du certificat…</p>
+
+<div class="cert-wrap" id="certWrap" hidden>
+  <div class="cert">
+    <!-- Bande titre -->
+    <div class="cert-band">
+      <div class="cert-band-line"></div>
+      <span class="cert-band-text">Attestation de Formation Professionnelle</span>
+      <div class="cert-band-line"></div>
+    </div>
+
+    <!-- Logo -->
+    <div class="cert-logo">
+      <span class="cert-logo-script">Nahira Academy</span>
+      <span class="cert-logo-sub">École de beauté · France</span>
+    </div>
+
+    <!-- Corps -->
+    <div class="cert-body">
+      <p class="cert-atteste">Certifie que</p>
+      <p class="cert-nom" id="c-nom">Prénom Nom</p>
+      <p class="cert-a-complete">a complété avec succès la formation</p>
+      <p class="cert-formation" id="c-formation">Titre de la formation</p>
+
+      <div class="cert-divider"><span>✦</span></div>
+
+      <div class="cert-meta">
+        <div class="cert-meta-item">
+          <div class="cert-meta-label">Date d'émission</div>
+          <div class="cert-meta-val" id="c-date">—</div>
+        </div>
+        <div class="cert-meta-item">
+          <div class="cert-meta-label">Score obtenu</div>
+          <div class="cert-meta-val" id="c-score">—</div>
+        </div>
+        <div class="cert-meta-item">
+          <div class="cert-meta-label">Organisme</div>
+          <div class="cert-meta-val">Nahira Beauty Nails</div>
+        </div>
+      </div>
+
+      <p class="cert-legal">
+        Ce certificat d'attestation confirme la participation active et la réussite du quiz de validation
+        de la formation indiquée ci-dessus, dispensée par Nahira Beauty Nails.
+        Il ne constitue pas un titre professionnel au sens de la réglementation sur la formation
+        professionnelle et ne remplace pas un diplôme d'État.
+        Vérification : <span id="c-ref-inline" style="color:var(--or-vif);font-weight:500"></span>
+      </p>
+    </div>
+
+    <!-- Signature & sceau -->
+    <div class="cert-sig-zone">
+      <div class="cert-sig">
+        <div class="cert-sig-script">Nahira ✦</div>
+        <div class="cert-sig-label">Fondatrice · Nahira Academy</div>
+      </div>
+
+      <div class="cert-sceau">
+        <div class="cert-sceau-ring">✦</div>
+        <div class="cert-sceau-label">Certificat<br>numérique</div>
+      </div>
+
+      <div class="cert-ref">
+        <div class="cert-ref-num" id="c-ref">—</div>
+        <div class="cert-ref-label">Référence unique</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p id="introuvable" hidden style="text-align:center">
+  Ce certificat est introuvable ou invalide.<br>
+  <a href="academy.html">Retour à l'Academy →</a>
+</p>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(async function() {
+  const SUPABASE_URL      = "https://mxbmjtzrggahbwahxmkp.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14Ym1qdHpyZ2dhaGJ3YWh4bWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyMzc5NDQsImV4cCI6MjA5NjgxMzk0NH0.iTibkVCaTZYoMzQO4TQvddlKeZY40vNcfJ-kEgIHXpE";
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  function fin(ok) {
+    document.getElementById('chargement').hidden = true;
+    document.getElementById(ok ? 'certWrap' : 'introuvable').hidden = false;
+  }
+
+  const ref = new URLSearchParams(location.search).get('ref') || '';
+  if (!ref) return fin(false);
+
+  const { data: cert, error } = await sb.from('academy_certificates')
+    .select('reference, issued_at, user_id, course_id, recipient_name')
+    .eq('reference', ref)
+    .maybeSingle();
+
+  if (error || !cert) return fin(false);
+
+  // Fetch course title
+  const { data: course } = await sb.from('academy_courses')
+    .select('title')
+    .eq('id', cert.course_id)
+    .maybeSingle();
+
+  // Fetch best passing score for this user + course (only visible to the owner via RLS)
+  const { data: attempt } = await sb.from('academy_quiz_attempts')
+    .select('score')
+    .eq('user_id', cert.user_id)
+    .eq('course_id', cert.course_id)
+    .eq('passed', true)
+    .order('score', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const nom = cert.recipient_name || 'Participante';
+  const dateStr = new Date(cert.issued_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const score = attempt ? attempt.score + '%' : '—';
+
+  document.title = 'Certificat ' + (course?.title || '') + ' — ' + nom + ' — Nahira Academy';
+  document.getElementById('c-nom').textContent        = nom;
+  document.getElementById('c-formation').textContent  = course?.title || '—';
+  document.getElementById('c-date').textContent       = dateStr;
+  document.getElementById('c-score').textContent      = score;
+  document.getElementById('c-ref').textContent        = cert.reference;
+  document.getElementById('c-ref-inline').textContent = cert.reference;
+
+  fin(true);
+})();
+</script>
+</body>
+</html>

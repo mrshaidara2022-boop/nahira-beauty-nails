@@ -191,6 +191,40 @@ a{color:inherit;text-decoration:none}
   background:linear-gradient(135deg,var(--rose),var(--rose-poudre));color:#fff;
 }
 
+/* ── Quiz ── */
+.quiz-intro{font-family:'Montserrat',sans-serif;font-size:.88rem;color:var(--texte-doux);line-height:1.8;margin-bottom:36px;max-width:540px}
+.quiz-q{background:var(--carte);border:1px solid var(--ligne);border-radius:16px;padding:24px 28px;margin-bottom:16px;box-shadow:0 2px 12px var(--ombre)}
+.quiz-q-num{font-family:'Montserrat',sans-serif;font-size:.62rem;letter-spacing:.24em;text-transform:uppercase;color:var(--or-vif);margin-bottom:10px}
+.quiz-q-text{font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:var(--texte);margin-bottom:18px;line-height:1.4}
+.quiz-opts{display:flex;flex-direction:column;gap:9px}
+.quiz-opt{
+  display:flex;align-items:center;gap:12px;cursor:pointer;
+  padding:12px 16px;border-radius:10px;border:1px solid var(--ligne);
+  transition:all .2s;background:var(--fond-2);
+  font-family:'Montserrat',sans-serif;font-size:.86rem;color:var(--texte-doux);
+  user-select:none;
+}
+.quiz-opt:hover{border-color:var(--rose);background:var(--rose-pale);color:var(--rose)}
+.quiz-opt input[type=radio]{accent-color:var(--rose);width:16px;height:16px;flex:none;cursor:pointer}
+.quiz-opt.selected{border-color:var(--rose);background:var(--rose-pale);color:var(--rose);font-weight:500}
+.quiz-opt.correct{border-color:var(--vert);background:var(--vert-pale);color:var(--vert);font-weight:500}
+.quiz-opt.wrong{border-color:#b85c7a;background:rgba(184,92,122,.08);color:#b85c7a}
+.quiz-explanation{font-family:'Montserrat',sans-serif;font-size:.78rem;color:var(--texte-pale);margin-top:14px;padding:12px 16px;background:var(--fond-2);border-radius:10px;line-height:1.7;display:none}
+.quiz-explanation.show{display:block}
+.quiz-submit-zone{text-align:center;padding:28px 0 8px}
+.quiz-hint{font-family:'Montserrat',sans-serif;font-size:.72rem;color:var(--texte-pale);margin-top:14px;line-height:1.6}
+.quiz-result{text-align:center;padding:48px 28px;background:var(--carte);border:1px solid var(--ligne);border-radius:20px;margin-top:28px;box-shadow:0 4px 20px var(--ombre)}
+.quiz-score-circle{
+  width:110px;height:110px;border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  margin:0 auto 24px;border:3px solid;
+}
+.quiz-score-num{font-family:'Cormorant Garamond',serif;font-size:2.2rem;line-height:1}
+.quiz-score-label{font-family:'Montserrat',sans-serif;font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;margin-top:3px}
+.quiz-result-title{font-family:'Cormorant Garamond',serif;font-size:1.9rem;margin-bottom:10px;font-weight:300}
+.quiz-result-sub{font-family:'Montserrat',sans-serif;font-size:.86rem;color:var(--texte-doux);line-height:1.7;margin-bottom:28px;max-width:480px;margin-left:auto;margin-right:auto}
+.quiz-result-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+
 /* Mobile */
 .sidebar-toggle{
   display:none;position:fixed;bottom:80px;right:16px;z-index:200;
@@ -265,6 +299,24 @@ a{color:inherit;text-decoration:none}
       <a href="#" id="gateBtn">Voir la formation →</a>
     </div>
     <div id="leconContent" class="lecon-content" hidden></div>
+
+    <!-- ── Quiz mode ── -->
+    <div id="quizState" class="lecon-content" hidden>
+      <div class="lecon-eyebrow" id="quizEyebrow">Quiz final</div>
+      <h1 class="lecon-title" id="quizTitle">Quiz final</h1>
+      <p class="quiz-intro">
+        Répondez correctement à au moins <strong id="quizPassScore">70%</strong> des questions
+        pour valider votre formation et recevoir votre certificat d'attestation.
+      </p>
+      <div id="quizQuestions"></div>
+      <div class="quiz-submit-zone" id="quizSubmitZone">
+        <button class="nav-btn btn-terminer" id="btnSubmitQuiz" style="padding:14px 36px">
+          Valider mes réponses ✦
+        </button>
+        <p class="quiz-hint">Assurez-vous de répondre à toutes les questions avant de valider.</p>
+      </div>
+      <div class="quiz-result" id="quizResult" hidden></div>
+    </div>
   </main>
 </div>
 
@@ -354,6 +406,18 @@ async function init() {
 
   // Render sidebar
   renderSidebar();
+
+  // Quiz mode
+  if (params.get('quiz') === '1') {
+    if (!STATE.user || !STATE.enrolled) {
+      document.getElementById('loadingState').hidden = true;
+      showGate('formation.html?slug=' + courseSlug, !STATE.user);
+    } else {
+      await showQuiz();
+    }
+    document.getElementById('sidebarToggle').hidden = false;
+    return;
+  }
 
   // Determine which lesson to show
   const targetId = lessonId || STATE.lessons[0]?.id;
@@ -589,6 +653,154 @@ function showGate(href, notLoggedIn = false) {
     btn.href = href;
   }
   gate.hidden = false;
+}
+
+// ── Quiz mode ──────────────────────────────────────────────────────────────
+async function showQuiz() {
+  document.getElementById('loadingState').hidden = true;
+  document.getElementById('leconContent').hidden = true;
+  document.getElementById('leconNav').hidden     = true;
+  document.getElementById('quizState').hidden    = false;
+
+  document.getElementById('quizEyebrow').textContent  = `Quiz final · ${STATE.course.title}`;
+  document.getElementById('quizPassScore').textContent = STATE.course.passing_score + '%';
+
+  // Check for existing passing attempt
+  const { data: prev } = await sb.from('academy_quiz_attempts')
+    .select('score, passed')
+    .eq('user_id', STATE.user.id)
+    .eq('course_id', STATE.course.id)
+    .eq('passed', true)
+    .maybeSingle();
+
+  if (prev) {
+    const { data: cert } = await sb.from('academy_certificates')
+      .select('reference')
+      .eq('user_id', STATE.user.id)
+      .eq('course_id', STATE.course.id)
+      .maybeSingle();
+    document.getElementById('quizSubmitZone').hidden = true;
+    showQuizResult(true, prev.score, null, null, cert?.reference, null, null);
+    return;
+  }
+
+  // Load questions (no correct_index — kept server-side)
+  const { data: questions, error } = await sb.from('academy_quiz_questions')
+    .select('id, question, options, explanation, sort_order')
+    .eq('course_id', STATE.course.id)
+    .order('sort_order');
+
+  if (error || !questions || questions.length === 0) {
+    document.getElementById('quizQuestions').innerHTML =
+      `<p style="text-align:center;padding:40px 0;color:var(--texte-pale);font-family:'Montserrat',sans-serif;font-size:.85rem">Le quiz sera disponible prochainement.</p>`;
+    document.getElementById('quizSubmitZone').hidden = true;
+    return;
+  }
+
+  STATE.quizQuestions = questions;
+
+  const container = document.getElementById('quizQuestions');
+  container.innerHTML = questions.map((q, qi) => {
+    const opts = Array.isArray(q.options) ? q.options : [];
+    const optsHtml = opts.map((opt, oi) => {
+      const label = typeof opt === 'object' ? opt.text : opt;
+      return `<label class="quiz-opt" id="qo-${esc(q.id)}-${oi}">
+        <input type="radio" name="q_${esc(q.id)}" value="${oi}" onchange="selectOpt('${esc(q.id)}',${oi},${opts.length})">
+        ${esc(String(label))}
+      </label>`;
+    }).join('');
+    return `<div class="quiz-q" id="qq-${esc(q.id)}">
+      <div class="quiz-q-num">Question ${qi + 1} / ${questions.length}</div>
+      <div class="quiz-q-text">${esc(q.question)}</div>
+      <div class="quiz-opts">${optsHtml}</div>
+      ${q.explanation ? `<div class="quiz-explanation" id="qe-${esc(q.id)}">${esc(q.explanation)}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  document.getElementById('btnSubmitQuiz').onclick = () => submitQuiz(questions);
+}
+
+function selectOpt(questionId, optIdx, total) {
+  for (let i = 0; i < total; i++) {
+    const el = document.getElementById(`qo-${questionId}-${i}`);
+    if (el) el.classList.toggle('selected', i === optIdx);
+  }
+}
+
+async function submitQuiz(questions) {
+  const btn = document.getElementById('btnSubmitQuiz');
+
+  const answers = [];
+  let allAnswered = true;
+  for (const q of questions) {
+    const sel = document.querySelector(`input[name="q_${q.id}"]:checked`);
+    if (!sel) { allAnswered = false; break; }
+    answers.push({ question_id: q.id, selected_index: parseInt(sel.value, 10) });
+  }
+
+  if (!allAnswered) {
+    const orig = btn.textContent;
+    btn.textContent = 'Répondez à toutes les questions d\'abord';
+    setTimeout(() => { btn.textContent = orig; }, 2500);
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Correction en cours…';
+
+  const { data: { session } } = await sb.auth.getSession();
+  let result;
+  try {
+    const res = await fetch(
+      'https://mxbmjtzrggahbwahxmkp.supabase.co/functions/v1/submit-quiz',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ course_id: STATE.course.id, answers }),
+      }
+    );
+    result = await res.json();
+  } catch {
+    btn.disabled = false;
+    btn.textContent = 'Erreur réseau — réessayez';
+    return;
+  }
+
+  document.getElementById('quizSubmitZone').hidden = true;
+  showQuizResult(result.passed, result.score, result.total, result.correct, result.certificate_reference, questions, answers);
+}
+
+function showQuizResult(passed, score, total, correct, certRef) {
+  const el  = document.getElementById('quizResult');
+  const c   = passed ? 'var(--vert)' : 'var(--rose)';
+  const cbg = passed ? 'var(--vert-pale)' : 'var(--rose-pale)';
+  const countLabel = (total != null && correct != null) ? `${correct}/${total}` : '';
+
+  let actions = '';
+  if (passed && certRef)
+    actions += `<a class="nav-btn btn-suite" href="certificat.html?ref=${encodeURIComponent(certRef)}" style="white-space:nowrap">Obtenir mon certificat ✦</a>`;
+  actions += `<a class="nav-btn" href="compte.html?tab=formations">Mes formations</a>`;
+  if (!passed)
+    actions += `<button class="nav-btn btn-terminer" onclick="location.reload()">Réessayer →</button>`;
+
+  el.innerHTML = `
+    <div class="quiz-score-circle" style="border-color:${c};background:${cbg}">
+      <span class="quiz-score-num" style="color:${c}">${score}%</span>
+      ${countLabel ? `<span class="quiz-score-label" style="color:${c}">${countLabel}</span>` : ''}
+    </div>
+    <div class="quiz-result-title" style="color:${passed ? 'var(--vert)' : 'var(--texte)'}">
+      ${passed ? 'Félicitations ✦' : 'Presque…'}
+    </div>
+    <div class="quiz-result-sub">
+      ${passed
+        ? `Vous avez obtenu <strong>${score}%</strong> — votre certificat d'attestation est prêt.`
+        : `Vous avez obtenu <strong>${score}%</strong>. Le seuil de réussite est de ${STATE.course.passing_score}%.<br>Revoyez les leçons et réessayez quand vous vous sentez prête.`}
+    </div>
+    <div class="quiz-result-actions">${actions}</div>`;
+  el.hidden = false;
 }
 
 // ── Sidebar mobile ─────────────────────────────────────────────────────────
