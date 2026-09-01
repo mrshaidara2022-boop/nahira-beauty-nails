@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leçon — Nahira Academy</title>
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+:root{
+  --n-noir:#060406;--n-ligne:rgba(232,194,122,.16);
+  --n-texte-doux:rgba(255,247,250,.6);--n-rose:#F06FA7;--n-or:#E8C27A;
+  --n-blanc:#FFF7FA;
+  --fond:#FDFBF8;--fond-2:#F7F1EA;--fond-3:#F0E8DE;--carte:#FFFFFF;
+  --texte:#1C1612;--texte-doux:#6B5E52;--texte-pale:#A89A8E;
+  --rose:#B85C7A;--rose-poudre:#D4899A;--rose-pale:#F2E0E6;
+  --or:#9A7A40;--or-vif:#B8944A;--or-pale:#F0E4CC;
+  --ligne:rgba(154,122,64,.15);--ombre:rgba(28,22,18,.08);
+  --vert:#4A8A5A;--vert-pale:#D4EAD9;
+}
+body{
+  background:var(--fond);color:var(--texte);
+  font-family:'Cormorant Garamond',serif;font-size:18px;line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+
+/* ── Nav ── */
+.b-nav{position:sticky;top:0;z-index:100;background:rgba(6,4,6,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--n-ligne)}
+.b-nav-inner{max-width:none;padding:12px 22px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.b-logo{text-decoration:none;line-height:1.05;display:flex;flex-direction:column;align-items:flex-start}
+.b-logo .l1{font-family:'Cormorant Garamond',serif;font-size:.95rem;letter-spacing:.06em;color:var(--n-blanc)}
+.b-logo .l1 span{color:var(--n-rose)}
+.b-logo .l2{font-family:'Parisienne',cursive;color:var(--n-or);font-size:.95rem}
+.nav-course-title{
+  font-family:'Montserrat',sans-serif;font-size:.7rem;letter-spacing:.1em;
+  color:var(--n-texte-doux);max-width:400px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.nav-right{display:flex;align-items:center;gap:14px}
+.nav-progress-bar{
+  width:120px;height:4px;background:rgba(255,247,250,.15);border-radius:2px;overflow:hidden;
+}
+.nav-progress-fill{height:100%;background:linear-gradient(90deg,var(--n-rose),var(--n-or));border-radius:2px;transition:width .4s}
+.nav-progress-label{font-family:'Montserrat',sans-serif;font-size:.62rem;color:var(--n-texte-doux);letter-spacing:.08em;white-space:nowrap}
+
+/* ── Layout ── */
+.lecon-layout{display:grid;grid-template-columns:280px 1fr;min-height:calc(100vh - 56px)}
+
+/* ── Sidebar ── */
+.sidebar{
+  border-right:1px solid var(--ligne);background:var(--fond);
+  overflow-y:auto;max-height:calc(100vh - 56px);position:sticky;top:56px;
+  scrollbar-width:thin;scrollbar-color:var(--ligne) transparent;
+}
+.sidebar-header{
+  padding:20px 18px 16px;border-bottom:1px solid var(--ligne);
+}
+.sidebar-course-title{
+  font-family:'Cormorant Garamond',serif;font-size:1.05rem;font-weight:400;
+  color:var(--texte);line-height:1.2;margin-bottom:6px;
+}
+.sidebar-progress{
+  font-family:'Montserrat',sans-serif;font-size:.65rem;letter-spacing:.1em;
+  color:var(--texte-pale);display:flex;align-items:center;gap:8px;
+}
+.sidebar-progress-bar{flex:1;height:3px;background:var(--fond-3);border-radius:2px}
+.sidebar-progress-fill{height:100%;background:linear-gradient(90deg,var(--rose),var(--or-vif));border-radius:2px;transition:width .4s}
+.sidebar-module{margin-bottom:0}
+.sidebar-module-title{
+  padding:14px 18px 12px;font-family:'Montserrat',sans-serif;
+  font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--or-vif);border-bottom:1px solid var(--ligne);
+  background:var(--fond-2);position:sticky;top:0;
+}
+.sidebar-lesson{
+  display:flex;align-items:center;gap:10px;
+  padding:12px 18px;border-bottom:1px solid rgba(154,122,64,.06);
+  cursor:pointer;transition:background .15s;text-decoration:none;color:inherit;
+}
+.sidebar-lesson:hover{background:var(--fond-2)}
+.sidebar-lesson.active{background:var(--rose-pale)}
+.sidebar-lesson.active .sl-title{color:var(--rose);font-weight:500}
+.sidebar-lesson.locked{opacity:.45;cursor:default;pointer-events:none}
+.sl-check{
+  width:20px;height:20px;border-radius:50%;border:2px solid var(--ligne);
+  display:flex;align-items:center;justify-content:center;flex:none;
+  font-size:.65rem;background:var(--carte);transition:all .3s;
+}
+.sl-check.done{background:var(--vert);border-color:var(--vert);color:#fff}
+.sl-check.active{border-color:var(--rose);background:var(--rose-pale)}
+.sl-title{font-family:'Montserrat',sans-serif;font-size:.75rem;line-height:1.4;flex:1;color:var(--texte-doux)}
+.sl-duration{font-family:'Montserrat',sans-serif;font-size:.6rem;color:var(--texte-pale);flex:none}
+.sl-preview{
+  font-size:.55rem;letter-spacing:.12em;text-transform:uppercase;
+  padding:2px 7px;border-radius:99px;background:var(--rose-pale);color:var(--rose);flex:none;
+}
+
+/* ── Contenu principal ── */
+.lecon-main{padding:0;overflow-y:auto}
+.lecon-content{max-width:720px;margin:0 auto;padding:40px 28px 100px}
+
+/* Titre leçon */
+.lecon-eyebrow{
+  font-family:'Montserrat',sans-serif;font-size:.62rem;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--or-vif);margin-bottom:10px;
+}
+.lecon-title{
+  font-family:'Cormorant Garamond',serif;font-weight:300;
+  font-size:clamp(1.6rem,4vw,2.4rem);line-height:1.1;color:var(--texte);margin-bottom:28px;
+}
+
+/* Blocs de contenu */
+.block-text{margin-bottom:24px;color:var(--texte-doux);line-height:1.8}
+.block-text p+p{margin-top:14px}
+.block-image{margin-bottom:28px}
+.block-image img{border-radius:16px;width:100%;box-shadow:0 4px 20px var(--ombre)}
+.block-image figcaption{
+  font-family:'Montserrat',sans-serif;font-size:.72rem;color:var(--texte-pale);
+  text-align:center;margin-top:10px;letter-spacing:.04em;font-style:italic;
+}
+.block-video{margin-bottom:28px;border-radius:16px;overflow:hidden;background:#000;aspect-ratio:16/9}
+.block-video iframe,.block-video video{width:100%;height:100%;border:none;display:block}
+.block-tip{
+  background:var(--or-pale);border-left:3px solid var(--or-vif);
+  border-radius:0 12px 12px 0;padding:16px 20px;margin-bottom:24px;
+  font-family:'Montserrat',sans-serif;font-size:.84rem;line-height:1.7;color:var(--texte-doux);
+}
+.block-tip::before{content:'💡 ';font-style:normal}
+.block-warning{
+  background:var(--rose-pale);border-left:3px solid var(--rose);
+  border-radius:0 12px 12px 0;padding:16px 20px;margin-bottom:24px;
+  font-family:'Montserrat',sans-serif;font-size:.84rem;line-height:1.7;color:var(--texte-doux);
+}
+.block-warning::before{content:'⚠️ ';font-style:normal}
+.block-divider{border:none;border-top:1px solid var(--ligne);margin:28px 0}
+.block-heading{
+  font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:400;
+  color:var(--texte);margin:32px 0 14px;
+}
+
+/* Barre de navigation entre leçons */
+.lecon-nav{
+  position:fixed;bottom:0;left:280px;right:0;
+  background:rgba(253,251,248,.95);backdrop-filter:blur(10px);
+  border-top:1px solid var(--ligne);padding:16px 28px;
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  z-index:50;
+}
+.nav-btn{
+  font-family:'Montserrat',sans-serif;font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;
+  padding:12px 24px;border-radius:99px;border:1px solid var(--ligne);
+  cursor:pointer;transition:all .25s;background:transparent;color:var(--texte-doux);
+}
+.nav-btn:hover{border-color:var(--or-vif);color:var(--texte)}
+.nav-btn:disabled{opacity:.3;cursor:not-allowed}
+.btn-terminer{
+  background:linear-gradient(135deg,var(--rose),var(--rose-poudre));
+  color:#fff;border-color:transparent;font-weight:600;
+  box-shadow:0 4px 16px rgba(184,92,122,.25);
+}
+.btn-terminer:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(184,92,122,.35)}
+.btn-terminer.done{background:linear-gradient(135deg,var(--vert),#5AAA6A);border-color:transparent}
+.btn-terminer.done:hover{box-shadow:0 8px 24px rgba(74,138,90,.3)}
+.btn-suite{
+  background:linear-gradient(135deg,var(--or-vif),#D4A860);
+  color:#fff;border-color:transparent;font-weight:600;
+}
+.btn-suite:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(154,122,64,.3)}
+
+/* États chargement / erreur */
+.lecon-loading{padding:60px 28px;max-width:720px;margin:0 auto}
+.skel{height:16px;border-radius:8px;background:var(--fond-3);animation:sh 1.6s infinite;margin-bottom:12px}
+.skel.tall{height:360px;border-radius:12px;margin-bottom:24px}
+.skel.s{width:35%}
+.skel.m{width:60%}
+@keyframes sh{0%,100%{opacity:.5}50%{opacity:1}}
+.lecon-gate{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:80px 28px;gap:16px;
+}
+.lecon-gate-icon{font-size:3rem;opacity:.5}
+.lecon-gate h2{font-family:'Cormorant Garamond',serif;font-size:1.6rem;font-weight:300;color:var(--texte-doux)}
+.lecon-gate p{font-family:'Montserrat',sans-serif;font-size:.84rem;color:var(--texte-pale);max-width:380px;line-height:1.7}
+.lecon-gate a{
+  font-family:'Montserrat',sans-serif;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;
+  padding:13px 28px;border-radius:99px;
+  background:linear-gradient(135deg,var(--rose),var(--rose-poudre));color:#fff;
+}
+
+/* Mobile */
+.sidebar-toggle{
+  display:none;position:fixed;bottom:80px;right:16px;z-index:200;
+  background:var(--rose);color:#fff;border:none;border-radius:50%;
+  width:48px;height:48px;font-size:1.1rem;cursor:pointer;
+  box-shadow:0 4px 16px rgba(184,92,122,.4);
+}
+@media(max-width:760px){
+  .lecon-layout{grid-template-columns:1fr}
+  .sidebar{
+    display:none;position:fixed;top:56px;left:0;right:0;bottom:0;
+    z-index:90;max-height:none;
+  }
+  .sidebar.open{display:block}
+  .sidebar-toggle{display:flex;align-items:center;justify-content:center}
+  .lecon-nav{left:0}
+  .lecon-content{padding:32px 18px 100px}
+  .nav-course-title{display:none}
+  .nav-progress-bar{width:70px}
+}
+</style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav class="b-nav">
+  <div class="b-nav-inner">
+    <a href="academy.html" class="b-logo">
+      <span class="l1">Nahira <span>Academy</span></span>
+      <span class="l2">✦</span>
+    </a>
+    <div class="nav-course-title" id="navCourseTitle">Chargement…</div>
+    <div class="nav-right">
+      <div class="nav-progress-bar">
+        <div class="nav-progress-fill" id="navProgressFill" style="width:0%"></div>
+      </div>
+      <span class="nav-progress-label" id="navProgressLabel">0 / 0</span>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Layout principal ── -->
+<div class="lecon-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-course-title" id="sidebarCourseTitle">…</div>
+      <div class="sidebar-progress">
+        <div class="sidebar-progress-bar">
+          <div class="sidebar-progress-fill" id="sidebarProgressFill" style="width:0%"></div>
+        </div>
+        <span id="sidebarProgressLabel">0%</span>
+      </div>
+    </div>
+    <div id="sidebarModules"></div>
+  </aside>
+
+  <!-- Contenu leçon -->
+  <main class="lecon-main">
+    <div id="loadingState" class="lecon-loading">
+      <div class="skel s"></div>
+      <div class="skel m" style="margin-bottom:24px"></div>
+      <div class="skel tall"></div>
+      <div class="skel"></div>
+      <div class="skel m"></div>
+    </div>
+    <div id="gateState" class="lecon-gate" hidden>
+      <div class="lecon-gate-icon">🔒</div>
+      <h2>Accès restreint</h2>
+      <p id="gateMsg">Cette leçon est réservée aux participantes inscrites.</p>
+      <a href="#" id="gateBtn">Voir la formation →</a>
+    </div>
+    <div id="leconContent" class="lecon-content" hidden></div>
+  </main>
+</div>
+
+<!-- Barre nav leçon -->
+<div class="lecon-nav" id="leconNav" hidden>
+  <button class="nav-btn" id="btnPrev" disabled>← Précédent</button>
+  <button class="nav-btn btn-terminer" id="btnTerminer">J'ai terminé cette leçon ✓</button>
+  <button class="nav-btn btn-suite" id="btnNext" disabled>Suivant →</button>
+</div>
+
+<!-- Bouton sidebar mobile -->
+<button class="sidebar-toggle" id="sidebarToggle" aria-label="Programme" hidden>☰</button>
+
+<script>
+const SUPABASE_URL      = "https://mxbmjtzrggahbwahxmkp.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14Ym1qdHpyZ2dhaGJ3YWh4bWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyMzc5NDQsImV4cCI6MjA5NjgxMzk0NH0.iTibkVCaTZYoMzQO4TQvddlKeZY40vNcfJ-kEgIHXpE";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let STATE = {
+  course: null, modules: [], lessons: [], currentLesson: null,
+  completedIds: new Set(), enrolled: false, user: null,
+};
+
+// ── Utils ──────────────────────────────────────────────────────────────────
+function formatDur(m) { if(!m)return''; const h=Math.floor(m/60),r=m%60; return h?`${h}h${r?String(r).padStart(2,'0'):''}` :`${r} min`; }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── Init ───────────────────────────────────────────────────────────────────
+async function init() {
+  const params = new URLSearchParams(location.search);
+  const courseSlug = params.get('course');
+  const lessonId   = params.get('lesson');
+
+  if (!courseSlug) { location.href = 'academy.html'; return; }
+
+  // User session
+  const { data: { user } } = await sb.auth.getUser();
+  STATE.user = user;
+
+  // Fetch course
+  const { data: course, error: cErr } = await sb
+    .from('academy_courses')
+    .select('id, slug, title, is_published, passing_score')
+    .eq('slug', courseSlug)
+    .eq('is_published', true)
+    .maybeSingle();
+
+  if (cErr || !course) { location.href = 'academy.html'; return; }
+  STATE.course = course;
+
+  document.title = `${course.title} — Nahira Academy`;
+  document.getElementById('navCourseTitle').textContent = course.title;
+  document.getElementById('sidebarCourseTitle').textContent = course.title;
+
+  // Check enrollment
+  if (user) {
+    const { data: enroll } = await sb
+      .from('academy_enrollments')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('course_id', course.id)
+      .maybeSingle();
+    STATE.enrolled = !!enroll;
+  }
+
+  // Fetch modules + lessons
+  const { data: modules } = await sb
+    .from('academy_modules')
+    .select('id, title, sort_order, academy_lessons(id, title, is_preview, duration_minutes, sort_order, video_url, content_blocks)')
+    .eq('course_id', course.id)
+    .order('sort_order');
+
+  STATE.modules = (modules || []).sort((a,b) => a.sort_order - b.sort_order);
+  STATE.lessons = STATE.modules.flatMap(m =>
+    (m.academy_lessons || []).sort((a,b) => a.sort_order - b.sort_order)
+  );
+
+  // Fetch completed lessons
+  if (user && STATE.enrolled) {
+    const { data: progress } = await sb
+      .from('academy_progress')
+      .select('lesson_id')
+      .eq('user_id', user.id)
+      .eq('course_id', course.id);
+    (progress || []).forEach(p => STATE.completedIds.add(p.lesson_id));
+  }
+
+  // Render sidebar
+  renderSidebar();
+
+  // Determine which lesson to show
+  const targetId = lessonId || STATE.lessons[0]?.id;
+  if (targetId) {
+    await loadLesson(targetId);
+  } else {
+    document.getElementById('loadingState').hidden = true;
+    document.getElementById('leconContent').innerHTML = `<div style="text-align:center;padding:60px 0;color:var(--texte-pale);font-family:Montserrat,sans-serif;font-size:.85rem">Aucune leçon disponible pour l'instant.</div>`;
+    document.getElementById('leconContent').hidden = false;
+  }
+
+  document.getElementById('sidebarToggle').hidden = false;
+}
+
+// ── Sidebar ────────────────────────────────────────────────────────────────
+function renderSidebar() {
+  const container = document.getElementById('sidebarModules');
+  let totalLessons = STATE.lessons.length;
+  let done = STATE.completedIds.size;
+
+  const pct = totalLessons ? Math.round(done / totalLessons * 100) : 0;
+  document.getElementById('sidebarProgressFill').style.width = pct + '%';
+  document.getElementById('sidebarProgressLabel').textContent = pct + '%';
+  document.getElementById('navProgressFill').style.width = pct + '%';
+  document.getElementById('navProgressLabel').textContent = `${done} / ${totalLessons}`;
+
+  container.innerHTML = STATE.modules.map((mod, mi) => {
+    const lessons = (mod.academy_lessons || []).sort((a,b) => a.sort_order - b.sort_order);
+    const rows = lessons.map(l => {
+      const accessible = l.is_preview || STATE.enrolled;
+      const active = STATE.currentLesson?.id === l.id;
+      const done   = STATE.completedIds.has(l.id);
+      const locked = !accessible;
+      const checkHtml = done
+        ? `<div class="sl-check done">✓</div>`
+        : active
+          ? `<div class="sl-check active">▶</div>`
+          : `<div class="sl-check"></div>`;
+      const dur = l.duration_minutes ? `<span class="sl-duration">${formatDur(l.duration_minutes)}</span>` : '';
+      const preview = l.is_preview && !STATE.enrolled ? `<span class="sl-preview">Aperçu</span>` : '';
+      const lockClass = locked ? 'locked' : '';
+      const activeClass = active ? 'active' : '';
+      return `<a href="lecon.html?course=${STATE.course.slug}&lesson=${l.id}"
+               class="sidebar-lesson ${activeClass} ${lockClass}"
+               onclick="${locked ? 'return false' : ''}">${checkHtml}
+        <span class="sl-title">${esc(l.title)}</span>
+        ${preview}${dur}
+      </a>`;
+    }).join('');
+    return `<div class="sidebar-module">
+      <div class="sidebar-module-title">Module ${String(mi+1).padStart(2,'0')} — ${esc(mod.title)}</div>
+      ${rows}
+    </div>`;
+  }).join('');
+}
+
+// ── Charger une leçon ──────────────────────────────────────────────────────
+async function loadLesson(lessonId) {
+  const lesson = STATE.lessons.find(l => l.id === lessonId);
+  if (!lesson) { showGate('formation.html?slug=' + STATE.course.slug); return; }
+
+  const accessible = lesson.is_preview || STATE.enrolled;
+  if (!accessible) {
+    document.getElementById('loadingState').hidden = true;
+    showGate('formation.html?slug=' + STATE.course.slug, !STATE.user);
+    return;
+  }
+
+  STATE.currentLesson = lesson;
+
+  // Update URL silently
+  const url = new URL(location.href);
+  url.searchParams.set('lesson', lessonId);
+  history.replaceState({}, '', url);
+
+  // Render
+  document.getElementById('loadingState').hidden = true;
+  document.getElementById('leconContent').hidden = false;
+  document.getElementById('leconNav').hidden = false;
+
+  const idx = STATE.lessons.indexOf(lesson);
+  const prevLesson = STATE.lessons[idx - 1] || null;
+  const nextLesson = STATE.lessons[idx + 1] || null;
+
+  const mod = STATE.modules.find(m => m.academy_lessons?.some(l => l.id === lessonId));
+  const modIdx = STATE.modules.indexOf(mod);
+  const lessonNumInMod = (mod?.academy_lessons || []).sort((a,b)=>a.sort_order-b.sort_order).findIndex(l=>l.id===lessonId) + 1;
+
+  document.getElementById('leconContent').innerHTML = `
+    <div class="lecon-eyebrow">Module ${String(modIdx+1).padStart(2,'0')} · Leçon ${String(lessonNumInMod).padStart(2,'0')}</div>
+    <h1 class="lecon-title">${esc(lesson.title)}</h1>
+    ${renderBlocks(lesson)}
+  `;
+
+  // Boutons nav
+  const btnPrev    = document.getElementById('btnPrev');
+  const btnNext    = document.getElementById('btnNext');
+  const btnTerminer = document.getElementById('btnTerminer');
+
+  btnPrev.disabled = !prevLesson;
+  btnPrev.onclick = prevLesson ? () => navigateTo(prevLesson.id) : null;
+
+  btnNext.disabled = !nextLesson;
+  btnNext.onclick = nextLesson ? () => navigateTo(nextLesson.id) : null;
+
+  const isDone = STATE.completedIds.has(lessonId);
+  if (isDone) {
+    btnTerminer.textContent = '✓ Leçon terminée';
+    btnTerminer.classList.add('done');
+  } else {
+    btnTerminer.textContent = "J'ai terminé cette leçon ✓";
+    btnTerminer.classList.remove('done');
+  }
+  btnTerminer.disabled = isDone || !STATE.enrolled;
+  btnTerminer.onclick = STATE.enrolled ? () => markComplete(lessonId) : null;
+
+  // Scroll en haut
+  document.querySelector('.lecon-main')?.scrollTo(0, 0);
+  window.scrollTo(0, 0);
+
+  renderSidebar();
+}
+
+// ── Blocs de contenu ───────────────────────────────────────────────────────
+function renderBlocks(lesson) {
+  let html = '';
+
+  // Vidéo en premier si disponible
+  if (lesson.video_url) {
+    const isYT = /youtu\.be|youtube\.com/.test(lesson.video_url);
+    const isVimeo = /vimeo\.com/.test(lesson.video_url);
+    if (isYT) {
+      const id = lesson.video_url.match(/(?:v=|youtu\.be\/)([^&?]+)/)?.[1] || '';
+      html += `<div class="block-video"><iframe src="https://www.youtube.com/embed/${id}" allow="autoplay;encrypted-media" allowfullscreen loading="lazy"></iframe></div>`;
+    } else if (isVimeo) {
+      const id = lesson.video_url.match(/vimeo\.com\/(\d+)/)?.[1] || '';
+      html += `<div class="block-video"><iframe src="https://player.vimeo.com/video/${id}" allow="autoplay;fullscreen" allowfullscreen loading="lazy"></iframe></div>`;
+    } else {
+      html += `<div class="block-video"><video src="${esc(lesson.video_url)}" controls playsinline></video></div>`;
+    }
+  }
+
+  // Blocs JSONB
+  const blocks = Array.isArray(lesson.content_blocks) ? lesson.content_blocks : [];
+  for (const block of blocks) {
+    switch (block.type) {
+      case 'text':
+        html += `<div class="block-text">${block.content.split('\n').map(l => l ? `<p>${esc(l)}</p>` : '').join('')}</div>`;
+        break;
+      case 'heading':
+        html += `<h2 class="block-heading">${esc(block.content)}</h2>`;
+        break;
+      case 'image':
+        html += `<figure class="block-image">
+          <img src="${esc(block.url)}" alt="${esc(block.alt||'')}">
+          ${block.caption ? `<figcaption>${esc(block.caption)}</figcaption>` : ''}
+        </figure>`;
+        break;
+      case 'tip':
+        html += `<div class="block-tip">${esc(block.content)}</div>`;
+        break;
+      case 'warning':
+        html += `<div class="block-warning">${esc(block.content)}</div>`;
+        break;
+      case 'divider':
+        html += `<hr class="block-divider">`;
+        break;
+    }
+  }
+
+  if (!lesson.video_url && blocks.length === 0) {
+    html += `<div class="block-text" style="color:var(--texte-pale);font-family:Montserrat,sans-serif;font-size:.85rem;text-align:center;padding:40px 0">Le contenu de cette leçon sera ajouté prochainement.</div>`;
+  }
+
+  return html;
+}
+
+// ── Marquer terminée ───────────────────────────────────────────────────────
+async function markComplete(lessonId) {
+  if (!STATE.user || !STATE.enrolled) return;
+  const btn = document.getElementById('btnTerminer');
+  btn.disabled = true;
+  btn.textContent = '…';
+
+  const { error } = await sb.from('academy_progress').upsert({
+    user_id:   STATE.user.id,
+    lesson_id: lessonId,
+    course_id: STATE.course.id,
+  }, { onConflict: 'user_id,lesson_id', ignoreDuplicates: true });
+
+  if (!error) {
+    STATE.completedIds.add(lessonId);
+    btn.textContent = '✓ Leçon terminée';
+    btn.classList.add('done');
+    renderSidebar();
+
+    // Auto-passer à la suivante après 1.2s
+    const idx = STATE.lessons.findIndex(l => l.id === lessonId);
+    const next = STATE.lessons[idx + 1];
+
+    // Vérifier si toutes les leçons sont terminées → proposer le quiz
+    if (STATE.completedIds.size === STATE.lessons.length) {
+      setTimeout(() => {
+        if (confirm('🎉 Félicitations ! Vous avez terminé toutes les leçons.\nPassez maintenant au quiz final pour obtenir votre certificat ?')) {
+          location.href = `lecon.html?course=${STATE.course.slug}&quiz=1`;
+        }
+      }, 800);
+    } else if (next && (next.is_preview || STATE.enrolled)) {
+      setTimeout(() => navigateTo(next.id), 1200);
+    }
+  } else {
+    btn.disabled = false;
+    btn.textContent = "J'ai terminé cette leçon ✓";
+  }
+}
+
+// ── Navigation ─────────────────────────────────────────────────────────────
+function navigateTo(lessonId) {
+  loadLesson(lessonId);
+}
+
+function showGate(href, notLoggedIn = false) {
+  const gate = document.getElementById('gateState');
+  const msg  = document.getElementById('gateMsg');
+  const btn  = document.getElementById('gateBtn');
+  if (notLoggedIn) {
+    msg.textContent = 'Connectez-vous pour accéder à cette leçon.';
+    btn.textContent = 'Se connecter →';
+    btn.href = 'compte.html?next=' + encodeURIComponent(location.href);
+  } else {
+    msg.textContent = "Cette leçon est réservée aux participantes inscrites à la formation.";
+    btn.textContent = 'Voir la formation →';
+    btn.href = href;
+  }
+  gate.hidden = false;
+}
+
+// ── Sidebar mobile ─────────────────────────────────────────────────────────
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+document.querySelector('.lecon-main')?.addEventListener('click', () => {
+  document.getElementById('sidebar').classList.remove('open');
+});
+
+init();
+</script>
+</body>
+</html>
