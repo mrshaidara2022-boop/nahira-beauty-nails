@@ -1,18 +1,21 @@
 /**
- * Stripe Webhook — V2
+ * Stripe Webhook — V2 + Academy
  *
  * Events handled:
- *   checkout.session.completed  → create order, consume stock reservation, decrement stock
- *   checkout.session.expired    → release reservation
- *   payment_intent.payment_failed → release reservation if linked to session
+ *   checkout.session.completed  → create order, handle physical stock,
+ *                                 grant Academy enrollments for digital courses
+ *   checkout.session.expired    → release stock reservations (physical only)
  *
  * Idempotency: each event is keyed by stripe_event_id in processed_stripe_events.
- * A duplicate event returns 200 immediately without any DB write.
+ * Enrollments use ON CONFLICT DO NOTHING — safe to replay.
  *
- * Stock flow:
+ * Stock flow (physical items only):
  *   1. reserve_stock() locks stock at checkout open (in create-checkout)
- *   2. On session.completed: consume reservation + decrement products.stock atomically
+ *   2. On session.completed: consume reservation + decrement products.stock
  *   3. On session.expired:   release reservation (stock freed immediately)
+ *
+ * Academy flow (digital items):
+ *   1. On session.completed: insert into academy_enrollments (idempotent)
  */
 
 import Stripe from "https://esm.sh/stripe@14?target=deno";
@@ -46,7 +49,6 @@ Deno.serve(async (req) => {
   }
 
   // --- Idempotency check ---------------------------------------------------
-  // processed_stripe_events table must exist (see migration below)
   const { data: existing } = await supabase
     .from("processed_stripe_events")
     .select("id")
@@ -58,19 +60,16 @@ Deno.serve(async (req) => {
     return new Response("ok", { status: 200 });
   }
 
-  // Record event immediately (before processing) to prevent race conditions
-  // on duplicate delivery
   const { error: insertErr } = await supabase
     .from("processed_stripe_events")
     .insert({ stripe_event_id: event.id, event_type: event.type });
 
   if (insertErr && insertErr.code !== "23505") {
-    // 23505 = unique_violation — another concurrent request already inserted it
     console.error("Failed to record event:", insertErr);
     return new Response("DB error", { status: 500 });
   }
   if (insertErr?.code === "23505") {
-    console.log("Duplicate event (race condition, already inserted):", event.id);
+    console.log("Duplicate event (race condition):", event.id);
     return new Response("ok", { status: 200 });
   }
 
@@ -83,7 +82,6 @@ Deno.serve(async (req) => {
     }
   } catch (err: any) {
     console.error("Webhook handler error:", err);
-    // Mark event as failed so we can retry manually
     await supabase
       .from("processed_stripe_events")
       .update({ error: err.message })
@@ -96,30 +94,36 @@ Deno.serve(async (req) => {
 
 // ── checkout.session.completed ──────────────────────────────────────────────
 async function handleSessionCompleted(session: Stripe.Checkout.Session) {
-  const meta = session.metadata || {};
-  const userId     = meta.user_id || null;
-  const itemsJson  = meta.items_json || "[]";
-  const sessionId  = session.id;
+  const meta      = session.metadata || {};
+  const userId    = meta.user_id || null;
+  const itemsJson = meta.items_json || "[]";
+  const sessionId = session.id;
 
-  let items: Array<{
-    product_id: string;
-    product_name: string;
-    product_sku: string;
-    quantity: number;
+  type CartItem = {
+    product_id:       string;
+    product_name:     string;
+    product_sku:      string;
+    product_type:     "physical" | "digital";
+    course_id:        string | null;
+    quantity:         number;
     unit_price_cents: number;
-  }> = [];
+  };
 
+  let items: CartItem[] = [];
   try {
     items = JSON.parse(itemsJson);
   } catch {
     throw new Error("items_json invalid in session metadata: " + sessionId);
   }
 
+  const physicalItems = items.filter((it) => it.product_type === "physical");
+  const digitalItems  = items.filter((it) => it.product_type === "digital");
+
   const shippingDetails = session.shipping_details;
   const shippingCost    = session.shipping_cost?.amount_total ?? 0;
   const totalCents      = session.amount_total ?? 0;
 
-  // --- Create order --------------------------------------------------------
+  // --- Create order (includes all items — physical + digital) ---------------
   const { data: order, error: orderErr } = await supabase
     .from("orders")
     .insert({
@@ -141,22 +145,21 @@ async function handleSessionCompleted(session: Stripe.Checkout.Session) {
 
   if (orderErr) throw new Error("Order insert failed: " + orderErr.message);
 
-  // --- Insert order_items (denormalized snapshot) ---------------------------
+  // --- Insert order_items (all items, physical + digital) -------------------
   const orderItems = items.map((it) => ({
-    order_id:        order.id,
-    product_id:      it.product_id,
-    product_name:    it.product_name,
-    product_sku:     it.product_sku,
-    quantity:        it.quantity,
+    order_id:         order.id,
+    product_id:       it.product_id,
+    product_name:     it.product_name,
+    product_sku:      it.product_sku,
+    quantity:         it.quantity,
     unit_price_cents: it.unit_price_cents,
   }));
 
   const { error: itemsErr } = await supabase.from("order_items").insert(orderItems);
   if (itemsErr) throw new Error("order_items insert failed: " + itemsErr.message);
 
-  // --- Consume reservations + decrement stock atomically per product --------
-  for (const it of items) {
-    // Mark reservation as consumed
+  // --- Physical: consume reservations + decrement stock --------------------
+  for (const it of physicalItems) {
     await supabase
       .from("stock_reservations")
       .update({ consumed_at: new Date().toISOString() })
@@ -164,7 +167,6 @@ async function handleSessionCompleted(session: Stripe.Checkout.Session) {
       .eq("product_id", it.product_id)
       .is("consumed_at", null);
 
-    // Decrement physical stock (using DB-side arithmetic to avoid race)
     const { error: stockErr } = await supabase.rpc("decrement_stock", {
       p_product_id: it.product_id,
       p_quantity:   it.quantity,
@@ -173,8 +175,8 @@ async function handleSessionCompleted(session: Stripe.Checkout.Session) {
     if (stockErr) throw new Error("decrement_stock failed: " + stockErr.message);
   }
 
-  // --- Notify restock alert subscribers if product now sold out ------------
-  for (const it of items) {
+  // --- Physical: check sold-out products -----------------------------------
+  for (const it of physicalItems) {
     const { data: prod } = await supabase
       .from("products")
       .select("stock, name")
@@ -182,14 +184,38 @@ async function handleSessionCompleted(session: Stripe.Checkout.Session) {
       .single();
 
     if (prod && prod.stock <= 0) {
-      // Mark product sold out
-      await supabase
-        .from("products")
-        .update({ is_visible: true }) // stays visible as "sold out", not hidden
-        .eq("id", it.product_id);
-
       console.log(`Product "${prod.name}" is now sold out.`);
     }
+  }
+
+  // --- Digital: grant Academy enrollments (idempotent) ---------------------
+  if (digitalItems.length > 0 && userId) {
+    const enrollments = digitalItems
+      .filter((it) => it.course_id)
+      .map((it) => ({
+        user_id:           userId,
+        course_id:         it.course_id!,
+        stripe_session_id: sessionId,
+      }));
+
+    if (enrollments.length > 0) {
+      const { error: enrollErr } = await supabase
+        .from("academy_enrollments")
+        .upsert(enrollments, { onConflict: "user_id,course_id", ignoreDuplicates: true });
+
+      if (enrollErr) {
+        // Log but don't fail — order already committed above
+        console.error("Enrollment insert failed:", enrollErr.message);
+      } else {
+        console.log(`Enrolled user ${userId} in ${enrollments.length} course(s)`);
+      }
+    }
+  } else if (digitalItems.length > 0 && !userId) {
+    // Guest purchase of a digital course — log for manual follow-up
+    console.warn(
+      `Digital courses purchased without user_id. Session: ${sessionId}. Courses:`,
+      digitalItems.map((it) => it.course_id)
+    );
   }
 
   console.log(`Order ${order.order_number} created for session ${sessionId}`);
@@ -197,7 +223,7 @@ async function handleSessionCompleted(session: Stripe.Checkout.Session) {
 
 // ── checkout.session.expired ────────────────────────────────────────────────
 async function handleSessionExpired(session: Stripe.Checkout.Session) {
-  // Release all reservations held for this session
+  // Release stock reservations for physical items only
   const { error } = await supabase
     .from("stock_reservations")
     .update({ released_at: new Date().toISOString() })
