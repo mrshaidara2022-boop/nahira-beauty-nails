@@ -1208,7 +1208,7 @@ function prodFormHTML(p) {
       finishes.map(function(s){ return '<option'+(v('finish','')==s?' selected':'')+'>'+s+'</option>'; }).join('') +
     '</select></div>' +
     '<div class="champ"><label>Longueur (mm)</label><input id="fp-length" type="number" min="0" value="'+esc(v('length_mm',''))+'"></div>' +
-    '<div class="champ"><label>Nb ongles</label><input id="fp-nails" type="number" min="0" value="'+esc(v('nail_count',''))+'"></div>' +
+    '<div class="champ"><label>Nombre de capsules</label><input id="fp-nails" type="number" min="1" placeholder="24" value="'+esc(v('nail_count',24))+'"></div>' +
     '<div class="form-sep"></div><div class="form-legend">Descriptions</div>' +
     '<div class="champ form-plein"><label>Description courte</label><textarea id="fp-desc-s" rows="2">'+esc(v('description_short',''))+'</textarea></div>' +
     '<div class="champ form-plein"><label>Description complète</label><textarea id="fp-desc" rows="4">'+esc(v('description',''))+'</textarea></div>' +
@@ -1261,7 +1261,7 @@ async function prodEnregistrer() {
     shape: document.getElementById('fp-shape').value||null,
     finish: document.getElementById('fp-finish').value||null,
     length_mm: parseInt(document.getElementById('fp-length').value)||null,
-    nail_count: parseInt(document.getElementById('fp-nails').value)||null,
+    nail_count: parseInt(document.getElementById('fp-nails').value)||24,
     description_short: document.getElementById('fp-desc-s').value.trim()||null,
     description: document.getElementById('fp-desc').value.trim()||null,
     image_url: document.getElementById('fp-img').value.trim()||null,

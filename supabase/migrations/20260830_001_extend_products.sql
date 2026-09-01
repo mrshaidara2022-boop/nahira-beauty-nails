@@ -11,7 +11,7 @@ ALTER TABLE products
   ADD COLUMN IF NOT EXISTS primary_color      TEXT,
   ADD COLUMN IF NOT EXISTS style              TEXT,
   ADD COLUMN IF NOT EXISTS finish             TEXT,
-  ADD COLUMN IF NOT EXISTS nail_count         INTEGER NOT NULL DEFAULT 30,
+  ADD COLUMN IF NOT EXISTS nail_count         INTEGER NOT NULL DEFAULT 24,
   ADD COLUMN IF NOT EXISTS description_short  TEXT,
   -- Single source of truth for visibility: is_visible replaces / aligns with active
   -- is_visible = product shows in catalog; active = legacy flag kept for compatibility
