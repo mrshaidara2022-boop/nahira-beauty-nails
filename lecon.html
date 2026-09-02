@@ -141,6 +141,44 @@ a{color:inherit;text-decoration:none}
   font-family:'Cormorant Garamond',serif;font-size:1.35rem;font-weight:400;
   color:var(--texte);margin:32px 0 14px;
 }
+.block-info{
+  background:rgba(166,197,230,.12);border-left:3px solid #78a8cc;
+  border-radius:0 12px 12px 0;padding:16px 20px;margin-bottom:24px;
+  font-family:'Montserrat',sans-serif;font-size:.84rem;line-height:1.7;color:var(--texte-doux);
+}
+.block-info::before{content:'ℹ️ ';font-style:normal}
+.block-step{
+  display:flex;gap:16px;align-items:flex-start;margin-bottom:24px;
+  padding:16px 20px;border-radius:12px;background:rgba(184,148,74,.06);
+  font-family:'Montserrat',sans-serif;font-size:.84rem;line-height:1.7;color:var(--texte-doux);
+}
+.block-step-num{
+  flex:none;width:28px;height:28px;border-radius:50%;background:var(--or-vif);
+  color:#fff;font-weight:700;font-size:.78rem;display:flex;align-items:center;
+  justify-content:center;margin-top:1px;
+}
+.block-material{margin-bottom:24px}
+.block-material ul{margin:0;padding-left:1.4em;list-style:none}
+.block-material ul li{
+  font-family:'Montserrat',sans-serif;font-size:.84rem;line-height:1.8;
+  color:var(--texte-doux);position:relative;
+}
+.block-material ul li::before{content:'✦ ';color:var(--or-vif);font-size:.7rem}
+.block-material h4{
+  font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;
+  color:var(--or-vif);margin:0 0 10px;letter-spacing:.04em;text-transform:uppercase;
+}
+.block-gallery{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+  gap:10px;margin-bottom:28px;
+}
+.block-gallery img{
+  width:100%;height:140px;object-fit:cover;border-radius:10px;
+  cursor:pointer;transition:opacity .2s;
+}
+.block-gallery img:hover{opacity:.88}
+.block-video-inline{margin-bottom:28px;border-radius:16px;overflow:hidden;background:#000;aspect-ratio:16/9}
+.block-video-inline iframe,.block-video-inline video{width:100%;height:100%;border:none;display:block}
 
 /* Barre de navigation entre leçons */
 .lecon-nav{
@@ -582,9 +620,46 @@ function renderBlocks(lesson) {
       case 'warning':
         html += `<div class="block-warning">${esc(block.content)}</div>`;
         break;
+      case 'info':
+        html += `<div class="block-info">${esc(block.content)}</div>`;
+        break;
       case 'divider':
         html += `<hr class="block-divider">`;
         break;
+      case 'step': {
+        const stepNum = block.number ?? (blocks.filter((b,bi) => b.type==='step' && bi<=blocks.indexOf(block)).length);
+        html += `<div class="block-step"><div class="block-step-num">${stepNum}</div><div>${esc(block.content)}</div></div>`;
+        break;
+      }
+      case 'material': {
+        const items = Array.isArray(block.items) ? block.items : [];
+        html += `<div class="block-material">${block.title ? `<h4>${esc(block.title)}</h4>` : ''}<ul>${items.map(i => `<li>${esc(i)}</li>`).join('')}</ul></div>`;
+        break;
+      }
+      case 'gallery': {
+        const imgs = Array.isArray(block.images) ? block.images : [];
+        if (imgs.length) html += `<div class="block-gallery">${imgs.map(img => {
+          const src = typeof img === 'string' ? img : img.url;
+          const alt = typeof img === 'object' ? (img.alt||'') : '';
+          return `<img src="${esc(src)}" alt="${esc(alt)}" loading="lazy">`;
+        }).join('')}</div>`;
+        break;
+      }
+      case 'video': {
+        const vUrl = block.url || '';
+        let vHtml = '';
+        if (/youtu\.be|youtube\.com/.test(vUrl)) {
+          const vid = vUrl.match(/(?:v=|youtu\.be\/)([^&?]+)/)?.[1] || '';
+          vHtml = `<iframe src="https://www.youtube.com/embed/${vid}" allow="autoplay;encrypted-media" allowfullscreen loading="lazy"></iframe>`;
+        } else if (/vimeo\.com/.test(vUrl)) {
+          const vid = vUrl.match(/vimeo\.com\/(\d+)/)?.[1] || '';
+          vHtml = `<iframe src="https://player.vimeo.com/video/${vid}" allow="autoplay;fullscreen" allowfullscreen loading="lazy"></iframe>`;
+        } else {
+          vHtml = `<video src="${esc(vUrl)}" controls playsinline></video>`;
+        }
+        html += `<div class="block-video-inline">${vHtml}</div>`;
+        break;
+      }
     }
   }
 

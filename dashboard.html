@@ -387,6 +387,7 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
       <button class="nav-item" data-nav="ac-eleves" onclick="goTo('ac-eleves')"><span class="nav-ico">👥</span>Élèves</button>
       <button class="nav-item" data-nav="ac-progression" onclick="goTo('ac-progression')"><span class="nav-ico">📊</span>Progression</button>
       <button class="nav-item" data-nav="ac-attestations" onclick="goTo('ac-attestations')"><span class="nav-ico">✦</span>Attestations</button>
+      <button class="nav-item" data-nav="ac-reglages" onclick="goTo('ac-reglages')"><span class="nav-ico">⚙</span>Réglages Academy</button>
     </ul>
     <div class="cote-footer">
       <div class="cote-email" id="cote-email"></div>
@@ -914,6 +915,33 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
         <div id="ac-cert-liste" class="chargement">Chargement…</div>
       </section>
 
+      <section class="section" id="s-ac-reglages" style="display:none">
+        <div class="eyebrow">Academy</div>
+        <h2 class="section-titre"><em>Réglages</em> Academy</h2>
+        <div class="carte" style="max-width:560px">
+          <h3 style="margin:0 0 18px;font-size:16px">Paramètres généraux</h3>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div>
+              <label class="param-lbl">Score de certification par défaut (%)</label>
+              <div style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);margin-bottom:6px">Appliqué à la création d'une nouvelle formation. Chaque formation peut avoir son propre score.</div>
+              <input class="param-input" id="ac-reg-score" type="number" min="0" max="100" value="70" style="width:100px">
+            </div>
+            <div>
+              <label class="param-lbl">URL de la page Academy publique</label>
+              <input class="param-input" id="ac-reg-url" value="academy.html" readonly style="width:100%;color:var(--texte-faible);font-size:11px;font-family:monospace">
+            </div>
+            <div>
+              <label class="param-lbl">Mention légale sur les attestations</label>
+              <textarea class="param-input" id="ac-reg-mention" rows="4" style="width:100%;font-size:11px">Ce certificat d'attestation de suivi de formation est délivré par Nahira Beauty Nails. Il confirme l'assiduité et la réussite au quiz de contrôle des connaissances dans le cadre de la Masterclass concernée. Il ne constitue pas un titre professionnel au sens du Code du travail français, ni un diplôme d'État ou une certification inscrite au RNCP.</textarea>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn btn-primaire btn-sm" onclick="acReglagesSauvegarder()">Enregistrer les réglages</button>
+              <span id="ac-reg-msg" style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--or)"></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </div><!-- /#main -->
   </div><!-- /.app-main -->
 
@@ -938,7 +966,9 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
     <button class="plus-item" onclick="goTo('ac-contenu')"><span class="ico">📋</span>Contenu</button>
     <button class="plus-item" onclick="goTo('ac-quiz')"><span class="ico">❓</span>Quiz</button>
     <button class="plus-item" onclick="goTo('ac-eleves')"><span class="ico">👥</span>Élèves</button>
+    <button class="plus-item" onclick="goTo('ac-progression')"><span class="ico">📊</span>Progression</button>
     <button class="plus-item" onclick="goTo('ac-attestations')"><span class="ico">✦</span>Attestations</button>
+    <button class="plus-item" onclick="goTo('ac-reglages')"><span class="ico">⚙</span>Réglages</button>
   </div>
 
 </div><!-- /#app -->
@@ -1029,7 +1059,7 @@ var sectionLabels = {
   avis:'Avis', import:'Import CSV', parametres:'Paramètres',
   'ac-formations':'Academy — Formations', 'ac-contenu':'Academy — Contenu',
   'ac-quiz':'Academy — Quiz', 'ac-eleves':'Academy — Élèves',
-  'ac-progression':'Academy — Progression', 'ac-attestations':'Academy — Attestations',
+  'ac-progression':'Academy — Progression', 'ac-attestations':'Academy — Attestations', 'ac-reglages':'Academy — Réglages',
 };
 
 function goTo(id) {
@@ -1067,6 +1097,7 @@ function goTo(id) {
   else if (id === 'ac-eleves') acElevesInit();
   else if (id === 'ac-progression') acProgInit();
   else if (id === 'ac-attestations') acAttestationsCharger();
+  else if (id === 'ac-reglages') acReglagesInit();
 }
 
 function togglePlus() {
@@ -2743,7 +2774,7 @@ var AC = { cours: [], coursId: null };
 async function acChargerCours() {
   if (AC.cours.length) return AC.cours;
   var r = await NAHIRA.sb.from('academy_courses')
-    .select('id,slug,title,is_published,passing_score,price_cents:product_id(price_cents),duration_minutes,created_at')
+    .select('id,slug,title,is_published,is_free,level,passing_score,product:product_id(id,price_cents),duration_minutes,cover_url,subtitle,description_long,product_id,created_at')
     .order('sort_order');
   AC.cours = r.data || [];
   return AC.cours;
@@ -2787,14 +2818,17 @@ async function acFormCharger() {
   zone.innerHTML = cours.map(function(c) {
     var pub = c.is_published;
     var dur = c.duration_minutes ? Math.round(c.duration_minutes/60) + 'h' : '—';
+    var prix = c.product && c.product.price_cents ? acEur(c.product.price_cents) : (c.is_free ? 'Gratuit' : '—');
+    var niv = {debutant:'Débutant',intermediaire:'Intermédiaire',avance:'Avancé'}[c.level] || '—';
     return '<div class="prod-ligne" style="align-items:center;gap:12px;padding:12px 14px">' +
       '<div class="prod-vignette" style="background:linear-gradient(135deg,var(--rose),var(--or))">🎓</div>' +
       '<div class="prod-info"><div class="prod-nom">' + acE(c.title) + '</div>' +
-      '<div class="prod-sku">' + acE(c.slug) + ' · ' + dur + ' · Score min ' + (c.passing_score||70) + '%</div></div>' +
+      '<div class="prod-sku">' + acE(c.slug) + ' · ' + dur + ' · ' + prix + ' · Score min ' + (c.passing_score||70) + '% · ' + niv + '</div></div>' +
       '<span class="badge ' + (pub ? 'badge-dispo' : 'badge-masque') + '">' + (pub ? 'Publiée' : 'Masquée') + '</span>' +
       '<div style="display:flex;gap:6px;flex:none">' +
       '<button class="btn btn-sec btn-sm" onclick="acFormEditer(\'' + c.id + '\')">Modifier</button>' +
       '<button class="btn btn-sm ' + (pub ? 'btn-danger' : 'btn-primaire') + '" onclick="acFormTogglePublish(\'' + c.id + '\',' + pub + ')">' + (pub ? 'Masquer' : 'Publier') + '</button>' +
+      '<button class="btn btn-danger btn-sm" onclick="acFormSupprimer(\'' + c.id + '\',\'' + acE(c.title) + '\')">✕</button>' +
       '</div></div>';
   }).join('');
 }
@@ -2820,25 +2854,34 @@ async function acFormEditer(id) {
 }
 
 function acFormFormHtml(c) {
+  var isFree = c.is_free ? 'on' : '';
   return '<div class="form-grille" style="display:flex;flex-direction:column;gap:12px">' +
     '<div><label class="param-lbl">Titre *</label><input class="param-input" id="ac-f-titre" value="' + acE(c.title||'') + '" style="width:100%"></div>' +
     '<div><label class="param-lbl">Sous-titre</label><input class="param-input" id="ac-f-sous" value="' + acE(c.subtitle||'') + '" style="width:100%"></div>' +
-    '<div><label class="param-lbl">Slug (URL)</label><input class="param-input" id="ac-f-slug" value="' + acE(c.slug||'') + '" style="width:100%"></div>' +
+    '<div><label class="param-lbl">Slug (URL) — ex: masterclass-fibre-de-verre</label><input class="param-input" id="ac-f-slug" value="' + acE(c.slug||'') + '" style="width:100%"></div>' +
+    '<div><label class="param-lbl">Description</label><textarea class="param-input" id="ac-f-desc" rows="3" style="width:100%">' + acE(c.description_long||'') + '</textarea></div>' +
+    '<div><label class="param-lbl">Niveau</label><select class="param-input" id="ac-f-niveau" style="width:100%"><option value="">— Choisir —</option><option value="debutant"' + (c.level==='debutant'?' selected':'') + '>Débutant</option><option value="intermediaire"' + (c.level==='intermediaire'?' selected':'') + '>Intermédiaire</option><option value="avance"' + (c.level==='avance'?' selected':'') + '>Avancé</option></select></div>' +
     '<div><label class="param-lbl">Durée totale (minutes)</label><input class="param-input" id="ac-f-dur" type="number" value="' + (c.duration_minutes||'') + '" style="width:100%"></div>' +
     '<div><label class="param-lbl">Score minimum pour certification (%)</label><input class="param-input" id="ac-f-score" type="number" min="0" max="100" value="' + (c.passing_score||70) + '" style="width:100%"></div>' +
-    '<div><label class="param-lbl">URL de la couverture</label><input class="param-input" id="ac-f-cover" value="' + acE(c.cover_url||'') + '" style="width:100%"></div>' +
+    '<div><label class="param-lbl">URL de la couverture (image)</label><input class="param-input" id="ac-f-cover" value="' + acE(c.cover_url||'') + '" style="width:100%"></div>' +
+    '<div style="display:flex;align-items:center;gap:10px"><label class="param-lbl">Formation gratuite</label><button class="param-toggle ' + isFree + '" id="ac-f-free" onclick="this.classList.toggle(\'on\')"></button></div>' +
+    '<div><label class="param-lbl" style="color:var(--texte-faible);font-size:10px">ID produit boutique (UUID — coller depuis Produits si formation payante)</label><input class="param-input" id="ac-f-prodid" value="' + acE(c.product_id||'') + '" style="width:100%;font-size:11px;font-family:monospace" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></div>' +
     '</div>';
 }
 
 async function acFormSauvegarder(id) {
-  var titre = document.getElementById('ac-f-titre').value.trim();
+  var titre  = document.getElementById('ac-f-titre').value.trim();
   var sous   = document.getElementById('ac-f-sous').value.trim();
   var slug   = document.getElementById('ac-f-slug').value.trim() || slugify(titre);
+  var desc   = document.getElementById('ac-f-desc').value.trim() || null;
+  var niveau = document.getElementById('ac-f-niveau').value || null;
   var dur    = parseInt(document.getElementById('ac-f-dur').value) || null;
   var score  = parseInt(document.getElementById('ac-f-score').value) || 70;
   var cover  = document.getElementById('ac-f-cover').value.trim() || null;
+  var isFree = document.getElementById('ac-f-free').classList.contains('on');
+  var prodId = document.getElementById('ac-f-prodid').value.trim() || null;
   if (!titre || !slug) { toast('Titre et slug requis.', 'err'); return; }
-  var data = { title:titre, subtitle:sous||null, slug, duration_minutes:dur, passing_score:score, cover_url:cover };
+  var data = { title:titre, subtitle:sous||null, slug, description_long:desc, level:niveau, duration_minutes:dur, passing_score:score, cover_url:cover, is_free:isFree, product_id:prodId };
   var r = id
     ? await NAHIRA.sb.from('academy_courses').update(data).eq('id', id)
     : await NAHIRA.sb.from('academy_courses').insert({...data, is_published:false});
@@ -2846,6 +2889,15 @@ async function acFormSauvegarder(id) {
   modalFermer();
   AC.cours = [];
   toast(id ? 'Formation mise à jour.' : 'Formation créée ✦');
+  acFormCharger();
+}
+
+async function acFormSupprimer(id, titre) {
+  if (!confirm('Supprimer la formation "' + titre + '" et tout son contenu ?\nCette action est irréversible.')) return;
+  var r = await NAHIRA.sb.from('academy_courses').delete().eq('id', id);
+  if (r.error) { toast('Erreur : ' + r.error.message, 'err'); return; }
+  AC.cours = [];
+  toast('Formation supprimée.');
   acFormCharger();
 }
 
@@ -2894,6 +2946,7 @@ async function acContenuCharger(coursId) {
         '<h3 style="margin:0;font-size:18px">' + acE(mod.title) + '</h3></div>' +
         '<div style="display:flex;gap:6px">' +
         '<button class="btn btn-primaire btn-sm" onclick="acLeconNouveau(\'' + mod.id + '\')">+ Leçon</button>' +
+        '<button class="btn btn-sec btn-sm" onclick="acModuleEditer(\'' + mod.id + '\',\'' + acE(mod.title) + '\',' + mod.sort_order + ')">Renommer</button>' +
         '<button class="btn btn-danger btn-sm" onclick="acModuleSupprimer(\'' + mod.id + '\')">✕</button>' +
         '</div></div>' + lHtml + '</div>';
     }).join('');
@@ -2907,6 +2960,22 @@ function acModuleNouveau() {
     '<div style="display:flex;flex-direction:column;gap:12px"><div><label class="param-lbl">Titre du module *</label><input class="param-input" id="ac-mod-titre" style="width:100%"></div>' +
     '<div><label class="param-lbl">Ordre d\'affichage</label><input class="param-input" id="ac-mod-ordre" type="number" value="0" style="width:100%"></div></div>',
     '<button class="btn btn-primaire" onclick="acModuleSauvegarder()">Créer le module</button>');
+}
+
+function acModuleEditer(id, titre, ordre) {
+  modalOuvrir('Renommer le module',
+    '<div style="display:flex;flex-direction:column;gap:12px"><div><label class="param-lbl">Titre du module *</label><input class="param-input" id="ac-mod-titre" value="' + acE(titre) + '" style="width:100%"></div>' +
+    '<div><label class="param-lbl">Ordre d\'affichage</label><input class="param-input" id="ac-mod-ordre" type="number" value="' + ordre + '" style="width:100%"></div></div>',
+    '<button class="btn btn-primaire" onclick="acModuleMajSauvegarder(\'' + id + '\')">Enregistrer</button>');
+}
+
+async function acModuleMajSauvegarder(id) {
+  var titre = document.getElementById('ac-mod-titre').value.trim();
+  var ordre = parseInt(document.getElementById('ac-mod-ordre').value)||0;
+  if (!titre) { toast('Titre requis.','err'); return; }
+  var r = await NAHIRA.sb.from('academy_modules').update({title:titre, sort_order:ordre}).eq('id',id);
+  if (r.error) { toast('Erreur : '+r.error.message,'err'); return; }
+  modalFermer(); toast('Module mis à jour.'); acContenuCharger(AC.coursId);
 }
 
 async function acModuleSauvegarder() {
@@ -3024,16 +3093,15 @@ async function acQuizCharger(coursId) {
 
 function acQuizFormHtml(q) {
   q = q || {};
-  var opts = Array.isArray(q.options) ? q.options : ['','','',''];
-  while (opts.length < 2) opts.push('');
+  var rawOpts = Array.isArray(q.options) ? q.options : [];
+  var opts = [0,1,2,3].map(function(i){ var o = rawOpts[i]; return typeof o === 'object' ? (o.text||'') : (o||''); });
   return '<div style="display:flex;flex-direction:column;gap:12px">' +
     '<div><label class="param-lbl">Question *</label><input class="param-input" id="ac-q-question" value="' + acE(q.question||'') + '" style="width:100%"></div>' +
-    opts.map(function(o,i){
-      var txt = typeof o === 'object' ? o.text : o;
-      return '<div><label class="param-lbl">Option ' + (i+1) + '</label><input class="param-input" id="ac-q-opt-' + i + '" value="' + acE(txt||'') + '" style="width:100%"></div>';
+    opts.map(function(txt,i){
+      return '<div><label class="param-lbl">Option ' + (i+1) + (i>1?' (optionnel)':'') + '</label><input class="param-input" id="ac-q-opt-' + i + '" value="' + acE(txt) + '" style="width:100%"></div>';
     }).join('') +
     '<div><label class="param-lbl">Réponse correcte (numéro, 1 = première option)</label>' +
-    '<input class="param-input" id="ac-q-correct" type="number" min="1" max="' + opts.length + '" value="' + ((q.correct_index||0)+1) + '" style="width:80px"></div>' +
+    '<input class="param-input" id="ac-q-correct" type="number" min="1" max="4" value="' + ((q.correct_index||0)+1) + '" style="width:80px"></div>' +
     '<div><label class="param-lbl">Explication (affichée après correction)</label><input class="param-input" id="ac-q-expl" value="' + acE(q.explanation||'') + '" style="width:100%"></div>' +
     '<div><label class="param-lbl">Ordre d\'affichage</label><input class="param-input" id="ac-q-ordre" type="number" value="' + (q.sort_order||0) + '" style="width:80px"></div>' +
     '</div>';
@@ -3121,6 +3189,12 @@ async function acElevesCharger() {
 async function acProgInit() {
   await acChargerCours();
   acPopulateSelects();
+  // Apply userId filter from "Voir progression" click
+  if (AC._progUserId) {
+    // No course filter when viewing specific student
+    var sel = document.getElementById('ac-prog-filtre');
+    if (sel) sel.value = '';
+  }
   acProgCharger();
 }
 
@@ -3128,24 +3202,37 @@ async function acProgCharger() {
   var zone = document.getElementById('ac-prog-liste');
   zone.innerHTML = '<div class="chargement">Chargement…</div>';
   var filtre = document.getElementById('ac-prog-filtre').value;
+  var userId = AC._progUserId || null;
+  AC._progUserId = null; // consume once
 
-  // For each enrollment, count progress
   var q = NAHIRA.sb.from('academy_enrollments')
     .select('user_id,course_id,enrolled_at,academy_courses(id,title,academy_modules(academy_lessons(id)))')
     .order('enrolled_at',{ascending:false}).limit(50);
   if (filtre) q = q.eq('course_id', filtre);
+  if (userId) q = q.eq('user_id', userId);
   var r = await q;
   var enrollments = r.data || [];
   if (!enrollments.length) { zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);padding:20px 0">Aucune inscription.</p>'; return; }
 
-  // Batch progress counts
+  // Batch: fetch all progress rows for these enrollments in one query
+  var pairs = enrollments.map(function(e){ return 'user_id.eq.' + e.user_id + ',course_id.eq.' + e.course_id; });
+  var rp = await NAHIRA.sb.from('academy_progress')
+    .select('user_id,course_id')
+    .not('completed_at','is',null)
+    .or(pairs.join(','));
+  var progRows = rp.data || [];
+  // Index progress by user_id+course_id
+  var progMap = {};
+  progRows.forEach(function(p){
+    var key = p.user_id + '|' + p.course_id;
+    progMap[key] = (progMap[key]||0) + 1;
+  });
+
   var html = '<div style="display:flex;flex-direction:column;gap:8px">';
-  for (var enr of enrollments) {
+  enrollments.forEach(function(enr) {
     var cours = enr.academy_courses;
     var total = (cours?.academy_modules||[]).reduce(function(s,m){return s+(m.academy_lessons||[]).length;},0);
-    var rp = await NAHIRA.sb.from('academy_progress').select('lesson_id',{count:'exact'})
-      .eq('user_id',enr.user_id).eq('course_id',enr.course_id).not('completed_at','is',null);
-    var done = rp.count||0;
+    var done = progMap[enr.user_id+'|'+enr.course_id] || 0;
     var pct = total ? Math.round(done/total*100) : 0;
     var uid = enr.user_id ? enr.user_id.slice(0,8)+'…' : '—';
     html += '<div class="prod-ligne" style="align-items:center;gap:12px;flex-wrap:wrap">' +
@@ -3160,14 +3247,13 @@ async function acProgCharger() {
       '</div>' +
       (pct===100?'<span class="badge badge-dispo">Complété</span>':'') +
       '</div>';
-  }
+  });
   html += '</div>';
   zone.innerHTML = html;
 }
 
 function acProgVoir(userId) {
-  var sel = document.getElementById('ac-prog-filtre');
-  if (sel) sel.value = '';
+  AC._progUserId = userId || null;
   goTo('ac-progression');
 }
 
@@ -3207,6 +3293,30 @@ async function acAttestationsCharger() {
         '<a class="btn btn-sec btn-sm" href="certificat.html?ref=' + encodeURIComponent(c.reference) + '" target="_blank">Voir ↗</a>' +
         '</td></tr>';
     }).join('') + '</tbody></table>';
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   RÉGLAGES ACADEMY
+   ══════════════════════════════════════════════════════════════════════ */
+var AC_REGLAGES_KEY = 'nahira_academy_reglages';
+
+function acReglagesInit() {
+  try {
+    var stored = JSON.parse(localStorage.getItem(AC_REGLAGES_KEY)||'{}');
+    if (stored.score) document.getElementById('ac-reg-score').value = stored.score;
+    if (stored.mention) document.getElementById('ac-reg-mention').value = stored.mention;
+  } catch(e) {}
+}
+
+function acReglagesSauvegarder() {
+  var score   = parseInt(document.getElementById('ac-reg-score').value)||70;
+  var mention = document.getElementById('ac-reg-mention').value.trim();
+  try {
+    localStorage.setItem(AC_REGLAGES_KEY, JSON.stringify({score, mention}));
+    var msg = document.getElementById('ac-reg-msg');
+    msg.textContent = 'Réglages enregistrés ✦';
+    setTimeout(function(){ msg.textContent = ''; }, 3000);
+  } catch(e) { toast('Impossible d\'enregistrer.','err'); }
 }
 
 /* ====== DÉMARRAGE ====== */
