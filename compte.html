@@ -761,7 +761,7 @@ async function chargerFormations() {
       .in("course_id", courseIds)
       .not("completed_at", "is", null),
     sb.from("academy_certificates")
-      .select("course_id, certificate_reference, issued_at")
+      .select("course_id, reference, issued_at")
       .eq("user_id", currentUser.id)
       .in("course_id", courseIds),
   ]);
@@ -786,7 +786,7 @@ async function chargerFormations() {
     const completedLessons = progressByCourse[enr.course_id] || 0;
     const pct = totalLessons > 0 ? Math.round(completedLessons / totalLessons * 100) : 0;
     const cert = certByCourse[enr.course_id];
-    const ctaLabel = pct === 0 ? "Commencer la formation" : pct === 100 ? "Revoir la formation" : "Continuer la formation";
+    const ctaLabel = pct === 0 ? "Commencer la formation" : "Continuer la formation";
 
     const div = document.createElement("div");
     div.className = "form-card";
@@ -807,7 +807,8 @@ async function chargerFormations() {
           </div>
           <div class="form-card-actions">
             <a class="btn btn-or" href="lecon.html?course=${encodeURIComponent(cours.slug)}" style="font-size:.72rem;padding:11px 20px;text-align:center">${escH(ctaLabel)} →</a>
-            ${cert ? `<a class="form-certif-lien" href="certificat.html?ref=${encodeURIComponent(cert.certificate_reference)}" target="_blank">Télécharger mon certificat ↗</a>` : ""}
+            ${pct === 100 && !cert ? `<a class="btn btn-or" href="lecon.html?course=${encodeURIComponent(cours.slug)}&quiz=1" style="font-size:.72rem;padding:11px 20px;text-align:center;background:var(--rose-pale);color:var(--rose)">Passer le quiz →</a>` : ""}
+            ${cert ? `<a class="form-certif-lien" href="certificat.html?ref=${encodeURIComponent(cert.reference)}" target="_blank">Télécharger mon certificat ↗</a>` : ""}
           </div>
         </div>
       </div>`;

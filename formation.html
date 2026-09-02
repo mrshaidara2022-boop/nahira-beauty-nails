@@ -439,14 +439,37 @@ function renderPage(course, modules, enrolled, user) {
 
   // ── Gestion achat ────────────────────────────────────────────────────
   const btnAcheter = document.getElementById('btnAcheter');
-  if (btnAcheter && product) {
-    btnAcheter.addEventListener('click', () => acheter(course, product, user));
+  if (btnAcheter) {
+    if (course.is_free) {
+      btnAcheter.addEventListener('click', () => inscrireGratuit(course, user));
+    } else if (product) {
+      btnAcheter.addEventListener('click', () => acheter(course, product, user));
+    }
   }
 }
 
 function toggleModule(id) {
   const el = document.getElementById('mod-' + id);
   if (el) el.classList.toggle('ouvert');
+}
+
+async function inscrireGratuit(course, user) {
+  const btn = document.getElementById('btnAcheter');
+  const msg = document.getElementById('fmMsg');
+  msg.className = 'fm-msg';
+  if (!user) { window.location.href = 'compte.html?next=' + encodeURIComponent(location.href); return; }
+  btn.disabled = true;
+  btn.textContent = 'Inscription…';
+  try {
+    const { error } = await sb.from('academy_enrollments').insert({ user_id: user.id, course_id: course.id });
+    if (error && error.code !== '23505') throw new Error(error.message);
+    window.location.href = 'lecon.html?course=' + encodeURIComponent(course.slug);
+  } catch(e) {
+    msg.textContent = e.message;
+    msg.className = 'fm-msg err';
+    btn.disabled = false;
+    btn.textContent = 'Accéder gratuitement';
+  }
 }
 
 async function acheter(course, product, user) {
