@@ -1,4 +1,4 @@
-const CACHE = 'nahira-v4';
+const CACHE = 'nahira-v5';
 const STATIC = [
   './',
   './index.html',
@@ -11,6 +11,11 @@ const STATIC = [
   './boutique.css',
   './boutique.js',
   './manifest.json',
+  './academy.html',
+  './formation.html',
+  './lecon.html',
+  './certificat.html',
+  './dashboard.html',
 ];
 
 self.addEventListener('install', e => {
