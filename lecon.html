@@ -656,20 +656,21 @@ function renderBlocks(lesson) {
         </figure>`;
         break;
       case 'tip':
-        html += `<div class="block-tip">${esc(block.content)}</div>`;
+        html += `<div class="block-tip">${esc(block.content || '').replace(/\n/g,'<br>')}</div>`;
         break;
       case 'warning':
-        html += `<div class="block-warning">${esc(block.content)}</div>`;
+        html += `<div class="block-warning">${esc(block.content || '').replace(/\n/g,'<br>')}</div>`;
         break;
       case 'info':
-        html += `<div class="block-info">${esc(block.content)}</div>`;
+        html += `<div class="block-info">${esc(block.content || '').replace(/\n/g,'<br>')}</div>`;
         break;
       case 'divider':
         html += `<hr class="block-divider">`;
         break;
       case 'step': {
         const stepNum = block.number ?? (blocks.filter((b,bi) => b.type==='step' && bi<=blocks.indexOf(block)).length);
-        html += `<div class="block-step"><div class="block-step-num">${stepNum}</div><div>${esc(block.content)}</div></div>`;
+        const stepTitle = block.title ? `<strong style="color:var(--texte)">${esc(block.title)}</strong><br>` : '';
+        html += `<div class="block-step"><div class="block-step-num">${stepNum}</div><div>${stepTitle}${esc(block.content || '')}</div></div>`;
         break;
       }
       case 'material': {
@@ -704,9 +705,12 @@ function renderBlocks(lesson) {
       case 'section':
         html += `<div class="block-section">${esc(block.label || '')}</div>`;
         break;
-      case 'je_maitrise':
-        html += `<div class="block-je-maitrise">${esc(block.content || '')}</div>`;
+      case 'je_maitrise': {
+        const jmItems = Array.isArray(block.items) ? block.items : [];
+        const jmBody = jmItems.map(i => `<p style="margin:0 0 6px;padding-left:1.2em;text-indent:-1.2em">✓ ${esc(i)}</p>`).join('');
+        html += `<div class="block-je-maitrise">${jmBody}${esc(block.content || '')}</div>`;
         break;
+      }
       case 'table': {
         const tHeaders = Array.isArray(block.headers) ? block.headers : [];
         const tRows    = Array.isArray(block.rows)    ? block.rows    : [];
