@@ -100,7 +100,7 @@ serve(async (req) => {
       const recipient_name = profile?.full_name || user.email?.split("@")[0] || "Participante";
 
       const { data: cert } = await admin.from("academy_certificates")
-        .insert({ user_id: user.id, course_id, recipient_name })
+        .insert({ user_id: user.id, course_id })
         .select("reference")
         .single();
       certificate_reference = cert?.reference ?? null;
