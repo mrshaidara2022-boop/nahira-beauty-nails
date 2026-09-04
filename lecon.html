@@ -373,7 +373,7 @@ a{color:inherit;text-decoration:none}
       <div class="lecon-eyebrow" id="quizEyebrow">Quiz final</div>
       <h1 class="lecon-title" id="quizTitle">Quiz final</h1>
       <p class="quiz-intro">
-        Répondez correctement à au moins <strong id="quizPassScore">70%</strong> des questions
+        Répondez correctement à au moins <strong id="quizPassScore">14 / 20</strong> questions
         pour valider votre formation et recevoir votre certificat d'attestation.
       </p>
       <div id="quizQuestions"></div>
@@ -800,12 +800,11 @@ async function showQuiz() {
   document.getElementById('leconNav').hidden     = true;
   document.getElementById('quizState').hidden    = false;
 
-  document.getElementById('quizEyebrow').textContent  = `Quiz final · ${STATE.course.title}`;
-  document.getElementById('quizPassScore').textContent = STATE.course.passing_score + '%';
+  document.getElementById('quizEyebrow').textContent = `Quiz final · ${STATE.course.title}`;
 
   // Check for existing passing attempt
   const { data: prev } = await sb.from('academy_quiz_attempts')
-    .select('score, passed')
+    .select('score, correct_count, total_questions, passed')
     .eq('user_id', STATE.user.id)
     .eq('course_id', STATE.course.id)
     .eq('passed', true)
@@ -818,40 +817,60 @@ async function showQuiz() {
       .eq('course_id', STATE.course.id)
       .maybeSingle();
     document.getElementById('quizSubmitZone').hidden = true;
-    showQuizResult(true, prev.score, null, null, cert?.reference, null, null);
+    const correctCount = prev.correct_count ?? Math.round((prev.score / 100) * (prev.total_questions ?? 20));
+    const totalQ       = prev.total_questions ?? 20;
+    showQuizResult(true, correctCount, totalQ, cert?.reference, null);
     return;
   }
 
-  // Load questions (no correct_index — kept server-side)
-  const { data: questions, error } = await sb.from('academy_quiz_questions')
-    .select('id, question, options, explanation, sort_order')
-    .eq('course_id', STATE.course.id)
-    .order('sort_order');
+  // Start a server-side quiz session (random draw of 20/41)
+  const { data: { session } } = await sb.auth.getSession();
+  let startResult;
+  try {
+    const res = await fetch(
+      'https://mxbmjtzrggahbwahxmkp.supabase.co/functions/v1/start-quiz',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ course_id: STATE.course.id }),
+      }
+    );
+    startResult = await res.json();
+  } catch {
+    document.getElementById('quizQuestions').innerHTML =
+      `<p style="text-align:center;padding:40px 0;color:var(--texte-pale);font-family:'Montserrat',sans-serif;font-size:.85rem">Erreur réseau — rechargez la page pour réessayer.</p>`;
+    document.getElementById('quizSubmitZone').hidden = true;
+    return;
+  }
 
-  if (error || !questions || questions.length === 0) {
+  if (!startResult.attempt_id || !startResult.questions?.length) {
     document.getElementById('quizQuestions').innerHTML =
       `<p style="text-align:center;padding:40px 0;color:var(--texte-pale);font-family:'Montserrat',sans-serif;font-size:.85rem">Le quiz sera disponible prochainement.</p>`;
     document.getElementById('quizSubmitZone').hidden = true;
     return;
   }
 
-  STATE.quizQuestions = questions;
+  STATE.quizAttemptId = startResult.attempt_id;
+  const questions = startResult.questions;
 
   const container = document.getElementById('quizQuestions');
   container.innerHTML = questions.map((q, qi) => {
     const opts = Array.isArray(q.options) ? q.options : [];
     const optsHtml = opts.map((opt, oi) => {
       const label = typeof opt === 'object' ? opt.text : opt;
-      return `<label class="quiz-opt" id="qo-${esc(q.id)}-${oi}">
-        <input type="radio" name="q_${esc(q.id)}" value="${oi}" onchange="selectOpt('${esc(q.id)}',${oi},${opts.length})">
+      return `<label class="quiz-opt" id="qo-${esc(q.question_id)}-${oi}">
+        <input type="radio" name="q_${esc(q.question_id)}" value="${oi}" onchange="selectOpt('${esc(q.question_id)}',${oi},${opts.length})">
         ${esc(String(label))}
       </label>`;
     }).join('');
-    return `<div class="quiz-q" id="qq-${esc(q.id)}">
+    return `<div class="quiz-q" id="qq-${esc(q.question_id)}">
       <div class="quiz-q-num">Question ${qi + 1} / ${questions.length}</div>
       <div class="quiz-q-text">${esc(q.question)}</div>
       <div class="quiz-opts">${optsHtml}</div>
-      ${q.explanation ? `<div class="quiz-explanation" id="qe-${esc(q.id)}">${esc(q.explanation)}</div>` : ''}
+      <div class="quiz-explanation" id="qe-${esc(q.question_id)}" hidden></div>
     </div>`;
   }).join('');
 
@@ -871,9 +890,9 @@ async function submitQuiz(questions) {
   const answers = [];
   let allAnswered = true;
   for (const q of questions) {
-    const sel = document.querySelector(`input[name="q_${q.id}"]:checked`);
+    const sel = document.querySelector(`input[name="q_${q.question_id}"]:checked`);
     if (!sel) { allAnswered = false; break; }
-    answers.push({ question_id: q.id, selected_index: parseInt(sel.value, 10) });
+    answers.push({ question_id: q.question_id, selected_index: parseInt(sel.value, 10) });
   }
 
   if (!allAnswered) {
@@ -897,7 +916,7 @@ async function submitQuiz(questions) {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ course_id: STATE.course.id, answers }),
+        body: JSON.stringify({ attempt_id: STATE.quizAttemptId, answers }),
       }
     );
     result = await res.json();
@@ -908,14 +927,36 @@ async function submitQuiz(questions) {
   }
 
   document.getElementById('quizSubmitZone').hidden = true;
-  showQuizResult(result.passed, result.score, result.total, result.correct, result.certificate_reference, questions, answers);
+
+  // Reveal per-question explanations with correct/incorrect markers
+  if (Array.isArray(result.results)) {
+    for (const r of result.results) {
+      const qEl   = document.getElementById(`qq-${r.question_id}`);
+      const expEl = document.getElementById(`qe-${r.question_id}`);
+      if (qEl) qEl.style.borderColor = r.is_correct ? 'var(--vert)' : '#b85c7a';
+      if (expEl && r.explanation) {
+        expEl.textContent = r.explanation;
+        expEl.classList.add('show');
+      }
+      // Mark the options (uses existing CSS classes)
+      const correctLabel = document.getElementById(`qo-${r.question_id}-${r.correct_index}`);
+      if (correctLabel) correctLabel.classList.add('correct');
+      if (!r.is_correct) {
+        const wrongLabel = document.getElementById(`qo-${r.question_id}-${r.selected_index}`);
+        if (wrongLabel) wrongLabel.classList.add('wrong');
+      }
+    }
+  }
+
+  showQuizResult(result.passed, result.correct_count, result.total_questions, result.certificate_reference, result.results);
 }
 
-function showQuizResult(passed, score, total, correct, certRef) {
-  const el  = document.getElementById('quizResult');
-  const c   = passed ? 'var(--vert)' : 'var(--rose)';
-  const cbg = passed ? 'var(--vert-pale)' : 'var(--rose-pale)';
-  const countLabel = (total != null && correct != null) ? `${correct}/${total}` : '';
+function showQuizResult(passed, correctCount, totalQuestions, certRef, results) {
+  const el   = document.getElementById('quizResult');
+  const c    = passed ? 'var(--vert)' : 'var(--rose)';
+  const cbg  = passed ? 'var(--vert-pale)' : 'var(--rose-pale)';
+  const passingCount = Math.ceil(((STATE.course.passing_score ?? 70) / 100) * (totalQuestions ?? 20));
+  const scoreLabel   = (correctCount != null && totalQuestions != null) ? `${correctCount} / ${totalQuestions}` : '';
 
   let actions = '';
   if (passed && certRef)
@@ -926,16 +967,16 @@ function showQuizResult(passed, score, total, correct, certRef) {
 
   el.innerHTML = `
     <div class="quiz-score-circle" style="border-color:${c};background:${cbg}">
-      <span class="quiz-score-num" style="color:${c}">${score}%</span>
-      ${countLabel ? `<span class="quiz-score-label" style="color:${c}">${countLabel}</span>` : ''}
+      <span class="quiz-score-num" style="color:${c}">${scoreLabel || '—'}</span>
+      ${totalQuestions ? `<span class="quiz-score-label" style="color:${c}">questions correctes</span>` : ''}
     </div>
     <div class="quiz-result-title" style="color:${passed ? 'var(--vert)' : 'var(--texte)'}">
       ${passed ? 'Félicitations ✦' : 'Presque…'}
     </div>
     <div class="quiz-result-sub">
       ${passed
-        ? `Vous avez obtenu <strong>${score}%</strong> — votre certificat d'attestation est prêt.`
-        : `Vous avez obtenu <strong>${score}%</strong>. Le seuil de réussite est de ${STATE.course.passing_score}%.<br>Revoyez les leçons et réessayez quand vous vous sentez prête.`}
+        ? `Vous avez obtenu <strong>${scoreLabel}</strong> — votre certificat d'attestation est prêt.`
+        : `Vous avez obtenu <strong>${scoreLabel}</strong>. Le seuil de réussite est de <strong>${passingCount} / ${totalQuestions ?? 20}</strong>.<br>Revoyez les leçons et réessayez quand vous vous sentez prête.`}
     </div>
     <div class="quiz-result-actions">${actions}</div>`;
   el.hidden = false;

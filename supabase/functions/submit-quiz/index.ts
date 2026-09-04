@@ -25,7 +25,6 @@ serve(async (req) => {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return json({ error: "Unauthorized" }, 401);
 
-  // User-scoped client (respects RLS)
   const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     global: { headers: { Authorization: authHeader } },
   });
@@ -33,54 +32,110 @@ serve(async (req) => {
   const { data: { user }, error: uErr } = await sb.auth.getUser();
   if (uErr || !user) return json({ error: "Unauthorized" }, 401);
 
-  let body: { course_id: string; answers: { question_id: string; selected_index: number }[] };
+  let body: { attempt_id: string; answers: { question_id: string; selected_index: number }[] };
   try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
 
-  const { course_id, answers } = body;
-  if (!course_id || !Array.isArray(answers)) return json({ error: "Missing course_id or answers" }, 400);
+  const { attempt_id, answers } = body;
+  if (!attempt_id || !Array.isArray(answers)) return json({ error: "Missing attempt_id or answers" }, 400);
 
-  // Verify enrollment
-  const { data: enrollment } = await sb.from("academy_enrollments")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("course_id", course_id)
-    .maybeSingle();
-  if (!enrollment) return json({ error: "Not enrolled" }, 403);
-
-  // Service-role client for reading correct answers
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
-  const { data: questions, error: qErr } = await admin.from("academy_quiz_questions")
-    .select("id, correct_index")
-    .eq("course_id", course_id);
-  if (qErr || !questions) return json({ error: "Could not load questions" }, 500);
+  // Verify attempt belongs to this user and is still in_progress
+  const { data: attempt, error: atErr } = await admin.from("academy_quiz_attempts")
+    .select("id, user_id, course_id, status")
+    .eq("id", attempt_id)
+    .single();
 
-  // Score calculation
-  const total   = questions.length;
-  let   correct = 0;
-  for (const q of questions) {
-    const a = answers.find((x) => x.question_id === q.id);
-    if (a && a.selected_index === q.correct_index) correct++;
+  if (atErr || !attempt)                    return json({ error: "Attempt not found" }, 404);
+  if (attempt.user_id !== user.id)          return json({ error: "Forbidden" }, 403);
+  if (attempt.status !== "in_progress")     return json({ error: "Attempt already completed" }, 409);
+
+  const course_id = attempt.course_id;
+
+  // Fetch the exact 20 question IDs assigned to this attempt
+  const { data: assignedRows, error: aqErr } = await admin.from("academy_quiz_attempt_questions")
+    .select("question_id")
+    .eq("attempt_id", attempt_id);
+
+  if (aqErr || !assignedRows) return json({ error: "Could not load session questions" }, 500);
+
+  const assignedIds = new Set(assignedRows.map((r) => r.question_id));
+  const total_questions = assignedIds.size;
+
+  // Validate: answers must cover exactly the assigned questions, no more, no less
+  if (answers.length !== total_questions) return json({ error: "Answer count mismatch" }, 400);
+
+  const submittedIds = new Set(answers.map((a) => a.question_id));
+  for (const id of submittedIds) {
+    if (!assignedIds.has(id)) return json({ error: "Answer references unknown question" }, 400);
   }
-  const score = total > 0 ? Math.round((correct / total) * 100) : 0;
+  if (submittedIds.size !== answers.length) return json({ error: "Duplicate question answers" }, 400);
+
+  // Fetch correct_index for assigned questions via service-role (never exposed to client)
+  const { data: correctData, error: cErr } = await admin.from("academy_quiz_questions")
+    .select("id, correct_index, explanation")
+    .in("id", [...assignedIds]);
+
+  if (cErr || !correctData) return json({ error: "Could not load correct answers" }, 500);
+
+  const correctMap = new Map(correctData.map((q) => [q.id, { correct_index: q.correct_index, explanation: q.explanation }]));
+
+  // Grade
+  let correct_count = 0;
+  const results: { question_id: string; selected_index: number; is_correct: boolean; correct_index: number; explanation: string | null }[] = [];
+
+  for (const answer of answers) {
+    const qData = correctMap.get(answer.question_id);
+    const is_correct = qData ? answer.selected_index === qData.correct_index : false;
+    if (is_correct) correct_count++;
+    results.push({
+      question_id:    answer.question_id,
+      selected_index: answer.selected_index,
+      is_correct,
+      correct_index:  qData?.correct_index ?? -1,
+      explanation:    qData?.explanation ?? null,
+    });
+  }
 
   // Passing threshold from course
   const { data: course } = await admin.from("academy_courses")
     .select("passing_score")
     .eq("id", course_id)
     .single();
-  const passed = score >= (course?.passing_score ?? 70);
+  const passing_score = course?.passing_score ?? 70;
 
-  // Save attempt
-  await sb.from("academy_quiz_attempts").insert({
-    user_id:  user.id,
-    course_id,
+  const score  = total_questions > 0 ? Math.round((correct_count / total_questions) * 100) : 0;
+  const passed = score >= passing_score;
+
+  const now = new Date().toISOString();
+
+  // Update attempt
+  await admin.from("academy_quiz_attempts").update({
     score,
     passed,
+    correct_count,
+    total_questions,
+    completed_at: now,
+    status:       "completed",
     answers,
-  });
+  }).eq("id", attempt_id);
 
-  // Generate certificate if passed
+  // Update per-question result rows
+  const updateRows = answers.map((a) => ({
+    attempt_id,
+    question_id:    a.question_id,
+    selected_index: a.selected_index,
+    is_correct:     results.find((r) => r.question_id === a.question_id)?.is_correct ?? false,
+  }));
+
+  for (const row of updateRows) {
+    await admin.from("academy_quiz_attempt_questions")
+      .update({ selected_index: row.selected_index, is_correct: row.is_correct })
+      .eq("attempt_id", row.attempt_id)
+      .eq("question_id", row.question_id);
+  }
+
+  // Certificate (only on pass)
   let certificate_reference: string | null = null;
   if (passed) {
     const { data: existing } = await admin.from("academy_certificates")
@@ -92,7 +147,6 @@ serve(async (req) => {
     if (existing) {
       certificate_reference = existing.reference;
     } else {
-      // Fetch recipient name from profiles (service role bypasses RLS)
       const { data: profile } = await admin.from("profiles")
         .select("full_name")
         .eq("id", user.id)
@@ -100,12 +154,20 @@ serve(async (req) => {
       const recipient_name = profile?.full_name || user.email?.split("@")[0] || "Participante";
 
       const { data: cert } = await admin.from("academy_certificates")
-        .insert({ user_id: user.id, course_id })
+        .insert({
+          user_id:         user.id,
+          course_id,
+          recipient_name,
+          score,
+          correct_count,
+          total_questions,
+          attempt_id,
+        })
         .select("reference")
         .single();
       certificate_reference = cert?.reference ?? null;
     }
   }
 
-  return json({ passed, score, total, correct, certificate_reference });
+  return json({ passed, score, total_questions, correct_count, certificate_reference, results });
 });
