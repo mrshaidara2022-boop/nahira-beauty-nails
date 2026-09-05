@@ -295,7 +295,7 @@ img{max-width:100%;display:block}
   if (!ref) return fin(false);
 
   const { data: cert, error } = await sb.from('academy_certificates')
-    .select('reference, issued_at, user_id, course_id, recipient_name')
+    .select('reference, issued_at, user_id, course_id, recipient_name, score, correct_count, total_questions')
     .eq('reference', ref)
     .maybeSingle();
 
@@ -307,19 +307,11 @@ img{max-width:100%;display:block}
     .eq('id', cert.course_id)
     .maybeSingle();
 
-  // Fetch best passing score for this user + course (only visible to the owner via RLS)
-  const { data: attempt } = await sb.from('academy_quiz_attempts')
-    .select('score')
-    .eq('user_id', cert.user_id)
-    .eq('course_id', cert.course_id)
-    .eq('passed', true)
-    .order('score', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
   const nom = cert.recipient_name || 'Participante';
   const dateStr = new Date(cert.issued_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-  const score = attempt ? attempt.score + '%' : '—';
+  const score = (cert.correct_count != null && cert.total_questions)
+    ? cert.correct_count + ' / ' + cert.total_questions
+    : '—';
 
   document.title = 'Certificat ' + (course?.title || '') + ' — ' + nom + ' — Nahira Academy';
   document.getElementById('c-nom').textContent        = nom;
