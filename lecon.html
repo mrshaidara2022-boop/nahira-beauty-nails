@@ -234,6 +234,23 @@ a{color:inherit;text-decoration:none}
 }
 .block-fiche-btn:hover{background:var(--or-vif);color:#fff}
 
+/* Placeholder média — emplacement identifié pour photo/vidéo à venir */
+.block-placeholder{
+  display:flex;align-items:center;gap:18px;
+  padding:18px 22px;margin-bottom:18px;
+  background:repeating-linear-gradient(-45deg,rgba(154,122,64,.03),rgba(154,122,64,.03) 6px,transparent 6px,transparent 14px);
+  border:2px dashed rgba(154,122,64,.35);border-radius:10px;
+}
+.block-placeholder-icon{font-size:1.8rem;flex:none;opacity:.75}
+.block-placeholder-info{flex:1;min-width:0}
+.block-placeholder-id{
+  font-family:'Montserrat',sans-serif;font-size:.62rem;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--or-vif);font-weight:700;margin-bottom:4px;
+}
+.block-placeholder-label{
+  font-family:'Cormorant Garamond',serif;font-size:.95rem;color:var(--texte-doux);font-style:italic;
+}
+
 /* Barre de navigation entre leçons */
 .lecon-nav{
   position:fixed;bottom:0;left:280px;right:0;
@@ -759,9 +776,19 @@ function renderBlocks(lesson) {
           `</div>`;
         break;
       }
-      case 'placeholder':
-        // Media placeholder — renders nothing for students; visible in admin editor (Action 08)
+      case 'placeholder': {
+        const pid = block.id || 'PLACEHOLDER';
+        const isVideo = pid.startsWith('VIDEO_');
+        const icon = isVideo ? '🎬' : '📸';
+        const label = isVideo ? 'Vidéo de démonstration à venir' : 'Photo illustrative à venir';
+        html += `<div class="block-placeholder">` +
+          `<span class="block-placeholder-icon">${icon}</span>` +
+          `<div class="block-placeholder-info">` +
+          `<div class="block-placeholder-id">${pid}</div>` +
+          `<div class="block-placeholder-label">${label}</div>` +
+          `</div></div>`;
         break;
+      }
     }
   }
 
