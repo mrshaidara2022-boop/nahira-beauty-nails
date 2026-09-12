@@ -388,6 +388,9 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
       <button class="nav-item" data-nav="ac-progression" onclick="goTo('ac-progression')"><span class="nav-ico">📊</span>Progression</button>
       <button class="nav-item" data-nav="ac-attestations" onclick="goTo('ac-attestations')"><span class="nav-ico">✦</span>Attestations</button>
       <button class="nav-item" data-nav="ac-reglages" onclick="goTo('ac-reglages')"><span class="nav-ico">⚙</span>Réglages Academy</button>
+      <button class="nav-item" data-nav="ac-medias" onclick="goTo('ac-medias')"><span class="nav-ico">🎞</span>Médias</button>
+      <button class="nav-item" data-nav="ac-fiches" onclick="goTo('ac-fiches')"><span class="nav-ico">📄</span>Fiches</button>
+      <button class="nav-item" data-nav="ac-tableau" onclick="goTo('ac-tableau')"><span class="nav-ico">📈</span>Tableau de bord</button>
     </ul>
     <div class="cote-footer">
       <div class="cote-email" id="cote-email"></div>
@@ -942,6 +945,46 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
         </div>
       </section>
 
+      <!-- ═══ ACADEMY : MÉDIAS ════════════════════════════════════════════════ -->
+      <section class="section" id="s-ac-medias" style="display:none">
+        <div class="eyebrow">Academy</div>
+        <h2 class="section-titre">Médias <em>& placeholders</em></h2>
+        <div class="filtres-barre" style="margin-bottom:16px">
+          <select class="filtre-select" id="ac-medias-cours" onchange="acMediasCharger()" style="flex:1">
+            <option value="">— Toutes les formations —</option>
+          </select>
+          <select class="filtre-select" id="ac-medias-filtre" onchange="acMediasCharger()" style="width:160px">
+            <option value="">Tous les statuts</option>
+            <option value="placeholder">Placeholder (à tourner)</option>
+            <option value="url">URL renseignée</option>
+          </select>
+          <button class="btn btn-sec btn-sm" onclick="acMediasCharger()">Actualiser</button>
+        </div>
+        <div id="ac-medias-corps">
+          <p style="font-family:'Montserrat',sans-serif;font-size:11px;color:var(--texte-faible)">Sélectionnez une formation pour voir les médias.</p>
+        </div>
+      </section>
+
+      <!-- ═══ ACADEMY : FICHES ════════════════════════════════════════════════ -->
+      <section class="section" id="s-ac-fiches" style="display:none">
+        <div class="eyebrow">Academy</div>
+        <h2 class="section-titre">Fiches <em>de référence</em></h2>
+        <div class="filtres-barre" style="margin-bottom:16px">
+          <select class="filtre-select" id="ac-fiches-cours" onchange="acFichesCharger()" style="flex:1">
+            <option value="">— Toutes les formations —</option>
+          </select>
+          <button class="btn btn-primaire btn-sm" onclick="acFicheNouveau()">+ Nouvelle fiche</button>
+        </div>
+        <div id="ac-fiches-liste" class="chargement">Chargement…</div>
+      </section>
+
+      <!-- ═══ ACADEMY : TABLEAU DE BORD ══════════════════════════════════════ -->
+      <section class="section" id="s-ac-tableau" style="display:none">
+        <div class="eyebrow">Academy</div>
+        <h2 class="section-titre">Tableau de <em>bord</em></h2>
+        <div id="ac-tableau-corps"><div class="chargement">Chargement…</div></div>
+      </section>
+
     </div><!-- /#main -->
   </div><!-- /.app-main -->
 
@@ -1060,6 +1103,7 @@ var sectionLabels = {
   'ac-formations':'Academy — Formations', 'ac-contenu':'Academy — Contenu',
   'ac-quiz':'Academy — Quiz', 'ac-eleves':'Academy — Élèves',
   'ac-progression':'Academy — Progression', 'ac-attestations':'Academy — Attestations', 'ac-reglages':'Academy — Réglages',
+  'ac-medias':'Academy — Médias', 'ac-fiches':'Academy — Fiches', 'ac-tableau':'Academy — Tableau de bord',
 };
 
 function goTo(id) {
@@ -1098,6 +1142,9 @@ function goTo(id) {
   else if (id === 'ac-progression') acProgInit();
   else if (id === 'ac-attestations') acAttestationsCharger();
   else if (id === 'ac-reglages') acReglagesInit();
+  else if (id === 'ac-medias') acMediasCharger();
+  else if (id === 'ac-fiches') acFichesCharger();
+  else if (id === 'ac-tableau') acTableauCharger();
 }
 
 function togglePlus() {
@@ -2997,6 +3044,7 @@ async function acModuleSupprimer(id) {
 function acLeconNouveau(moduleId) {
   modalOuvrir('Nouvelle leçon', acLeconFormHtml(moduleId, {}),
     '<button class="btn btn-primaire" onclick="acLeconSauvegarder(\'' + moduleId + '\',null)">Créer la leçon</button>');
+  acBlockEditorRender();
 }
 
 async function acLeconEditer(moduleId, id) {
@@ -3004,18 +3052,37 @@ async function acLeconEditer(moduleId, id) {
   var l = r.data || {};
   modalOuvrir('Modifier la leçon', acLeconFormHtml(moduleId, l),
     '<button class="btn btn-primaire" onclick="acLeconSauvegarder(\'' + moduleId + '\',\'' + id + '\')">Enregistrer</button>');
+  acBlockEditorRender();
 }
 
 function acLeconFormHtml(moduleId, l) {
-  var cb = l.content_blocks ? JSON.stringify(l.content_blocks, null, 2) : '[]';
+  var blocks = l.content_blocks && Array.isArray(l.content_blocks) ? l.content_blocks : [];
+  acBlockEditorInit(blocks);
+  var typeOpts = BLOCK_TYPES.map(function(t){
+    return '<option value="' + t.type + '">' + t.icon + ' ' + t.label + '</option>';
+  }).join('');
   return '<div style="display:flex;flex-direction:column;gap:12px">' +
     '<div><label class="param-lbl">Titre *</label><input class="param-input" id="ac-l-titre" value="' + acE(l.title||'') + '" style="width:100%"></div>' +
     '<div><label class="param-lbl">URL vidéo (YouTube / Vimeo / MP4)</label><input class="param-input" id="ac-l-video" value="' + acE(l.video_url||'') + '" style="width:100%"></div>' +
-    '<div><label class="param-lbl">Durée (minutes)</label><input class="param-input" id="ac-l-dur" type="number" value="' + (l.duration_minutes||'') + '" style="width:100%"></div>' +
-    '<div><label class="param-lbl">Ordre d\'affichage</label><input class="param-input" id="ac-l-ordre" type="number" value="' + (l.sort_order||0) + '" style="width:100%"></div>' +
+    '<div style="display:flex;gap:10px">' +
+      '<div style="flex:1"><label class="param-lbl">Durée (min)</label><input class="param-input" id="ac-l-dur" type="number" value="' + (l.duration_minutes||'') + '" style="width:100%"></div>' +
+      '<div style="flex:1"><label class="param-lbl">Ordre</label><input class="param-input" id="ac-l-ordre" type="number" value="' + (l.sort_order||0) + '" style="width:100%"></div>' +
+    '</div>' +
     '<div style="display:flex;align-items:center;gap:10px"><label class="param-lbl">Aperçu gratuit</label>' +
     '<button class="param-toggle ' + (l.is_preview?'on':'') + '" id="ac-l-preview" onclick="this.classList.toggle(\'on\')"></button></div>' +
-    '<div><label class="param-lbl">Blocs de contenu (JSON)</label><textarea class="param-input" id="ac-l-blocks" rows="8" style="width:100%;font-family:monospace;font-size:11px">' + acE(cb) + '</textarea></div>' +
+    '<div style="border-top:1px solid var(--bordure);margin:4px 0"></div>' +
+    '<div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+        '<label class="param-lbl" style="margin:0">Blocs de contenu <span id="be-count" style="color:var(--texte-faible)">(' + blocks.length + ')</span></label>' +
+        '<div style="display:flex;gap:6px;align-items:center">' +
+          '<select class="filtre-select" id="be-type-select" style="font-size:11px;padding:3px 7px;height:auto">' +
+            '<option value="">— Type —</option>' + typeOpts +
+          '</select>' +
+          '<button class="btn btn-primaire btn-sm" onclick="acBlockAdd()">+ Bloc</button>' +
+        '</div>' +
+      '</div>' +
+      '<div id="ac-block-list"></div>' +
+    '</div>' +
     '</div>';
 }
 
@@ -3025,10 +3092,8 @@ async function acLeconSauvegarder(moduleId, id) {
   var dur    = parseInt(document.getElementById('ac-l-dur').value)||null;
   var ordre  = parseInt(document.getElementById('ac-l-ordre').value)||0;
   var prev   = document.getElementById('ac-l-preview').classList.contains('on');
-  var cbRaw  = document.getElementById('ac-l-blocks').value.trim();
   if (!titre) { toast('Titre requis.','err'); return; }
-  var blocks;
-  try { blocks = JSON.parse(cbRaw); } catch { toast('JSON des blocs invalide.','err'); return; }
+  var blocks = AC._editBlocks || [];
   var data = { title:titre, video_url:video, duration_minutes:dur, sort_order:ordre, is_preview:prev, content_blocks:blocks, course_id:AC.coursId, module_id:moduleId };
   var r = id
     ? await NAHIRA.sb.from('academy_lessons').update(data).eq('id',id)
@@ -3160,27 +3225,46 @@ async function acElevesCharger() {
   zone.innerHTML = '<div class="chargement">Chargement…</div>';
   var filtre = document.getElementById('ac-eleves-filtre').value;
   var q = NAHIRA.sb.from('academy_enrollments')
-    .select('id,enrolled_at,user_id,academy_courses(title)')
+    .select('id,enrolled_at,user_id,course_id,academy_courses(title)')
     .order('enrolled_at',{ascending:false}).limit(100);
   if (filtre) q = q.eq('course_id', filtre);
   var r = await q;
   var rows = r.data || [];
   if (!rows.length) { zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);padding:20px 0">Aucune inscription.</p>'; return; }
+
+  var uids = rows.map(function(e){return e.user_id;}).filter(Boolean);
+  uids = uids.filter(function(v,i,a){return a.indexOf(v)===i;});
+  var profMap = {};
+  if (uids.length) {
+    var rp = await NAHIRA.sb.from('profiles').select('id,display_name').in('id', uids);
+    (rp.data||[]).forEach(function(p){ profMap[p.id] = p; });
+  }
+
   zone.innerHTML = '<table style="width:100%;border-collapse:collapse;font-family:Montserrat,sans-serif;font-size:12px">' +
     '<thead><tr style="border-bottom:1px solid var(--bordure);color:var(--texte-faible)">' +
-    '<th style="text-align:left;padding:8px 6px;font-weight:500">Utilisateur</th>' +
+    '<th style="text-align:left;padding:8px 6px;font-weight:500">Élève</th>' +
     '<th style="text-align:left;padding:8px 6px;font-weight:500">Formation</th>' +
     '<th style="text-align:left;padding:8px 6px;font-weight:500">Date</th>' +
     '<th style="padding:8px 6px"></th></tr></thead><tbody>' +
     rows.map(function(e) {
-      var uid = e.user_id ? e.user_id.slice(0,8) + '…' : '—';
+      var prof = profMap[e.user_id] || {};
+      var nom = prof.display_name || (e.user_id ? e.user_id.slice(0,8)+'…' : '—');
       return '<tr style="border-bottom:1px solid rgba(240,111,167,.06)">' +
-        '<td style="padding:9px 6px;color:var(--texte-doux)">' + acE(uid) + '</td>' +
+        '<td style="padding:9px 6px;color:var(--texte)">' + acE(nom) + '</td>' +
         '<td style="padding:9px 6px;color:var(--texte)">' + acE(e.academy_courses?.title||'—') + '</td>' +
         '<td style="padding:9px 6px;color:var(--texte-faible)">' + fmtD(e.enrolled_at) + '</td>' +
-        '<td style="padding:9px 6px;text-align:right"><button class="btn btn-sec btn-sm" onclick="acProgVoir(\'' + e.user_id + '\')">Voir progression</button></td>' +
-        '</tr>';
+        '<td style="padding:9px 6px;text-align:right;white-space:nowrap">' +
+          '<button class="btn btn-sec btn-sm" onclick="acProgVoir(\'' + e.user_id + '\')" style="margin-right:4px">Progression</button>' +
+          '<button class="btn btn-danger btn-sm" onclick="acEleveRetirer(\'' + e.id + '\',\'' + acE(nom) + '\')">Retirer</button>' +
+        '</td></tr>';
     }).join('') + '</tbody></table>';
+}
+
+async function acEleveRetirer(enrollmentId, nom) {
+  if (!confirm('Retirer l\'accès à ' + nom + ' ?\nLeur progression sera conservée mais ils n\'auront plus accès à la formation.')) return;
+  var r = await NAHIRA.sb.from('academy_enrollments').delete().eq('id', enrollmentId);
+  if (r.error) { toast('Erreur : '+r.error.message,'err'); return; }
+  toast('Accès retiré.'); acElevesCharger();
 }
 
 /* ════════════════════════════════════════════════════════════════════════
@@ -3228,17 +3312,26 @@ async function acProgCharger() {
     progMap[key] = (progMap[key]||0) + 1;
   });
 
+  var uids2 = enrollments.map(function(e){return e.user_id;}).filter(Boolean);
+  uids2 = uids2.filter(function(v,i,a){return a.indexOf(v)===i;});
+  var profMap2 = {};
+  if (uids2.length) {
+    var rp2 = await NAHIRA.sb.from('profiles').select('id,display_name').in('id', uids2);
+    (rp2.data||[]).forEach(function(p){ profMap2[p.id] = p; });
+  }
+
   var html = '<div style="display:flex;flex-direction:column;gap:8px">';
   enrollments.forEach(function(enr) {
     var cours = enr.academy_courses;
     var total = (cours?.academy_modules||[]).reduce(function(s,m){return s+(m.academy_lessons||[]).length;},0);
     var done = progMap[enr.user_id+'|'+enr.course_id] || 0;
     var pct = total ? Math.round(done/total*100) : 0;
-    var uid = enr.user_id ? enr.user_id.slice(0,8)+'…' : '—';
+    var prof2 = profMap2[enr.user_id] || {};
+    var nom2 = prof2.display_name || (enr.user_id ? enr.user_id.slice(0,8)+'…' : '—');
     html += '<div class="prod-ligne" style="align-items:center;gap:12px;flex-wrap:wrap">' +
       '<div class="prod-info">' +
       '<div class="prod-nom" style="font-size:15px">' + acE(cours?.title||'—') + '</div>' +
-      '<div class="prod-sku">Élève ' + acE(uid) + ' · ' + fmtD(enr.enrolled_at) + '</div>' +
+      '<div class="prod-sku">' + acE(nom2) + ' · ' + fmtD(enr.enrolled_at) + '</div>' +
       '</div>' +
       '<div style="flex:1;min-width:120px">' +
       '<div style="height:4px;background:rgba(255,247,250,.1);border-radius:2px;overflow:hidden;margin-bottom:3px">' +
@@ -3300,23 +3393,486 @@ async function acAttestationsCharger() {
    ══════════════════════════════════════════════════════════════════════ */
 var AC_REGLAGES_KEY = 'nahira_academy_reglages';
 
-function acReglagesInit() {
-  try {
-    var stored = JSON.parse(localStorage.getItem(AC_REGLAGES_KEY)||'{}');
-    if (stored.score) document.getElementById('ac-reg-score').value = stored.score;
-    if (stored.mention) document.getElementById('ac-reg-mention').value = stored.mention;
-  } catch(e) {}
+async function acReglagesInit() {
+  var r = await NAHIRA.sb.from('site_settings').select('value').eq('key','academy_settings').maybeSingle();
+  var stored = {};
+  if (r.data && r.data.value) {
+    try { stored = JSON.parse(r.data.value); } catch(e) {}
+  } else {
+    try { stored = JSON.parse(localStorage.getItem(AC_REGLAGES_KEY)||'{}'); } catch(e) {}
+  }
+  if (stored.score) document.getElementById('ac-reg-score').value = stored.score;
+  if (stored.mention) document.getElementById('ac-reg-mention').value = stored.mention;
 }
 
-function acReglagesSauvegarder() {
+async function acReglagesSauvegarder() {
   var score   = parseInt(document.getElementById('ac-reg-score').value)||70;
   var mention = document.getElementById('ac-reg-mention').value.trim();
-  try {
-    localStorage.setItem(AC_REGLAGES_KEY, JSON.stringify({score, mention}));
-    var msg = document.getElementById('ac-reg-msg');
+  var data    = { score, mention };
+  var r = await NAHIRA.sb.from('site_settings').upsert({key:'academy_settings', value:JSON.stringify(data)}, {onConflict:'key'});
+  var msg = document.getElementById('ac-reg-msg');
+  if (r.error) {
+    try { localStorage.setItem(AC_REGLAGES_KEY, JSON.stringify(data)); } catch(e) {}
+    msg.textContent = 'Enregistré localement (erreur Supabase).';
+  } else {
     msg.textContent = 'Réglages enregistrés ✦';
-    setTimeout(function(){ msg.textContent = ''; }, 3000);
-  } catch(e) { toast('Impossible d\'enregistrer.','err'); }
+  }
+  setTimeout(function(){ msg.textContent = ''; }, 3000);
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   ÉDITEUR DE BLOCS — visual block editor for lesson content_blocks
+   ══════════════════════════════════════════════════════════════════════ */
+AC._editBlocks = [];
+AC._editBlockIdx = null;
+
+var BLOCK_TYPES = [
+  {type:'title',      label:'Titre',        icon:'T'},
+  {type:'subtitle',   label:'Sous-titre',   icon:'t'},
+  {type:'text',       label:'Texte',        icon:'¶'},
+  {type:'section',    label:'Section',      icon:'§'},
+  {type:'list',       label:'Liste',        icon:'≡'},
+  {type:'step',       label:'Étape',        icon:'→'},
+  {type:'tip',        label:'Conseil',      icon:'💡'},
+  {type:'info',       label:'Info',         icon:'ℹ'},
+  {type:'warning',    label:'Attention',    icon:'⚠'},
+  {type:'image',      label:'Image',        icon:'🖼'},
+  {type:'video',      label:'Vidéo',        icon:'▶'},
+  {type:'placeholder',label:'Placeholder',  icon:'📍'},
+  {type:'fiche',      label:'Fiche',        icon:'📄'},
+  {type:'table',      label:'Tableau',      icon:'⊞'},
+  {type:'material',   label:'Matériel',     icon:'🔧'},
+  {type:'je_maitrise',label:'Je maîtrise',  icon:'✓'},
+  {type:'gallery',    label:'Galerie',      icon:'⊡'},
+];
+
+function acBlockTypeLabel(type) {
+  var t = BLOCK_TYPES.find(function(x){return x.type===type;});
+  return t ? t.label : type;
+}
+
+function acBlockPreview(b) {
+  var s = '';
+  switch(b.type) {
+    case 'title': case 'subtitle': case 'text': case 'tip': case 'info': case 'warning': s = b.text||''; break;
+    case 'list': s = (b.items||[]).slice(0,3).join(' · '); break;
+    case 'step': s = '[' + (b.number||'?') + '] ' + (b.text||''); break;
+    case 'section': s = b.title||''; break;
+    case 'image': s = b.url||b.caption||''; break;
+    case 'video': s = b.url||''; break;
+    case 'placeholder': s = b.id||''; break;
+    case 'fiche': s = b.id||''; break;
+    case 'table': s = (b.headers||[]).join(' | '); break;
+    case 'material': s = b.name||''; break;
+    case 'je_maitrise': s = Array.isArray(b.items) ? b.items.slice(0,2).join(' · ') : (b.text||''); break;
+    case 'gallery': s = (b.images||[]).length + ' image(s)'; break;
+    default: s = JSON.stringify(b).slice(0,60);
+  }
+  return s.length > 72 ? s.slice(0,72)+'…' : s;
+}
+
+function acBlockEditorInit(blocksArr) {
+  AC._editBlocks = Array.isArray(blocksArr) ? JSON.parse(JSON.stringify(blocksArr)) : [];
+  AC._editBlockIdx = null;
+}
+
+function acBlockEditorRender() {
+  var el = document.getElementById('ac-block-list');
+  if (!el) return;
+  var blocks = AC._editBlocks;
+  var cntEl = document.getElementById('be-count');
+  if (cntEl) cntEl.textContent = '(' + blocks.length + ')';
+  if (!blocks.length) {
+    el.innerHTML = '<div style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);padding:12px 0;text-align:center;border:1px dashed var(--bordure);border-radius:8px">Aucun bloc. Choisissez un type et cliquez « + Bloc ».</div>';
+    return;
+  }
+  el.innerHTML = blocks.map(function(b, i) {
+    var editing = AC._editBlockIdx === i;
+    var preview = acE(acBlockPreview(b));
+    return '<div style="border:1px solid var(--bordure);border-radius:10px;margin-bottom:6px;overflow:hidden">' +
+      '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--carte-2)">' +
+        '<span style="font-family:Montserrat,sans-serif;font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;background:rgba(240,111,167,.18);color:var(--rose);flex:none">' + acE(acBlockTypeLabel(b.type)) + '</span>' +
+        '<span style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + preview + '</span>' +
+        '<div style="display:flex;gap:3px;flex:none">' +
+          (i > 0 ? '<button class="btn btn-sec btn-sm" onclick="acBlockMove(' + i + ',-1)" style="padding:2px 5px">↑</button>' : '<span style="width:27px"></span>') +
+          (i < blocks.length-1 ? '<button class="btn btn-sec btn-sm" onclick="acBlockMove(' + i + ',1)" style="padding:2px 5px">↓</button>' : '<span style="width:27px"></span>') +
+          '<button class="btn btn-sec btn-sm" onclick="acBlockToggleEdit(' + i + ')" style="padding:2px 7px" title="Éditer">' + (editing ? '✕' : '✎') + '</button>' +
+          '<button class="btn btn-danger btn-sm" onclick="acBlockDelete(' + i + ')" style="padding:2px 6px" title="Supprimer">✕</button>' +
+        '</div>' +
+      '</div>' +
+      (editing ? '<div style="padding:10px;border-top:1px solid var(--bordure)">' + acBlockEditForm(b, i) + '</div>' : '') +
+    '</div>';
+  }).join('');
+}
+
+function acBlockEditForm(b, i) {
+  var t = b.type;
+  var html = '<div style="display:flex;flex-direction:column;gap:8px">';
+  if (t === 'title' || t === 'subtitle') {
+    html += '<label class="param-lbl">' + (t==='title'?'Titre':'Sous-titre') + '</label><input class="param-input" id="be-f-text" value="' + acE(b.text||'') + '" style="width:100%">';
+  } else if (t === 'text') {
+    html += '<label class="param-lbl">Contenu</label><textarea class="param-input" id="be-f-text" rows="4" style="width:100%;font-size:12px">' + acE(b.text||'') + '</textarea>';
+  } else if (t === 'tip' || t === 'info' || t === 'warning') {
+    var lbl = t==='tip'?'Conseil':t==='info'?'Info':'Attention';
+    html += '<label class="param-lbl">' + lbl + '</label><textarea class="param-input" id="be-f-text" rows="3" style="width:100%;font-size:12px">' + acE(b.text||'') + '</textarea>';
+  } else if (t === 'section') {
+    html += '<label class="param-lbl">Titre de section</label><input class="param-input" id="be-f-stitle" value="' + acE(b.title||'') + '" style="width:100%">';
+  } else if (t === 'step') {
+    html += '<div style="display:flex;gap:10px"><div><label class="param-lbl">N°</label><input class="param-input" id="be-f-snum" type="number" value="' + (b.number||1) + '" style="width:70px"></div>' +
+      '<div style="flex:1"><label class="param-lbl">Texte</label><input class="param-input" id="be-f-stext" value="' + acE(b.text||'') + '" style="width:100%"></div></div>';
+  } else if (t === 'list') {
+    html += '<label class="param-lbl">Éléments (un par ligne)</label><textarea class="param-input" id="be-f-items" rows="4" style="width:100%;font-size:12px">' + acE((b.items||[]).join('\n')) + '</textarea>';
+  } else if (t === 'je_maitrise') {
+    var jmVal = Array.isArray(b.items) ? b.items.join('\n') : (b.text||'');
+    html += '<label class="param-lbl">Objectifs (un par ligne)</label><textarea class="param-input" id="be-f-jm" rows="4" style="width:100%;font-size:12px">' + acE(jmVal) + '</textarea>';
+  } else if (t === 'image') {
+    html += '<label class="param-lbl">URL image</label><input class="param-input" id="be-f-iurl" value="' + acE(b.url||'') + '" style="width:100%">' +
+      '<label class="param-lbl">Légende</label><input class="param-input" id="be-f-icap" value="' + acE(b.caption||'') + '" style="width:100%">';
+  } else if (t === 'video') {
+    html += '<label class="param-lbl">URL vidéo</label><input class="param-input" id="be-f-vurl" value="' + acE(b.url||'') + '" style="width:100%">';
+  } else if (t === 'placeholder') {
+    html += '<label class="param-lbl">ID placeholder (ex: VIDEO_M6_REEQUILIBRAGE_PROTOCOLE)</label><input class="param-input" id="be-f-pid" value="' + acE(b.id||'') + '" style="width:100%;font-family:monospace;font-size:11px">';
+  } else if (t === 'fiche') {
+    html += '<label class="param-lbl">ID fiche (ex: F3)</label><input class="param-input" id="be-f-fid" value="' + acE(b.id||'') + '" style="width:100%;font-family:monospace">';
+  } else if (t === 'table') {
+    html += '<label class="param-lbl">En-têtes (séparés par |)</label><input class="param-input" id="be-f-thead" value="' + acE((b.headers||[]).join(' | ')) + '" style="width:100%">' +
+      '<label class="param-lbl">Lignes (une par ligne, colonnes séparées par |)</label><textarea class="param-input" id="be-f-trows" rows="4" style="width:100%;font-size:12px">' + acE((b.rows||[]).map(function(r){return r.join(' | ');}).join('\n')) + '</textarea>';
+  } else if (t === 'material') {
+    html += '<label class="param-lbl">Nom</label><input class="param-input" id="be-f-mname" value="' + acE(b.name||'') + '" style="width:100%">' +
+      '<label class="param-lbl">Description</label><textarea class="param-input" id="be-f-mdesc" rows="2" style="width:100%;font-size:12px">' + acE(b.description||'') + '</textarea>';
+  } else if (t === 'gallery') {
+    html += '<label class="param-lbl">Images (une URL par ligne, ou URL | légende)</label><textarea class="param-input" id="be-f-gimgs" rows="4" style="width:100%;font-size:12px">' +
+      acE((b.images||[]).map(function(img){return img.url + (img.caption?' | '+img.caption:'');}).join('\n')) + '</textarea>';
+  } else {
+    html += '<label class="param-lbl">JSON brut</label><textarea class="param-input" id="be-f-raw" rows="3" style="width:100%;font-family:monospace;font-size:11px">' + acE(JSON.stringify(b, null, 2)) + '</textarea>';
+  }
+  html += '<button class="btn btn-primaire btn-sm" onclick="acBlockSave(' + i + ')">Enregistrer ce bloc</button></div>';
+  return html;
+}
+
+function acBlockSave(i) {
+  var b = Object.assign({}, AC._editBlocks[i]);
+  var t = b.type;
+  if (t === 'title' || t === 'subtitle' || t === 'text' || t === 'tip' || t === 'info' || t === 'warning') {
+    var el = document.getElementById('be-f-text'); if (el) b.text = el.value;
+  } else if (t === 'section') {
+    var el = document.getElementById('be-f-stitle'); if (el) b.title = el.value;
+  } else if (t === 'step') {
+    var en = document.getElementById('be-f-snum'); var et = document.getElementById('be-f-stext');
+    if (en) b.number = parseInt(en.value)||1; if (et) b.text = et.value;
+  } else if (t === 'list') {
+    var el = document.getElementById('be-f-items');
+    if (el) b.items = el.value.split('\n').map(function(s){return s.trim();}).filter(Boolean);
+  } else if (t === 'je_maitrise') {
+    var el = document.getElementById('be-f-jm');
+    if (el) b.items = el.value.split('\n').map(function(s){return s.trim();}).filter(Boolean);
+  } else if (t === 'image') {
+    var eu = document.getElementById('be-f-iurl'); var ec = document.getElementById('be-f-icap');
+    if (eu) b.url = eu.value; if (ec) b.caption = ec.value;
+  } else if (t === 'video') {
+    var el = document.getElementById('be-f-vurl'); if (el) b.url = el.value;
+  } else if (t === 'placeholder') {
+    var el = document.getElementById('be-f-pid'); if (el) b.id = el.value.trim();
+  } else if (t === 'fiche') {
+    var el = document.getElementById('be-f-fid'); if (el) b.id = el.value.trim();
+  } else if (t === 'table') {
+    var eh = document.getElementById('be-f-thead'); var er = document.getElementById('be-f-trows');
+    if (eh) b.headers = eh.value.split('|').map(function(s){return s.trim();}).filter(Boolean);
+    if (er) b.rows = er.value.split('\n').filter(Boolean).map(function(line){return line.split('|').map(function(s){return s.trim();});});
+  } else if (t === 'material') {
+    var en = document.getElementById('be-f-mname'); var ed = document.getElementById('be-f-mdesc');
+    if (en) b.name = en.value; if (ed) b.description = ed.value;
+  } else if (t === 'gallery') {
+    var el = document.getElementById('be-f-gimgs');
+    if (el) b.images = el.value.split('\n').filter(Boolean).map(function(line){
+      var pts = line.split('|'); return {url:pts[0].trim(), caption:(pts[1]||'').trim()};
+    });
+  } else {
+    var el = document.getElementById('be-f-raw');
+    if (el) { try { b = JSON.parse(el.value); } catch(e) { toast('JSON invalide.','err'); return; } }
+  }
+  AC._editBlocks[i] = b;
+  AC._editBlockIdx = null;
+  acBlockEditorRender();
+}
+
+function acBlockToggleEdit(i) {
+  AC._editBlockIdx = (AC._editBlockIdx === i) ? null : i;
+  acBlockEditorRender();
+}
+
+function acBlockDelete(i) {
+  if (!confirm('Supprimer ce bloc ?')) return;
+  AC._editBlocks.splice(i, 1);
+  if (AC._editBlockIdx >= AC._editBlocks.length) AC._editBlockIdx = null;
+  acBlockEditorRender();
+}
+
+function acBlockMove(i, dir) {
+  var arr = AC._editBlocks;
+  var j = i + dir;
+  if (j < 0 || j >= arr.length) return;
+  var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+  if (AC._editBlockIdx === i) AC._editBlockIdx = j;
+  else if (AC._editBlockIdx === j) AC._editBlockIdx = i;
+  acBlockEditorRender();
+}
+
+function acBlockAdd() {
+  var sel = document.getElementById('be-type-select');
+  if (!sel || !sel.value) { toast('Choisissez un type de bloc.','err'); return; }
+  var type = sel.value;
+  var nb = {type: type};
+  if (type === 'list' || type === 'je_maitrise') nb.items = [];
+  else if (type === 'step') { nb.number = AC._editBlocks.filter(function(b){return b.type==='step';}).length+1; nb.text=''; }
+  else if (type === 'table') { nb.headers = []; nb.rows = []; }
+  else if (type === 'gallery') nb.images = [];
+  else if (type === 'section') nb.title = '';
+  else if (type === 'image') { nb.url=''; nb.caption=''; }
+  else nb.text = '';
+  AC._editBlocks.push(nb);
+  AC._editBlockIdx = AC._editBlocks.length - 1;
+  acBlockEditorRender();
+  // scroll block list into view
+  setTimeout(function(){ var el=document.getElementById('ac-block-list'); if(el) el.lastElementChild&&el.lastElementChild.scrollIntoView({block:'nearest'}); }, 50);
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   MÉDIAS — placeholder tracker
+   ══════════════════════════════════════════════════════════════════════ */
+async function acMediasCharger() {
+  var zone = document.getElementById('ac-medias-corps');
+  var cours = await acChargerCours();
+  acMediasPopulateSelect();
+  var coursId = document.getElementById('ac-medias-cours').value;
+  var filtre  = document.getElementById('ac-medias-filtre').value;
+  if (!coursId) {
+    zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible)">Sélectionnez une formation pour afficher les médias.</p>';
+    return;
+  }
+  zone.innerHTML = '<div class="chargement">Chargement…</div>';
+
+  var r = await NAHIRA.sb.from('academy_lessons')
+    .select('id,title,sort_order,module_id,content_blocks,video_url,academy_modules!inner(sort_order,title)')
+    .eq('course_id', coursId).order('sort_order');
+  var lessons = r.data || [];
+
+  var rows = [];
+  lessons.forEach(function(l) {
+    var mTitle = l.academy_modules ? l.academy_modules.title : '—';
+    var mOrder = l.academy_modules ? l.academy_modules.sort_order : 0;
+    if (l.video_url) {
+      rows.push({lesson:l.title, module:mTitle, mOrder:mOrder, type:'video', id:'(video principale)', status:'url', url:l.video_url, lessonId:l.id});
+    }
+    var blocks = Array.isArray(l.content_blocks) ? l.content_blocks : [];
+    blocks.forEach(function(b) {
+      if (b.type === 'placeholder') {
+        rows.push({lesson:l.title, module:mTitle, mOrder:mOrder, type:'placeholder', id:b.id||'—', status:'placeholder', url:'', lessonId:l.id});
+      } else if (b.type === 'video' && b.url) {
+        rows.push({lesson:l.title, module:mTitle, mOrder:mOrder, type:'video', id:b.url, status:'url', url:b.url, lessonId:l.id});
+      } else if (b.type === 'image' && b.url) {
+        rows.push({lesson:l.title, module:mTitle, mOrder:mOrder, type:'image', id:b.url, status:'url', url:b.url, lessonId:l.id});
+      }
+    });
+  });
+
+  if (filtre === 'placeholder') rows = rows.filter(function(r){return r.status==='placeholder';});
+  else if (filtre === 'url') rows = rows.filter(function(r){return r.status==='url';});
+
+  if (!rows.length) {
+    zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);padding:20px 0">Aucun média trouvé.</p>';
+    return;
+  }
+
+  var nbPlaceholder = rows.filter(function(r){return r.status==='placeholder';}).length;
+  var nbUrl = rows.filter(function(r){return r.status==='url';}).length;
+  zone.innerHTML =
+    '<div class="grille-kpi" style="margin-bottom:14px">' +
+      '<div class="kpi"><div class="v">' + rows.length + '</div><div class="l">Total</div></div>' +
+      '<div class="kpi"><div class="v" style="color:var(--alerte)">' + nbPlaceholder + '</div><div class="l">À tourner</div></div>' +
+      '<div class="kpi"><div class="v" style="color:var(--ok)">' + nbUrl + '</div><div class="l">Renseignés</div></div>' +
+    '</div>' +
+    '<table style="width:100%;border-collapse:collapse;font-family:Montserrat,sans-serif;font-size:12px">' +
+    '<thead><tr style="border-bottom:1px solid var(--bordure);color:var(--texte-faible)">' +
+    '<th style="text-align:left;padding:6px 8px;font-weight:500">Module</th>' +
+    '<th style="text-align:left;padding:6px 8px;font-weight:500">Leçon</th>' +
+    '<th style="text-align:left;padding:6px 8px;font-weight:500">ID / URL</th>' +
+    '<th style="text-align:left;padding:6px 8px;font-weight:500">Statut</th>' +
+    '</tr></thead><tbody>' +
+    rows.sort(function(a,b){return a.mOrder-b.mOrder;}).map(function(row) {
+      var statusBadge = row.status === 'placeholder'
+        ? '<span class="badge" style="background:rgba(232,194,122,.15);color:var(--or)">À tourner</span>'
+        : '<span class="badge badge-dispo">Renseigné</span>';
+      return '<tr style="border-bottom:1px solid rgba(240,111,167,.06)">' +
+        '<td style="padding:7px 8px;color:var(--texte-faible)">' + acE(row.module) + '</td>' +
+        '<td style="padding:7px 8px;color:var(--texte)">' + acE(row.lesson) + '</td>' +
+        '<td style="padding:7px 8px;color:var(--texte-doux);font-family:monospace;font-size:10px">' + acE(row.id) + '</td>' +
+        '<td style="padding:7px 8px">' + statusBadge + '</td>' +
+      '</tr>';
+    }).join('') + '</tbody></table>';
+}
+
+function acMediasPopulateSelect() {
+  var sel = document.getElementById('ac-medias-cours');
+  if (!sel) return;
+  var old = sel.value;
+  var first = sel.options[0];
+  sel.innerHTML = '';
+  sel.appendChild(first);
+  (AC.cours||[]).forEach(function(c) {
+    var opt = document.createElement('option');
+    opt.value = c.id; opt.textContent = c.title;
+    if (c.id === old) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   FICHES — academy_materials CRUD
+   ══════════════════════════════════════════════════════════════════════ */
+async function acFichesCharger() {
+  var zone = document.getElementById('ac-fiches-liste');
+  zone.innerHTML = '<div class="chargement">Chargement…</div>';
+  var cours = await acChargerCours();
+  acFichesPopulateSelect();
+  var coursId = document.getElementById('ac-fiches-cours').value;
+
+  var q = NAHIRA.sb.from('academy_materials')
+    .select('id,title,description,file_url,file_type,sort_order,course_id,lesson_id,academy_courses(title)')
+    .order('sort_order');
+  if (coursId) q = q.eq('course_id', coursId);
+  var r = await q;
+  var fiches = r.data || [];
+
+  if (!fiches.length) {
+    zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);padding:20px 0">Aucune fiche. Créez-en une pour commencer.</p>';
+    return;
+  }
+  zone.innerHTML = fiches.map(function(f) {
+    var typeLabel = {pdf:'PDF',image:'Image',html:'HTML',video:'Vidéo'}[f.file_type] || (f.file_type||'—');
+    return '<div class="prod-ligne" style="align-items:center;gap:12px;padding:10px 14px">' +
+      '<div style="font-size:20px;flex:none">📄</div>' +
+      '<div class="prod-info">' +
+        '<div class="prod-nom">' + acE(f.title) + '</div>' +
+        '<div class="prod-sku">' + acE(f.academy_courses?.title||'—') + ' · ' + acE(typeLabel) + ' · ordre ' + f.sort_order + '</div>' +
+        (f.description ? '<div style="font-size:11px;color:var(--texte-faible);margin-top:2px">' + acE(f.description) + '</div>' : '') +
+      '</div>' +
+      '<div style="display:flex;gap:6px;flex:none">' +
+        (f.file_url ? '<a class="btn btn-sec btn-sm" href="' + acE(f.file_url) + '" target="_blank">Voir ↗</a>' : '') +
+        '<button class="btn btn-sec btn-sm" onclick="acFicheEditer(\'' + f.id + '\')">Modifier</button>' +
+        '<button class="btn btn-danger btn-sm" onclick="acFicheSupprimer(\'' + f.id + '\',\'' + acE(f.title) + '\')">✕</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function acFichesPopulateSelect() {
+  var sel = document.getElementById('ac-fiches-cours');
+  if (!sel) return;
+  var old = sel.value;
+  var first = sel.options[0];
+  sel.innerHTML = '';
+  sel.appendChild(first);
+  (AC.cours||[]).forEach(function(c) {
+    var opt = document.createElement('option');
+    opt.value = c.id; opt.textContent = c.title;
+    if (c.id === old) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function acFicheFormHtml(f) {
+  f = f || {};
+  var coursOpts = (AC.cours||[]).map(function(c){
+    return '<option value="' + c.id + '"' + (f.course_id===c.id?' selected':'') + '>' + acE(c.title) + '</option>';
+  }).join('');
+  return '<div style="display:flex;flex-direction:column;gap:12px">' +
+    '<div><label class="param-lbl">Titre *</label><input class="param-input" id="ac-fi-titre" value="' + acE(f.title||'') + '" style="width:100%"></div>' +
+    '<div><label class="param-lbl">Description</label><textarea class="param-input" id="ac-fi-desc" rows="2" style="width:100%">' + acE(f.description||'') + '</textarea></div>' +
+    '<div><label class="param-lbl">Formation *</label><select class="param-input" id="ac-fi-cours" style="width:100%"><option value="">— Choisir —</option>' + coursOpts + '</select></div>' +
+    '<div><label class="param-lbl">Type de fichier</label><select class="param-input" id="ac-fi-type" style="width:100%"><option value="pdf"' + (f.file_type==='pdf'?' selected':'') + '>PDF</option><option value="image"' + (f.file_type==='image'?' selected':'') + '>Image</option><option value="html"' + (f.file_type==='html'?' selected':'') + '>HTML</option><option value="video"' + (f.file_type==='video'?' selected':'') + '>Vidéo</option></select></div>' +
+    '<div><label class="param-lbl">URL du fichier *</label><input class="param-input" id="ac-fi-url" value="' + acE(f.file_url||'') + '" style="width:100%"></div>' +
+    '<div><label class="param-lbl">Ordre d\'affichage</label><input class="param-input" id="ac-fi-ordre" type="number" value="' + (f.sort_order||0) + '" style="width:80px"></div>' +
+    '</div>';
+}
+
+function acFicheNouveau() {
+  modalOuvrir('Nouvelle fiche', acFicheFormHtml(null),
+    '<button class="btn btn-primaire" onclick="acFicheSauvegarder(null)">Créer la fiche</button>');
+}
+
+async function acFicheEditer(id) {
+  var r = await NAHIRA.sb.from('academy_materials').select('*').eq('id',id).single();
+  var f = r.data || {};
+  modalOuvrir('Modifier — ' + f.title, acFicheFormHtml(f),
+    '<button class="btn btn-primaire" onclick="acFicheSauvegarder(\'' + id + '\')">Enregistrer</button>');
+}
+
+async function acFicheSauvegarder(id) {
+  var titre  = document.getElementById('ac-fi-titre').value.trim();
+  var desc   = document.getElementById('ac-fi-desc').value.trim() || null;
+  var coursId= document.getElementById('ac-fi-cours').value;
+  var type   = document.getElementById('ac-fi-type').value;
+  var url    = document.getElementById('ac-fi-url').value.trim();
+  var ordre  = parseInt(document.getElementById('ac-fi-ordre').value)||0;
+  if (!titre || !coursId || !url) { toast('Titre, formation et URL requis.','err'); return; }
+  var data = {title:titre, description:desc, course_id:coursId, file_type:type, file_url:url, sort_order:ordre};
+  var r = id
+    ? await NAHIRA.sb.from('academy_materials').update(data).eq('id',id)
+    : await NAHIRA.sb.from('academy_materials').insert(data);
+  if (r.error) { toast('Erreur : '+r.error.message,'err'); return; }
+  modalFermer(); toast(id?'Fiche mise à jour.':'Fiche créée ✦'); acFichesCharger();
+}
+
+async function acFicheSupprimer(id, titre) {
+  if (!confirm('Supprimer la fiche "' + titre + '" ?')) return;
+  var r = await NAHIRA.sb.from('academy_materials').delete().eq('id',id);
+  if (r.error) { toast('Erreur : '+r.error.message,'err'); return; }
+  toast('Fiche supprimée.'); acFichesCharger();
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   TABLEAU DE BORD ACADEMY
+   ══════════════════════════════════════════════════════════════════════ */
+async function acTableauCharger() {
+  var zone = document.getElementById('ac-tableau-corps');
+  zone.innerHTML = '<div class="chargement">Chargement…</div>';
+
+  var [rCours, rEnroll, rCerts, rAttempts, rLessons] = await Promise.all([
+    NAHIRA.sb.from('academy_courses').select('id,title,is_published', {count:'exact'}),
+    NAHIRA.sb.from('academy_enrollments').select('id,user_id,course_id', {count:'exact'}),
+    NAHIRA.sb.from('academy_certificates').select('id', {count:'exact'}),
+    NAHIRA.sb.from('academy_quiz_attempts').select('id,passed', {count:'exact'}),
+    NAHIRA.sb.from('academy_lessons').select('id,content_blocks'),
+  ]);
+
+  var nbCours     = rCours.count || 0;
+  var nbPubliees  = (rCours.data||[]).filter(function(c){return c.is_published;}).length;
+  var nbEleves    = new Set((rEnroll.data||[]).map(function(e){return e.user_id;})).size;
+  var nbInscrits  = rEnroll.count || 0;
+  var nbCerts     = rCerts.count || 0;
+  var attempts    = rAttempts.data || [];
+  var nbAttempts  = attempts.length;
+  var nbPassed    = attempts.filter(function(a){return a.passed;}).length;
+
+  var nbPlaceholders = 0;
+  (rLessons.data||[]).forEach(function(l) {
+    var blocks = Array.isArray(l.content_blocks) ? l.content_blocks : [];
+    nbPlaceholders += blocks.filter(function(b){return b.type==='placeholder';}).length;
+  });
+
+  zone.innerHTML =
+    '<div class="grille-kpi" style="margin-bottom:20px">' +
+      '<div class="kpi"><div class="v">' + nbCours + '</div><div class="l">Formation' + (nbCours>1?'s':'') + ' · ' + nbPubliees + ' publiée' + (nbPubliees>1?'s':'') + '</div></div>' +
+      '<div class="kpi"><div class="v">' + nbEleves + '</div><div class="l">Élève' + (nbEleves>1?'s':'') + ' uniques</div></div>' +
+      '<div class="kpi"><div class="v">' + nbInscrits + '</div><div class="l">Inscription' + (nbInscrits>1?'s':'') + '</div></div>' +
+      '<div class="kpi"><div class="v" style="color:var(--or)">' + nbCerts + '</div><div class="l">Attestation' + (nbCerts>1?'s':'') + ' délivrée' + (nbCerts>1?'s':'') + '</div></div>' +
+    '</div>' +
+    '<div class="grille-kpi">' +
+      '<div class="kpi"><div class="v">' + nbAttempts + '</div><div class="l">Tentative' + (nbAttempts>1?'s':'') + ' quiz</div></div>' +
+      '<div class="kpi"><div class="v" style="color:var(--ok)">' + nbPassed + '</div><div class="l">Quiz réussi' + (nbPassed>1?'s':'') + '</div></div>' +
+      '<div class="kpi"><div class="v" style="color:' + (nbPlaceholders>0?'var(--alerte)':'var(--ok)') + '">' + nbPlaceholders + '</div><div class="l">Placeholder' + (nbPlaceholders>1?'s':'') + ' (médias manquants)</div></div>' +
+    '</div>';
 }
 
 /* ====== DÉMARRAGE ====== */
