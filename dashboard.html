@@ -954,9 +954,12 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
             <option value="">— Toutes les formations —</option>
           </select>
           <select class="filtre-select" id="ac-medias-filtre" onchange="acMediasCharger()" style="width:160px">
-            <option value="">Tous les statuts</option>
-            <option value="placeholder">Placeholder (à tourner)</option>
-            <option value="url">URL renseignée</option>
+            <option value="">Tous</option>
+            <option value="video">Vidéos</option>
+            <option value="image">Photos</option>
+            <option value="cover-trailer">Cover &amp; Trailer</option>
+            <option value="placeholder">Manquants</option>
+            <option value="uploaded">Importés</option>
           </select>
           <button class="btn btn-sec btn-sm" onclick="acMediasCharger()">Actualiser</button>
         </div>
@@ -2821,7 +2824,7 @@ var AC = { cours: [], coursId: null };
 async function acChargerCours() {
   if (AC.cours.length) return AC.cours;
   var r = await NAHIRA.sb.from('academy_courses')
-    .select('id,slug,title,is_published,is_free,level,passing_score,product:product_id(id,price_cents),duration_minutes,cover_url,subtitle,description_long,product_id,created_at')
+    .select('id,slug,title,is_published,is_free,level,passing_score,product:product_id(id,price_cents),duration_minutes,cover_url,trailer_url,subtitle,description_long,product_id,created_at')
     .order('sort_order');
   AC.cours = r.data || [];
   return AC.cours;
@@ -2910,7 +2913,20 @@ function acFormFormHtml(c) {
     '<div><label class="param-lbl">Niveau</label><select class="param-input" id="ac-f-niveau" style="width:100%"><option value="">— Choisir —</option><option value="debutant"' + (c.level==='debutant'?' selected':'') + '>Débutant</option><option value="intermediaire"' + (c.level==='intermediaire'?' selected':'') + '>Intermédiaire</option><option value="avance"' + (c.level==='avance'?' selected':'') + '>Avancé</option></select></div>' +
     '<div><label class="param-lbl">Durée totale (minutes)</label><input class="param-input" id="ac-f-dur" type="number" value="' + (c.duration_minutes||'') + '" style="width:100%"></div>' +
     '<div><label class="param-lbl">Score minimum pour certification (%)</label><input class="param-input" id="ac-f-score" type="number" min="0" max="100" value="' + (c.passing_score||70) + '" style="width:100%"></div>' +
-    '<div><label class="param-lbl">URL de la couverture (image)</label><input class="param-input" id="ac-f-cover" value="' + acE(c.cover_url||'') + '" style="width:100%"></div>' +
+    '<div><label class="param-lbl">Image de couverture</label>' +
+    '<div style="display:flex;gap:8px;align-items:center">' +
+    '<input class="param-input" id="ac-f-cover" value="' + acE(c.cover_url||'') + '" style="flex:1;font-size:11px;font-family:monospace" readonly placeholder="(aucune — cliquer Importer)">' +
+    '<button class="btn btn-sec btn-sm" type="button" onclick="document.getElementById(\'ac-f-cover-file\').click()" style="white-space:nowrap">📂 Importer</button>' +
+    '</div>' +
+    '<input type="file" id="ac-f-cover-file" accept="image/*" hidden onchange="acFormMediaUpload(\'cover\',\'' + (c.id||'') + '\',\'' + acE(c.slug||'') + '\')">' +
+    '</div>' +
+    '<div><label class="param-lbl">Trailer vidéo</label>' +
+    '<div style="display:flex;gap:8px;align-items:center">' +
+    '<input class="param-input" id="ac-f-trailer" value="' + acE(c.trailer_url||'') + '" style="flex:1;font-size:11px;font-family:monospace" readonly placeholder="(aucun — cliquer Importer)">' +
+    '<button class="btn btn-sec btn-sm" type="button" onclick="document.getElementById(\'ac-f-trailer-file\').click()" style="white-space:nowrap">📂 Importer</button>' +
+    '</div>' +
+    '<input type="file" id="ac-f-trailer-file" accept="video/*" hidden onchange="acFormMediaUpload(\'trailer\',\'' + (c.id||'') + '\',\'' + acE(c.slug||'') + '\')">' +
+    '</div>' +
     '<div style="display:flex;align-items:center;gap:10px"><label class="param-lbl">Formation gratuite</label><button class="param-toggle ' + isFree + '" id="ac-f-free" onclick="this.classList.toggle(\'on\')"></button></div>' +
     '<div><label class="param-lbl" style="color:var(--texte-faible);font-size:10px">ID produit boutique (UUID — coller depuis Produits si formation payante)</label><input class="param-input" id="ac-f-prodid" value="' + acE(c.product_id||'') + '" style="width:100%;font-size:11px;font-family:monospace" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"></div>' +
     '</div>';
@@ -2924,11 +2940,12 @@ async function acFormSauvegarder(id) {
   var niveau = document.getElementById('ac-f-niveau').value || null;
   var dur    = parseInt(document.getElementById('ac-f-dur').value) || null;
   var score  = parseInt(document.getElementById('ac-f-score').value) || 70;
-  var cover  = document.getElementById('ac-f-cover').value.trim() || null;
-  var isFree = document.getElementById('ac-f-free').classList.contains('on');
-  var prodId = document.getElementById('ac-f-prodid').value.trim() || null;
+  var cover   = document.getElementById('ac-f-cover').value.trim() || null;
+  var trailer = document.getElementById('ac-f-trailer').value.trim() || null;
+  var isFree  = document.getElementById('ac-f-free').classList.contains('on');
+  var prodId  = document.getElementById('ac-f-prodid').value.trim() || null;
   if (!titre || !slug) { toast('Titre et slug requis.', 'err'); return; }
-  var data = { title:titre, subtitle:sous||null, slug, description_long:desc, level:niveau, duration_minutes:dur, passing_score:score, cover_url:cover, is_free:isFree, product_id:prodId };
+  var data = { title:titre, subtitle:sous||null, slug, description_long:desc, level:niveau, duration_minutes:dur, passing_score:score, cover_url:cover, trailer_url:trailer, is_free:isFree, product_id:prodId };
   var r = id
     ? await NAHIRA.sb.from('academy_courses').update(data).eq('id', id)
     : await NAHIRA.sb.from('academy_courses').insert({...data, is_published:false});
@@ -3638,11 +3655,11 @@ function acBlockAdd() {
 }
 
 /* ════════════════════════════════════════════════════════════════════════
-   MÉDIAS — placeholder tracker
+   MÉDIAS — médiathèque Academy avec upload
    ══════════════════════════════════════════════════════════════════════ */
 async function acMediasCharger() {
   var zone = document.getElementById('ac-medias-corps');
-  var cours = await acChargerCours();
+  await acChargerCours();
   acMediasPopulateSelect();
   var coursId = document.getElementById('ac-medias-cours').value;
   var filtre  = document.getElementById('ac-medias-filtre').value;
@@ -3652,64 +3669,93 @@ async function acMediasCharger() {
   }
   zone.innerHTML = '<div class="chargement">Chargement…</div>';
 
-  var r = await NAHIRA.sb.from('academy_lessons')
-    .select('id,title,sort_order,module_id,content_blocks,video_url,academy_modules!inner(sort_order,title)')
-    .eq('course_id', coursId).order('sort_order');
-  var lessons = r.data || [];
+  var cours = (AC.cours||[]).find(function(c){ return c.id === coursId; });
+  var courseSlug = cours ? cours.slug : '';
 
-  var rows = [];
-  lessons.forEach(function(l) {
-    var mTitle = l.academy_modules ? l.academy_modules.title : '—';
-    var mOrder = l.academy_modules ? l.academy_modules.sort_order : 0;
-    if (l.video_url) {
-      rows.push({lesson:l.title, module:mTitle, mOrder:mOrder, type:'video', id:'(video principale)', status:'url', url:l.video_url, lessonId:l.id});
-    }
-    var blocks = Array.isArray(l.content_blocks) ? l.content_blocks : [];
-    blocks.forEach(function(b) {
-      if (b.type === 'placeholder') {
-        rows.push({lesson:l.title, module:mTitle, mOrder:mOrder, type:'placeholder', id:b.id||'—', status:'placeholder', url:'', lessonId:l.id});
-      } else if (b.type === 'video' && b.url) {
-        rows.push({lesson:l.title, module:mTitle, mOrder:mOrder, type:'video', id:b.url, status:'url', url:b.url, lessonId:l.id});
-      } else if (b.type === 'image' && b.url) {
-        rows.push({lesson:l.title, module:mTitle, mOrder:mOrder, type:'image', id:b.url, status:'url', url:b.url, lessonId:l.id});
-      }
-    });
-  });
+  var r = await NAHIRA.sb.from('academy_media')
+    .select('*')
+    .eq('course_id', coursId)
+    .order('module_label', { nullsFirst: true });
 
-  if (filtre === 'placeholder') rows = rows.filter(function(r){return r.status==='placeholder';});
-  else if (filtre === 'url') rows = rows.filter(function(r){return r.status==='url';});
-
-  if (!rows.length) {
-    zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);padding:20px 0">Aucun média trouvé.</p>';
+  if (r.error) {
+    zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--alerte)">Erreur : ' + acE(r.error.message) + '</p>';
     return;
   }
 
-  var nbPlaceholder = rows.filter(function(r){return r.status==='placeholder';}).length;
-  var nbUrl = rows.filter(function(r){return r.status==='url';}).length;
-  zone.innerHTML =
+  var rows = r.data || [];
+
+  if (filtre === 'video')          rows = rows.filter(function(m){ return m.media_type==='video' && m.module_label; });
+  else if (filtre === 'image')     rows = rows.filter(function(m){ return m.media_type==='image' && m.module_label; });
+  else if (filtre === 'cover-trailer') rows = rows.filter(function(m){ return !m.module_label; });
+  else if (filtre === 'placeholder')   rows = rows.filter(function(m){ return m.status==='placeholder'; });
+  else if (filtre === 'uploaded')      rows = rows.filter(function(m){ return m.status==='uploaded'; });
+
+  if (!rows.length) {
+    zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);padding:20px 0">Aucun média trouvé pour ce filtre.</p>';
+    return;
+  }
+
+  var total   = r.data ? r.data.length : rows.length;
+  var missing = (r.data||[]).filter(function(m){ return m.status==='placeholder'; }).length;
+  var done    = (r.data||[]).filter(function(m){ return m.status==='uploaded'; }).length;
+
+  var html =
     '<div class="grille-kpi" style="margin-bottom:14px">' +
-      '<div class="kpi"><div class="v">' + rows.length + '</div><div class="l">Total</div></div>' +
-      '<div class="kpi"><div class="v" style="color:var(--alerte)">' + nbPlaceholder + '</div><div class="l">À tourner</div></div>' +
-      '<div class="kpi"><div class="v" style="color:var(--ok)">' + nbUrl + '</div><div class="l">Renseignés</div></div>' +
+      '<div class="kpi"><div class="v">' + total + '</div><div class="l">Total</div></div>' +
+      '<div class="kpi"><div class="v" style="color:var(--alerte)">' + missing + '</div><div class="l">À importer</div></div>' +
+      '<div class="kpi"><div class="v" style="color:var(--ok)">' + done + '</div><div class="l">Importés</div></div>' +
     '</div>' +
-    '<table style="width:100%;border-collapse:collapse;font-family:Montserrat,sans-serif;font-size:12px">' +
+    '<div style="overflow-x:auto">' +
+    '<table style="width:100%;border-collapse:collapse;font-family:Montserrat,sans-serif;font-size:12px;min-width:600px">' +
     '<thead><tr style="border-bottom:1px solid var(--bordure);color:var(--texte-faible)">' +
     '<th style="text-align:left;padding:6px 8px;font-weight:500">Module</th>' +
     '<th style="text-align:left;padding:6px 8px;font-weight:500">Leçon</th>' +
-    '<th style="text-align:left;padding:6px 8px;font-weight:500">ID / URL</th>' +
+    '<th style="text-align:left;padding:6px 8px;font-weight:500">ID</th>' +
+    '<th style="text-align:left;padding:6px 8px;font-weight:500">Type</th>' +
     '<th style="text-align:left;padding:6px 8px;font-weight:500">Statut</th>' +
-    '</tr></thead><tbody>' +
-    rows.sort(function(a,b){return a.mOrder-b.mOrder;}).map(function(row) {
-      var statusBadge = row.status === 'placeholder'
-        ? '<span class="badge" style="background:rgba(232,194,122,.15);color:var(--or)">À tourner</span>'
-        : '<span class="badge badge-dispo">Renseigné</span>';
-      return '<tr style="border-bottom:1px solid rgba(240,111,167,.06)">' +
-        '<td style="padding:7px 8px;color:var(--texte-faible)">' + acE(row.module) + '</td>' +
-        '<td style="padding:7px 8px;color:var(--texte)">' + acE(row.lesson) + '</td>' +
-        '<td style="padding:7px 8px;color:var(--texte-doux);font-family:monospace;font-size:10px">' + acE(row.id) + '</td>' +
-        '<td style="padding:7px 8px">' + statusBadge + '</td>' +
-      '</tr>';
-    }).join('') + '</tbody></table>';
+    '<th style="text-align:left;padding:6px 8px;font-weight:500">Actions</th>' +
+    '</tr></thead><tbody>';
+
+  rows.forEach(function(m) {
+    var modLabel = m.module_label
+      ? acE(m.module_label)
+      : '<span style="color:var(--or);font-style:italic">Cover / Trailer</span>';
+    var lessonLabel = m.lesson_label ? acE(m.lesson_label) : '<span style="color:var(--texte-faible)">—</span>';
+    var typeBadge = m.media_type === 'video'
+      ? '<span class="badge" style="background:rgba(132,193,245,.12);color:var(--info)">📹 Vidéo</span>'
+      : '<span class="badge" style="background:rgba(127,216,164,.12);color:var(--ok)">📸 Photo</span>';
+    var statusBadge = m.status === 'uploaded'
+      ? '<span class="badge badge-dispo">✓ Importé</span>'
+      : '<span class="badge" style="background:rgba(255,140,140,.12);color:var(--alerte)">À importer</span>';
+    var accept  = m.media_type === 'video' ? 'video/*' : 'image/*';
+    var safeId  = m.id.replace(/[^a-zA-Z0-9]/g, '_');
+    var importBtn = '<button class="btn ' + (m.status==='uploaded'?'btn-sec':'btn-primaire') + ' btn-sm" type="button" ' +
+      'onclick="document.getElementById(\'mf_' + safeId + '\').click()" style="font-size:10px">' +
+      (m.status==='uploaded' ? 'Remplacer' : 'Importer') + '</button>';
+    var retirerBtn = m.status === 'uploaded'
+      ? ' <button class="btn btn-sm" type="button" style="font-size:10px;color:var(--alerte);background:rgba(255,140,140,.08);border-color:rgba(255,140,140,.25)" ' +
+        'onclick="acMediaRetirer(\'' + m.id + '\',\'' + acE(m.storage_path||'') + '\',\'' + coursId + '\')">Retirer</button>'
+      : '';
+    var voirBtn = m.status === 'uploaded' && m.public_url
+      ? ' <a class="btn btn-sec btn-sm" href="' + acE(m.public_url) + '" target="_blank" rel="noopener" style="font-size:10px">Voir</a>'
+      : '';
+
+    html += '<tr id="mrow_' + safeId + '" style="border-bottom:1px solid rgba(240,111,167,.06)">' +
+      '<td style="padding:7px 8px;color:var(--texte-faible);font-size:11px">' + modLabel + '</td>' +
+      '<td style="padding:7px 8px;color:var(--texte)">' + lessonLabel + '</td>' +
+      '<td style="padding:7px 8px;color:var(--texte-doux);font-family:monospace;font-size:10px">' + acE(m.id) + '</td>' +
+      '<td style="padding:7px 8px">' + typeBadge + '</td>' +
+      '<td style="padding:7px 8px" id="mstatus_' + safeId + '">' + statusBadge + '</td>' +
+      '<td style="padding:7px 8px;white-space:nowrap">' +
+        '<input type="file" id="mf_' + safeId + '" accept="' + accept + '" hidden ' +
+          'onchange="acMediaImporter(this,\'' + m.id + '\',\'' + coursId + '\',\'' + courseSlug + '\')">' +
+        importBtn + retirerBtn + voirBtn +
+      '</td>' +
+    '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  zone.innerHTML = html;
 }
 
 function acMediasPopulateSelect() {
@@ -3725,6 +3771,99 @@ function acMediasPopulateSelect() {
     if (c.id === old) opt.selected = true;
     sel.appendChild(opt);
   });
+}
+
+async function acMediaImporter(input, mediaId, courseId, courseSlug) {
+  var file = input.files[0];
+  if (!file) return;
+  var safeId = mediaId.replace(/[^a-zA-Z0-9]/g, '_');
+  var statusCell = document.getElementById('mstatus_' + safeId);
+  if (statusCell) statusCell.innerHTML = '<span style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible)">Envoi…</span>';
+
+  var path = courseSlug + '/' + mediaId + '/' + file.name;
+  var { error: upErr } = await NAHIRA.sb.storage
+    .from('academy-media')
+    .upload(path, file, { upsert: true });
+
+  if (upErr) {
+    toast('Erreur upload : ' + upErr.message, 'err');
+    acMediasCharger();
+    return;
+  }
+
+  var urlResult = NAHIRA.sb.storage.from('academy-media').getPublicUrl(path);
+  var publicUrl = urlResult.data.publicUrl;
+
+  var { error: dbErr } = await NAHIRA.sb.from('academy_media').update({
+    public_url:   publicUrl,
+    storage_path: path,
+    status:       'uploaded',
+    file_name:    file.name,
+    file_size:    file.size,
+    uploaded_at:  new Date().toISOString(),
+  }).eq('id', mediaId);
+
+  if (dbErr) { toast('Erreur DB : ' + dbErr.message, 'err'); acMediasCharger(); return; }
+
+  if (mediaId.indexOf('COVER') !== -1) {
+    await NAHIRA.sb.from('academy_courses').update({ cover_url: publicUrl }).eq('id', courseId);
+    AC.cours = [];
+  }
+  if (mediaId.indexOf('TRAILER') !== -1) {
+    await NAHIRA.sb.from('academy_courses').update({ trailer_url: publicUrl }).eq('id', courseId);
+    AC.cours = [];
+  }
+
+  toast('Média importé ✓');
+  acMediasCharger();
+}
+
+async function acMediaRetirer(mediaId, storagePath, courseId) {
+  if (!confirm('Retirer ce média et supprimer le fichier du stockage ?')) return;
+  if (storagePath) {
+    await NAHIRA.sb.storage.from('academy-media').remove([storagePath]);
+  }
+  var { error } = await NAHIRA.sb.from('academy_media').update({
+    public_url: null, storage_path: null, status: 'placeholder',
+    file_name: null, file_size: null, uploaded_at: null,
+  }).eq('id', mediaId);
+  if (error) { toast('Erreur : ' + error.message, 'err'); return; }
+  if (mediaId.indexOf('COVER') !== -1) {
+    await NAHIRA.sb.from('academy_courses').update({ cover_url: null }).eq('id', courseId);
+    AC.cours = [];
+  }
+  if (mediaId.indexOf('TRAILER') !== -1) {
+    await NAHIRA.sb.from('academy_courses').update({ trailer_url: null }).eq('id', courseId);
+    AC.cours = [];
+  }
+  toast('Média retiré.');
+  acMediasCharger();
+}
+
+async function acFormMediaUpload(type, courseId, courseSlug) {
+  var fileInput = document.getElementById('ac-f-' + type + '-file');
+  var file = fileInput ? fileInput.files[0] : null;
+  if (!file) return;
+  toast('Envoi en cours…');
+  var subfolder = type === 'cover' ? 'cover' : 'trailer';
+  var path = courseSlug + '/' + subfolder + '/' + file.name;
+  var { error: upErr } = await NAHIRA.sb.storage
+    .from('academy-media')
+    .upload(path, file, { upsert: true });
+  if (upErr) { toast('Erreur upload : ' + upErr.message, 'err'); return; }
+  var urlResult = NAHIRA.sb.storage.from('academy-media').getPublicUrl(path);
+  var publicUrl = urlResult.data.publicUrl;
+  var mediaType = type === 'cover' ? 'image' : 'video';
+  await NAHIRA.sb.from('academy_media').update({
+    public_url: publicUrl, storage_path: path, status: 'uploaded',
+    file_name: file.name, file_size: file.size, uploaded_at: new Date().toISOString(),
+  }).eq('course_id', courseId).is('module_label', null).eq('media_type', mediaType);
+  var courseField = type === 'cover' ? 'cover_url' : 'trailer_url';
+  await NAHIRA.sb.from('academy_courses').update({ [courseField]: publicUrl }).eq('id', courseId);
+  var fieldEl = document.getElementById('ac-f-' + type);
+  if (fieldEl) fieldEl.value = publicUrl;
+  AC.cours = [];
+  toast('Média importé ✓');
 }
 
 /* ════════════════════════════════════════════════════════════════════════

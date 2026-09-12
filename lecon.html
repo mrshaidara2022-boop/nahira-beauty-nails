@@ -447,7 +447,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let STATE = {
   course: null, modules: [], lessons: [], currentLesson: null,
   completedIds: new Set(), enrolled: false, user: null,
-  enrollment: null,
+  enrollment: null, mediaMap: {},
 };
 
 // ── Utils ──────────────────────────────────────────────────────────────────
@@ -504,6 +504,15 @@ async function init() {
   STATE.lessons = STATE.modules.flatMap(m =>
     (m.academy_lessons || []).sort((a,b) => a.sort_order - b.sort_order)
   );
+
+  // Resolve placeholder media URLs from academy_media table
+  const { data: mediaRows } = await sb
+    .from('academy_media')
+    .select('id,public_url')
+    .eq('course_id', course.id)
+    .not('public_url', 'is', null);
+  STATE.mediaMap = {};
+  (mediaRows || []).forEach(m => { if (m.public_url) STATE.mediaMap[m.id] = m.public_url; });
 
   // Fetch completed lessons
   if (user && STATE.enrolled) {
@@ -778,15 +787,25 @@ function renderBlocks(lesson) {
       }
       case 'placeholder': {
         const pid = block.id || 'PLACEHOLDER';
-        const isVideo = pid.startsWith('VIDEO_');
-        const icon = isVideo ? '🎬' : '📸';
-        const label = isVideo ? 'Vidéo de démonstration à venir' : 'Photo illustrative à venir';
-        html += `<div class="block-placeholder">` +
-          `<span class="block-placeholder-icon">${icon}</span>` +
-          `<div class="block-placeholder-info">` +
-          `<div class="block-placeholder-id">${pid}</div>` +
-          `<div class="block-placeholder-label">${label}</div>` +
-          `</div></div>`;
+        const resolvedUrl = STATE.mediaMap[pid];
+        if (resolvedUrl) {
+          const isVideo = pid.startsWith('VIDEO_');
+          if (isVideo) {
+            html += `<div class="block-video"><video controls preload="metadata" style="width:100%;max-width:100%;border-radius:10px;background:#000;display:block"><source src="${resolvedUrl}"><p style="color:var(--texte-pale);text-align:center;padding:20px;font-family:Montserrat,sans-serif;font-size:.8rem">Votre navigateur ne supporte pas la lecture vidéo.</p></video></div>`;
+          } else {
+            html += `<div class="block-image"><img src="${resolvedUrl}" alt="" style="max-width:100%;border-radius:10px;display:block"></div>`;
+          }
+        } else {
+          const isVideo = pid.startsWith('VIDEO_');
+          const icon = isVideo ? '🎬' : '📸';
+          const label = isVideo ? 'Vidéo de démonstration à venir' : 'Photo illustrative à venir';
+          html += `<div class="block-placeholder">` +
+            `<span class="block-placeholder-icon">${icon}</span>` +
+            `<div class="block-placeholder-info">` +
+            `<div class="block-placeholder-id">${pid}</div>` +
+            `<div class="block-placeholder-label">${label}</div>` +
+            `</div></div>`;
+        }
         break;
       }
     }
