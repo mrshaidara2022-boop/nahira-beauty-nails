@@ -3655,8 +3655,28 @@ function acBlockAdd() {
 }
 
 /* ════════════════════════════════════════════════════════════════════════
-   MÉDIAS — médiathèque Academy avec upload
+   MÉDIAS — médiathèque Academy (v2 : upload progress, aperçu, sécurité)
+   Bucket marketing (public) : cover + trailer
+   Bucket academy-media (privé) : contenus pédagogiques
    ══════════════════════════════════════════════════════════════════════ */
+
+/* Détermine le bucket selon le média */
+function acMediaBucket(m) {
+  return (!m.module_label) ? 'academy-marketing' : 'academy-media';
+}
+
+/* Génère une URL de visualisation (publique ou signée 1h) */
+async function acMediaViewUrl(m) {
+  if (!m.storage_path) return null;
+  if (!m.module_label) {
+    // Cover/trailer : bucket public → URL directe
+    return NAHIRA.sb.storage.from('academy-marketing').getPublicUrl(m.storage_path).data.publicUrl;
+  }
+  // Leçon : bucket privé → URL signée
+  var r = await NAHIRA.sb.storage.from('academy-media').createSignedUrl(m.storage_path, 3600);
+  return r.data?.signedUrl || null;
+}
+
 async function acMediasCharger() {
   var zone = document.getElementById('ac-medias-corps');
   await acChargerCours();
@@ -3682,37 +3702,55 @@ async function acMediasCharger() {
     return;
   }
 
-  var rows = r.data || [];
+  AC._mediaRows = r.data || [];
+  var allRows = AC._mediaRows;
+  var rows = allRows.slice();
 
-  if (filtre === 'video')          rows = rows.filter(function(m){ return m.media_type==='video' && m.module_label; });
-  else if (filtre === 'image')     rows = rows.filter(function(m){ return m.media_type==='image' && m.module_label; });
+  if (filtre === 'video')              rows = rows.filter(function(m){ return m.media_type==='video' && m.module_label; });
+  else if (filtre === 'image')         rows = rows.filter(function(m){ return m.media_type==='image' && m.module_label; });
   else if (filtre === 'cover-trailer') rows = rows.filter(function(m){ return !m.module_label; });
   else if (filtre === 'placeholder')   rows = rows.filter(function(m){ return m.status==='placeholder'; });
-  else if (filtre === 'uploaded')      rows = rows.filter(function(m){ return m.status==='uploaded'; });
+  else if (filtre === 'uploaded' || filtre === 'review') rows = rows.filter(function(m){ return m.status !== 'placeholder'; });
 
-  if (!rows.length) {
-    zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);padding:20px 0">Aucun média trouvé pour ce filtre.</p>';
-    return;
+  var total   = allRows.length;
+  var missing = allRows.filter(function(m){ return m.status==='placeholder'; }).length;
+  var done    = allRows.filter(function(m){ return m.status!=='placeholder'; }).length;
+  var review  = allRows.filter(function(m){ return m.status==='review'; }).length;
+
+  /* Génère les URLs d'aperçu pour les lignes uploadées */
+  var previewUrls = {};
+  var uploadedRows = rows.filter(function(m){ return m.status !== 'placeholder' && m.storage_path; });
+  if (uploadedRows.length) {
+    var signedArr = await Promise.all(uploadedRows.map(function(m){ return acMediaViewUrl(m); }));
+    uploadedRows.forEach(function(m, i){ if (signedArr[i]) previewUrls[m.id] = signedArr[i]; });
   }
 
-  var total   = r.data ? r.data.length : rows.length;
-  var missing = (r.data||[]).filter(function(m){ return m.status==='placeholder'; }).length;
-  var done    = (r.data||[]).filter(function(m){ return m.status==='uploaded'; }).length;
+  if (!rows.length) {
+    zone.innerHTML =
+      '<div class="grille-kpi" style="margin-bottom:14px">' +
+        '<div class="kpi"><div class="v">' + total + '</div><div class="l">Total</div></div>' +
+        '<div class="kpi"><div class="v" style="color:var(--alerte)">' + missing + '</div><div class="l">À importer</div></div>' +
+        '<div class="kpi"><div class="v" style="color:var(--ok)">' + done + '</div><div class="l">Importés</div></div>' +
+      '</div>' +
+      '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);padding:12px 0">Aucun média pour ce filtre.</p>';
+    return;
+  }
 
   var html =
     '<div class="grille-kpi" style="margin-bottom:14px">' +
       '<div class="kpi"><div class="v">' + total + '</div><div class="l">Total</div></div>' +
       '<div class="kpi"><div class="v" style="color:var(--alerte)">' + missing + '</div><div class="l">À importer</div></div>' +
       '<div class="kpi"><div class="v" style="color:var(--ok)">' + done + '</div><div class="l">Importés</div></div>' +
+      (review ? '<div class="kpi"><div class="v" style="color:var(--or)">' + review + '</div><div class="l">À remplacer</div></div>' : '') +
     '</div>' +
     '<div style="overflow-x:auto">' +
-    '<table style="width:100%;border-collapse:collapse;font-family:Montserrat,sans-serif;font-size:12px;min-width:600px">' +
+    '<table style="width:100%;border-collapse:collapse;font-family:Montserrat,sans-serif;font-size:12px;min-width:700px">' +
     '<thead><tr style="border-bottom:1px solid var(--bordure);color:var(--texte-faible)">' +
     '<th style="text-align:left;padding:6px 8px;font-weight:500">Module</th>' +
     '<th style="text-align:left;padding:6px 8px;font-weight:500">Leçon</th>' +
-    '<th style="text-align:left;padding:6px 8px;font-weight:500">ID</th>' +
     '<th style="text-align:left;padding:6px 8px;font-weight:500">Type</th>' +
     '<th style="text-align:left;padding:6px 8px;font-weight:500">Statut</th>' +
+    '<th style="text-align:left;padding:6px 8px;font-weight:500">Aperçu</th>' +
     '<th style="text-align:left;padding:6px 8px;font-weight:500">Actions</th>' +
     '</tr></thead><tbody>';
 
@@ -3722,35 +3760,53 @@ async function acMediasCharger() {
       : '<span style="color:var(--or);font-style:italic">Cover / Trailer</span>';
     var lessonLabel = m.lesson_label ? acE(m.lesson_label) : '<span style="color:var(--texte-faible)">—</span>';
     var typeBadge = m.media_type === 'video'
-      ? '<span class="badge" style="background:rgba(132,193,245,.12);color:var(--info)">📹 Vidéo</span>'
-      : '<span class="badge" style="background:rgba(127,216,164,.12);color:var(--ok)">📸 Photo</span>';
+      ? '<span class="badge" style="background:rgba(132,193,245,.12);color:var(--info)">📹</span>'
+      : '<span class="badge" style="background:rgba(127,216,164,.12);color:var(--ok)">📸</span>';
     var statusBadge = m.status === 'uploaded'
       ? '<span class="badge badge-dispo">✓ Importé</span>'
-      : '<span class="badge" style="background:rgba(255,140,140,.12);color:var(--alerte)">À importer</span>';
-    var accept  = m.media_type === 'video' ? 'video/*' : 'image/*';
-    var safeId  = m.id.replace(/[^a-zA-Z0-9]/g, '_');
-    var importBtn = '<button class="btn ' + (m.status==='uploaded'?'btn-sec':'btn-primaire') + ' btn-sm" type="button" ' +
-      'onclick="document.getElementById(\'mf_' + safeId + '\').click()" style="font-size:10px">' +
-      (m.status==='uploaded' ? 'Remplacer' : 'Importer') + '</button>';
-    var retirerBtn = m.status === 'uploaded'
-      ? ' <button class="btn btn-sm" type="button" style="font-size:10px;color:var(--alerte);background:rgba(255,140,140,.08);border-color:rgba(255,140,140,.25)" ' +
-        'onclick="acMediaRetirer(\'' + m.id + '\',\'' + acE(m.storage_path||'') + '\',\'' + coursId + '\')">Retirer</button>'
-      : '';
-    var voirBtn = m.status === 'uploaded' && m.public_url
-      ? ' <a class="btn btn-sec btn-sm" href="' + acE(m.public_url) + '" target="_blank" rel="noopener" style="font-size:10px">Voir</a>'
-      : '';
+      : m.status === 'review'
+        ? '<span class="badge" style="background:rgba(232,194,122,.15);color:var(--or)">⚠ À remplacer</span>'
+        : '<span class="badge" style="background:rgba(255,140,140,.12);color:var(--alerte)">À importer</span>';
+    var accept = m.media_type === 'video' ? 'video/*' : 'image/*';
+    var safeId = m.id.replace(/[^a-zA-Z0-9]/g, '_');
+    var pUrl   = previewUrls[m.id] || '';
+
+    /* Aperçu inline */
+    var previewHtml = '<span style="color:var(--texte-faible);font-size:10px">—</span>';
+    if (pUrl) {
+      if (m.media_type === 'image') {
+        previewHtml = '<img src="' + acE(pUrl) + '" style="height:48px;border-radius:4px;cursor:pointer;object-fit:cover" ' +
+          'onclick="window.open(\'' + acE(pUrl) + '\',\'_blank\')" alt="" loading="lazy">';
+      } else {
+        previewHtml = '<video src="' + acE(pUrl) + '" preload="none" controls ' +
+          'style="height:52px;width:84px;border-radius:4px;background:#000;display:block"></video>';
+      }
+    }
+
+    /* Boutons actions */
+    var importLabel = m.status === 'placeholder' ? 'Importer' : 'Remplacer';
+    var importClass = m.status === 'placeholder' ? 'btn-primaire' : 'btn-sec';
+    var actHtml =
+      '<div id="mact_' + safeId + '" style="display:flex;flex-wrap:wrap;gap:4px;align-items:center">' +
+        '<input type="file" id="mf_' + safeId + '" accept="' + accept + '" hidden ' +
+          'onchange="acMediaImporter(this,\'' + m.id + '\',\'' + coursId + '\',\'' + courseSlug + '\')">' +
+        '<button class="btn ' + importClass + ' btn-sm" type="button" ' +
+          'onclick="document.getElementById(\'mf_' + safeId + '\').click()" style="font-size:10px">' + importLabel + '</button>' +
+        (m.status !== 'placeholder'
+          ? '<button class="btn btn-sm" type="button" style="font-size:10px;color:var(--alerte);background:rgba(255,140,140,.08);border-color:rgba(255,140,140,.25)" ' +
+            'onclick="acMediaRetirer(\'' + m.id + '\',\'' + acE(m.storage_path||'') + '\',\'' + coursId + '\')">Retirer</button>' +
+            '<button class="btn btn-sm" type="button" style="font-size:10px;color:var(--or);background:rgba(232,194,122,.08);border-color:rgba(232,194,122,.25)" ' +
+            'onclick="acMediaMarquerRevue(\'' + m.id + '\')">' + (m.status==='review'?'↩ Ok':'⚠ À refaire') + '</button>'
+          : '') +
+      '</div>';
 
     html += '<tr id="mrow_' + safeId + '" style="border-bottom:1px solid rgba(240,111,167,.06)">' +
       '<td style="padding:7px 8px;color:var(--texte-faible);font-size:11px">' + modLabel + '</td>' +
-      '<td style="padding:7px 8px;color:var(--texte)">' + lessonLabel + '</td>' +
-      '<td style="padding:7px 8px;color:var(--texte-doux);font-family:monospace;font-size:10px">' + acE(m.id) + '</td>' +
+      '<td style="padding:7px 8px;color:var(--texte);font-size:11px">' + lessonLabel + '</td>' +
       '<td style="padding:7px 8px">' + typeBadge + '</td>' +
-      '<td style="padding:7px 8px" id="mstatus_' + safeId + '">' + statusBadge + '</td>' +
-      '<td style="padding:7px 8px;white-space:nowrap">' +
-        '<input type="file" id="mf_' + safeId + '" accept="' + accept + '" hidden ' +
-          'onchange="acMediaImporter(this,\'' + m.id + '\',\'' + coursId + '\',\'' + courseSlug + '\')">' +
-        importBtn + retirerBtn + voirBtn +
-      '</td>' +
+      '<td style="padding:7px 8px">' + statusBadge + '</td>' +
+      '<td style="padding:7px 8px">' + previewHtml + '</td>' +
+      '<td style="padding:7px 8px">' + actHtml + '</td>' +
     '</tr>';
   });
 
@@ -3773,27 +3829,78 @@ function acMediasPopulateSelect() {
   });
 }
 
-async function acMediaImporter(input, mediaId, courseId, courseSlug) {
-  var file = input.files[0];
+/* Upload avec barre de progression (signed URL + XHR) */
+async function acMediaImporter(inputEl, mediaId, courseId, courseSlug) {
+  var file = inputEl.files[0];
   if (!file) return;
-  var safeId = mediaId.replace(/[^a-zA-Z0-9]/g, '_');
-  var statusCell = document.getElementById('mstatus_' + safeId);
-  if (statusCell) statusCell.innerHTML = '<span style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible)">Envoi…</span>';
 
-  var path = courseSlug + '/' + mediaId + '/' + file.name;
-  var { error: upErr } = await NAHIRA.sb.storage
-    .from('academy-media')
-    .upload(path, file, { upsert: true });
+  var safeId  = mediaId.replace(/[^a-zA-Z0-9]/g, '_');
+  var actZone = document.getElementById('mact_' + safeId);
 
-  if (upErr) {
-    toast('Erreur upload : ' + upErr.message, 'err');
-    acMediasCharger();
+  function setAct(html) { if (actZone) actZone.innerHTML = html; }
+  function setProgress(pct) {
+    setAct(
+      '<div style="font-family:Montserrat,sans-serif;font-size:11px;min-width:110px">' +
+      '<div style="background:rgba(240,111,167,.12);border-radius:3px;height:5px;overflow:hidden;margin-bottom:4px">' +
+      '<div style="background:linear-gradient(90deg,var(--rose),var(--or));height:100%;width:' + pct + '%;transition:width .15s"></div></div>' +
+      'Upload en cours — ' + pct + ' %</div>'
+    );
+  }
+
+  setProgress(0);
+
+  /* Récupère l'ancien chemin pour nettoyage orphelin */
+  var oldRow = (AC._mediaRows||[]).find(function(m){ return m.id === mediaId; });
+  var oldPath   = oldRow ? (oldRow.storage_path || null) : null;
+  var oldBucket = oldRow ? acMediaBucket(oldRow) : null;
+
+  /* Choix du bucket */
+  var isMarketing = !!(oldRow && !oldRow.module_label) || mediaId.indexOf('COVER') !== -1 || mediaId.indexOf('TRAILER') !== -1;
+  var bucket = isMarketing ? 'academy-marketing' : 'academy-media';
+  var path   = courseSlug + '/' + mediaId + '/' + file.name;
+
+  /* URL signée d'upload */
+  var { data: signedUp, error: signErr } = await NAHIRA.sb.storage
+    .from(bucket)
+    .createSignedUploadUrl(path);
+
+  if (signErr || !signedUp) {
+    setAct('<span style="color:var(--alerte);font-size:11px">Erreur prép. : ' + (signErr ? signErr.message : 'URL nulle') + '</span>');
     return;
   }
 
-  var urlResult = NAHIRA.sb.storage.from('academy-media').getPublicUrl(path);
-  var publicUrl = urlResult.data.publicUrl;
+  /* XHR upload avec progression */
+  var uploadOk = false;
+  try {
+    await new Promise(function(resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      xhr.upload.addEventListener('progress', function(e) {
+        if (e.lengthComputable) setProgress(Math.round(e.loaded / e.total * 100));
+      });
+      xhr.addEventListener('load', function() {
+        if (xhr.status >= 200 && xhr.status < 300) { uploadOk = true; resolve(); }
+        else reject(new Error('HTTP ' + xhr.status + ' — ' + xhr.responseText.slice(0, 120)));
+      });
+      xhr.addEventListener('error', function() { reject(new Error('Erreur réseau')); });
+      xhr.open('PUT', signedUp.signedUrl);
+      xhr.setRequestHeader('x-upsert', 'true');
+      if (file.type) xhr.setRequestHeader('Content-Type', file.type);
+      xhr.send(file);
+    });
+  } catch(err) {
+    setAct('<span style="color:var(--alerte);font-size:11px">Upload échoué : ' + err.message + '</span>');
+    toast('Erreur upload', 'err');
+    return;
+  }
 
+  setProgress(100);
+
+  /* URL finale : publique pour marketing, null (signed on demand) pour leçons */
+  var publicUrl = isMarketing
+    ? NAHIRA.sb.storage.from(bucket).getPublicUrl(path).data.publicUrl
+    : null;
+
+  /* Update academy_media */
   var { error: dbErr } = await NAHIRA.sb.from('academy_media').update({
     public_url:   publicUrl,
     storage_path: path,
@@ -3803,15 +3910,27 @@ async function acMediaImporter(input, mediaId, courseId, courseSlug) {
     uploaded_at:  new Date().toISOString(),
   }).eq('id', mediaId);
 
-  if (dbErr) { toast('Erreur DB : ' + dbErr.message, 'err'); acMediasCharger(); return; }
-
-  if (mediaId.indexOf('COVER') !== -1) {
-    await NAHIRA.sb.from('academy_courses').update({ cover_url: publicUrl }).eq('id', courseId);
-    AC.cours = [];
+  if (dbErr) {
+    setAct('<span style="color:var(--alerte);font-size:11px">Erreur DB : ' + dbErr.message + '</span>');
+    toast('Erreur DB', 'err');
+    return;
   }
-  if (mediaId.indexOf('TRAILER') !== -1) {
-    await NAHIRA.sb.from('academy_courses').update({ trailer_url: publicUrl }).eq('id', courseId);
-    AC.cours = [];
+
+  /* Mise à jour academy_courses pour cover/trailer */
+  if (isMarketing && publicUrl) {
+    if (mediaId.indexOf('COVER') !== -1) {
+      await NAHIRA.sb.from('academy_courses').update({ cover_url: publicUrl }).eq('id', courseId);
+      AC.cours = [];
+    }
+    if (mediaId.indexOf('TRAILER') !== -1) {
+      await NAHIRA.sb.from('academy_courses').update({ trailer_url: publicUrl }).eq('id', courseId);
+      AC.cours = [];
+    }
+  }
+
+  /* Nettoyage orphelin : supprime l'ancien fichier si chemin différent */
+  if (oldPath && oldPath !== path && oldBucket) {
+    NAHIRA.sb.storage.from(oldBucket).remove([oldPath]).then();
   }
 
   toast('Média importé ✓');
@@ -3819,9 +3938,28 @@ async function acMediaImporter(input, mediaId, courseId, courseSlug) {
 }
 
 async function acMediaRetirer(mediaId, storagePath, courseId) {
-  if (!confirm('Retirer ce média et supprimer le fichier du stockage ?')) return;
+  /* Affiche l'utilisation dans le message de confirmation */
+  var row = (AC._mediaRows||[]).find(function(m){ return m.id === mediaId; });
+  var usageMsg = '';
+  if (row) {
+    if (row.module_label) {
+      usageMsg = 'Utilisé dans : ' + row.module_label + (row.lesson_label ? ' — ' + row.lesson_label : '') + '.\n';
+    } else if (mediaId.indexOf('COVER') !== -1) {
+      usageMsg = 'Utilisé comme couverture de la formation.\n';
+    } else if (mediaId.indexOf('TRAILER') !== -1) {
+      usageMsg = 'Utilisé comme bande-annonce de la formation.\n';
+    }
+  }
+  if (!confirm(
+    'RETIRER CE MÉDIA ?\n\n' +
+    'ID : ' + mediaId + '\n' +
+    (usageMsg ? usageMsg : '') +
+    '\nLe fichier sera supprimé définitivement du stockage et le placeholder « à venir » réapparaîtra.'
+  )) return;
+
+  var bucket = row ? acMediaBucket(row) : 'academy-media';
   if (storagePath) {
-    await NAHIRA.sb.storage.from('academy-media').remove([storagePath]);
+    await NAHIRA.sb.storage.from(bucket).remove([storagePath]);
   }
   var { error } = await NAHIRA.sb.from('academy_media').update({
     public_url: null, storage_path: null, status: 'placeholder',
@@ -3840,28 +3978,93 @@ async function acMediaRetirer(mediaId, storagePath, courseId) {
   acMediasCharger();
 }
 
+async function acMediaMarquerRevue(mediaId) {
+  var row = (AC._mediaRows||[]).find(function(m){ return m.id === mediaId; });
+  if (!row) return;
+  var newStatus = row.status === 'review' ? 'uploaded' : 'review';
+  var { error } = await NAHIRA.sb.from('academy_media').update({ status: newStatus }).eq('id', mediaId);
+  if (error) { toast('Erreur : ' + error.message, 'err'); return; }
+  toast(newStatus === 'review' ? 'Marqué « À remplacer ».' : 'Statut restauré.');
+  acMediasCharger();
+}
+
+/* Upload depuis le formulaire Formation (cover / trailer) avec progression */
 async function acFormMediaUpload(type, courseId, courseSlug) {
   var fileInput = document.getElementById('ac-f-' + type + '-file');
   var file = fileInput ? fileInput.files[0] : null;
   if (!file) return;
-  toast('Envoi en cours…');
-  var subfolder = type === 'cover' ? 'cover' : 'trailer';
-  var path = courseSlug + '/' + subfolder + '/' + file.name;
-  var { error: upErr } = await NAHIRA.sb.storage
-    .from('academy-media')
-    .upload(path, file, { upsert: true });
-  if (upErr) { toast('Erreur upload : ' + upErr.message, 'err'); return; }
-  var urlResult = NAHIRA.sb.storage.from('academy-media').getPublicUrl(path);
-  var publicUrl = urlResult.data.publicUrl;
+
+  var btnEl = fileInput ? fileInput.previousElementSibling : null;
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = '…'; }
+
+  var isMarketing = true; /* cover et trailer = bucket marketing */
+  var bucket = 'academy-marketing';
+  var mediaId = type === 'cover'
+    ? 'PHOTO_COVER_MASTERCLASS_FIBER_SIGNATURE'
+    : 'VIDEO_TRAILER_MASTERCLASS_FIBER_SIGNATURE';
+  var path = courseSlug + '/' + mediaId + '/' + file.name;
+
+  /* Récupère l'ancien chemin */
+  var { data: oldRow } = await NAHIRA.sb.from('academy_media')
+    .select('storage_path').eq('id', mediaId).maybeSingle();
+  var oldPath = oldRow?.storage_path || null;
+
+  /* URL signée d'upload */
+  var { data: signedUp, error: signErr } = await NAHIRA.sb.storage
+    .from(bucket).createSignedUploadUrl(path);
+
+  if (signErr || !signedUp) {
+    if (btnEl) { btnEl.disabled = false; btnEl.textContent = '📂 Importer'; }
+    toast('Erreur : ' + (signErr?.message || 'URL nulle'), 'err');
+    return;
+  }
+
+  /* XHR avec progression */
+  var uploadOk = false;
+  try {
+    await new Promise(function(resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      xhr.upload.addEventListener('progress', function(e) {
+        if (e.lengthComputable && btnEl)
+          btnEl.textContent = Math.round(e.loaded / e.total * 100) + ' %';
+      });
+      xhr.addEventListener('load', function() {
+        if (xhr.status >= 200 && xhr.status < 300) { uploadOk = true; resolve(); }
+        else reject(new Error('HTTP ' + xhr.status));
+      });
+      xhr.addEventListener('error', function() { reject(new Error('Erreur réseau')); });
+      xhr.open('PUT', signedUp.signedUrl);
+      xhr.setRequestHeader('x-upsert', 'true');
+      if (file.type) xhr.setRequestHeader('Content-Type', file.type);
+      xhr.send(file);
+    });
+  } catch(err) {
+    if (btnEl) { btnEl.disabled = false; btnEl.textContent = '📂 Importer'; }
+    toast('Erreur upload : ' + err.message, 'err');
+    return;
+  }
+
+  if (!uploadOk) return;
+
+  var publicUrl = NAHIRA.sb.storage.from(bucket).getPublicUrl(path).data.publicUrl;
   var mediaType = type === 'cover' ? 'image' : 'video';
+
   await NAHIRA.sb.from('academy_media').update({
     public_url: publicUrl, storage_path: path, status: 'uploaded',
     file_name: file.name, file_size: file.size, uploaded_at: new Date().toISOString(),
   }).eq('course_id', courseId).is('module_label', null).eq('media_type', mediaType);
+
   var courseField = type === 'cover' ? 'cover_url' : 'trailer_url';
   await NAHIRA.sb.from('academy_courses').update({ [courseField]: publicUrl }).eq('id', courseId);
+
+  /* Nettoyage orphelin */
+  if (oldPath && oldPath !== path) {
+    NAHIRA.sb.storage.from(bucket).remove([oldPath]).then();
+  }
+
   var fieldEl = document.getElementById('ac-f-' + type);
   if (fieldEl) fieldEl.value = publicUrl;
+  if (btnEl) { btnEl.disabled = false; btnEl.textContent = '📂 Remplacer'; }
   AC.cours = [];
   toast('Média importé ✓');
 }

@@ -447,7 +447,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let STATE = {
   course: null, modules: [], lessons: [], currentLesson: null,
   completedIds: new Set(), enrolled: false, user: null,
-  enrollment: null, mediaMap: {},
+  enrollment: null, mediaMap: {}, mediaRows: {},
 };
 
 // ── Utils ──────────────────────────────────────────────────────────────────
@@ -505,14 +505,18 @@ async function init() {
     (m.academy_lessons || []).sort((a,b) => a.sort_order - b.sort_order)
   );
 
-  // Resolve placeholder media URLs from academy_media table
+  // Resolve placeholder media — fetch rows (storage_path needed for signed URLs)
   const { data: mediaRows } = await sb
     .from('academy_media')
-    .select('id,public_url')
-    .eq('course_id', course.id)
-    .not('public_url', 'is', null);
-  STATE.mediaMap = {};
-  (mediaRows || []).forEach(m => { if (m.public_url) STATE.mediaMap[m.id] = m.public_url; });
+    .select('id, public_url, storage_path, module_label')
+    .eq('course_id', course.id);
+  STATE.mediaRows = {};
+  STATE.mediaMap  = {};
+  (mediaRows || []).forEach(m => {
+    STATE.mediaRows[m.id] = m;
+    // Cover + trailer sont dans le bucket public : URL directe
+    if (!m.module_label && m.public_url) STATE.mediaMap[m.id] = m.public_url;
+  });
 
   // Fetch completed lessons
   if (user && STATE.enrolled) {
@@ -621,6 +625,24 @@ async function loadLesson(lessonId) {
   const url = new URL(location.href);
   url.searchParams.set('lesson', lessonId);
   history.replaceState({}, '', url);
+
+  // Génère les URLs signées pour les placeholders de cette leçon (bucket privé)
+  {
+    const placeholderIds = (lesson.content_blocks || [])
+      .filter(b => b.type === 'placeholder' && b.id && !STATE.mediaMap[b.id])
+      .map(b => b.id);
+    if (placeholderIds.length) {
+      await Promise.all(placeholderIds.map(async pid => {
+        const row = STATE.mediaRows[pid];
+        if (row && row.storage_path) {
+          const { data } = await sb.storage
+            .from('academy-media')
+            .createSignedUrl(row.storage_path, 3600);
+          if (data?.signedUrl) STATE.mediaMap[pid] = data.signedUrl;
+        }
+      }));
+    }
+  }
 
   // Render
   document.getElementById('loadingState').hidden = true;
