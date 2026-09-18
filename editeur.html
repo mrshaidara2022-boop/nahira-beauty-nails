@@ -440,8 +440,15 @@ input,textarea,select{font-family:'Montserrat',sans-serif}
   #edProps.open{transform:translateX(0)}
   #edCanvas{height:calc(100vh - 52px);overflow-y:auto}
   #canvasInner{padding:32px 18px 80px}
-  .tb-brand{width:auto}
+  .tb-brand{width:auto;font-size:.85rem}
   #mobileNavToggle,#mobilePropToggle{display:flex}
+  /* On mobile: hide all non-essential toolbar items */
+  .tb-btn,.tb-sep,#statusChip,.tb-btn-draft,.tb-brand{display:none}
+  /* Keep mode toggle and publish button */
+  .tb-actions{gap:5px;padding:0 6px;flex:none;min-width:0;overflow:hidden}
+  .tb-crumb{min-width:0;padding:0 8px}
+  .tb-mode-btn{padding:4px 8px;font-size:.6rem}
+  .tb-btn-primary{padding:6px 10px;font-size:.6rem;white-space:nowrap}
 }
 .mobile-drawer-btn{
   display:none;
@@ -1169,12 +1176,15 @@ function showProps(idx) {
       html += `<div class="pf-group"><label class="pf-label">Fiche liée</label>
         <select class="pf-select" onchange="setProp(${idx},'material_id',this.value)">
           <option value="">— Choisir une fiche —</option>
-          ${mats.map(m => `<option value="${m.id}" ${m.id===selId?'selected':''}>${esc(m.title)}</option>`).join('')}
+          ${mats.map(m => `<option value="${m.id}" ${m.id===selId?'selected':''}>${esc(m.fiche_num||'')} — ${esc(m.title)}</option>`).join('')}
         </select></div>`;
       if (selId) {
         const mat = mats.find(m => m.id === selId);
-        if (mat?.file_url) {
-          html += `<a href="${esc(mat.file_url)}" target="_blank" class="pf-btn primary">Aperçu / Télécharger ↗</a>`;
+        if (mat) {
+          if (mat.file_url) {
+            html += `<a href="${esc(mat.file_url)}" target="_blank" class="pf-btn primary" style="margin-bottom:4px;display:block">📄 Aperçu / Télécharger ↗</a>`;
+          }
+          html += `<button class="pf-btn" onclick="uploadFichePdf('${mat.id}',${idx})">${mat.file_url ? '🔄 Remplacer le PDF' : '📤 Importer le PDF'}</button>`;
         }
       }
       break;
@@ -1740,6 +1750,36 @@ async function deleteMedia(blockIdx) {
   renderBlocks();
   showProps(blockIdx);
   toast('Média supprimé');
+}
+
+// ─── Fiche PDF upload ──────────────────────────────────────────────────
+async function uploadFichePdf(matId, blockIdx) {
+  const mat = ST.materials.find(m => m.id === matId);
+  if (!mat) { toast('Fiche introuvable'); return; }
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'application/pdf';
+  input.onchange = async () => {
+    const file = input.files[0];
+    if (!file) return;
+    if (file.type !== 'application/pdf') { toast('Fichier PDF requis'); return; }
+    toast('Importation du PDF en cours…');
+    const num = (mat.fiche_num || matId).toString().replace(/[^a-zA-Z0-9_-]/g, '_');
+    const path = `fiches-pdf/F${num}_${Date.now()}.pdf`;
+    const { error: upErr } = await sb.storage.from('academy-marketing').upload(path, file, { upsert: true, contentType: 'application/pdf' });
+    if (upErr) { toast('Erreur upload : ' + upErr.message); return; }
+    const { data: urlData } = sb.storage.from('academy-marketing').getPublicUrl(path);
+    const publicUrl = urlData?.publicUrl || null;
+    const { error: dbErr } = await sb.from('academy_materials')
+      .update({ file_url: publicUrl })
+      .eq('id', matId);
+    if (dbErr) { toast('Erreur DB : ' + dbErr.message); return; }
+    // Update local cache
+    mat.file_url = publicUrl;
+    showProps(blockIdx);
+    toast('PDF importé ✓');
+  };
+  input.click();
 }
 
 // ─── Undo / Redo ──────────────────────────────────────────────────────
