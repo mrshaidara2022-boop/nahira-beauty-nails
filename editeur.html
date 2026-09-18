@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="boutique.js"></script>
+<script src="academy-renderer.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -730,11 +731,14 @@ function renderNavTree() {
   const tree = document.getElementById('edNavTree');
   let html = '';
   for (const mod of ST.modules) {
-    const modLessons = ST.lessons.filter(l => l.module_id === mod.id);
-    html += `<div class="nav-module" data-module-id="${mod.id}">
-      <div class="nav-module-header" onclick="toggleModule('${mod.id}')">
+    const modLessons = ST.lessons.filter(l => l.module_id === mod.id).sort((a,b)=>(a.sort_order||0)-(b.sort_order||0));
+    const modStyle = mod.is_hidden ? ' style="opacity:.45"' : '';
+    html += `<div class="nav-module" data-module-id="${mod.id}"
+      ondragover="navDragOver(event,'module','${mod.id}')" ondrop="navDrop(event,'module','${mod.id}')">
+      <div class="nav-module-header" onclick="toggleModule('${mod.id}')"
+        draggable="true" ondragstart="navDragStart(event,'module','${mod.id}')">
         <span class="nav-module-arrow open" id="arr-${mod.id}">▶</span>
-        <span class="nav-module-title" id="mt-${mod.id}">${esc(mod.title)}</span>
+        <span class="nav-module-title" id="mt-${mod.id}"${modStyle}>${esc(mod.title)}${mod.is_hidden ? ' 🚫' : ''}</span>
         <span class="nav-module-count">${modLessons.length}</span>
         <button class="nav-module-menu-btn" onclick="event.stopPropagation();showCtxModule('${mod.id}',this)" title="Options">⋯</button>
       </div>
@@ -755,9 +759,12 @@ function renderNavTree() {
 function renderNavLesson(l, num) {
   const active = ST.currentLesson && ST.currentLesson.id === l.id ? ' active' : '';
   const dur = l.duration_minutes ? `${l.duration_minutes}min` : '';
-  return `<div class="nav-lesson${active}" data-lesson-id="${l.id}" onclick="selectLesson('${l.id}')">
+  const hiddenStyle = l.is_hidden ? ' style="opacity:.45"' : '';
+  return `<div class="nav-lesson${active}" data-lesson-id="${l.id}" onclick="selectLesson('${l.id}')"
+    draggable="true" ondragstart="navDragStart(event,'lesson','${l.id}')"
+    ondragover="navDragOver(event,'lesson','${l.id}')" ondrop="navDrop(event,'lesson','${l.id}')">
     <span class="nav-lesson-num">${num}</span>
-    <span class="nav-lesson-title" id="lt-${l.id}">${esc(l.title)}</span>
+    <span class="nav-lesson-title" id="lt-${l.id}"${hiddenStyle}>${esc(l.title)}${l.is_hidden ? ' 🚫' : ''}</span>
     <span class="nav-lesson-dur">${esc(dur)}</span>
     <button class="nav-lesson-menu-btn" onclick="event.stopPropagation();showCtxLesson('${l.id}',this)" title="Options">⋯</button>
   </div>`;
@@ -805,7 +812,7 @@ async function selectLesson(lessonId) {
   showPropsEmpty();
 
   const hasDraft = lesson.draft_content_blocks !== null && lesson.draft_content_blocks !== undefined;
-  setStatus(hasDraft ? 'draft' : (lesson.is_published ? 'published' : 'saved'));
+  setStatus(hasDraft ? 'draft' : (Array.isArray(lesson.content_blocks) && lesson.content_blocks.length > 0 ? 'published' : 'saved'));
 
   // Show "add block" end zone in edit mode
   toggleAddBlockEnd();
@@ -818,19 +825,17 @@ async function loadMedia(blocks) {
   if (!ids.length) { ST.mediaMap = {}; return; }
 
   const { data: rows } = await sb.from('academy_media')
-    .select('placeholder_id, storage_path, bucket')
-    .in('placeholder_id', ids);
+    .select('id, storage_path, public_url, media_type')
+    .in('id', ids);
 
   const mediaMap = {};
   if (rows) {
     for (const row of rows) {
-      if (!row.storage_path) continue;
-      if (row.bucket === 'academy-marketing') {
-        const { data } = sb.storage.from('academy-marketing').getPublicUrl(row.storage_path);
-        mediaMap[row.placeholder_id] = data?.publicUrl;
-      } else {
+      if (row.public_url) {
+        mediaMap[row.id] = row.public_url;
+      } else if (row.storage_path) {
         const { data } = await sb.storage.from('academy-media').createSignedUrl(row.storage_path, 3600);
-        mediaMap[row.placeholder_id] = data?.signedUrl;
+        if (data?.signedUrl) mediaMap[row.id] = data.signedUrl;
       }
     }
   }
@@ -842,12 +847,17 @@ function renderBlocks() {
   const container = document.getElementById('blocksContainer');
   if (!ST.currentLesson) { container.innerHTML = ''; return; }
   const isEdit = ST.mode === 'edit';
+  const rendererOpts = { mediaMap: ST.mediaMap, materials: ST.materials, studentMode: !isEdit };
   let html = '';
   for (let i = 0; i < ST.blocks.length; i++) {
     const b = ST.blocks[i];
+    if (!isEdit && b.hidden) continue;
     const selected = ST.selectedBlockIdx === i;
     if (isEdit) {
-      html += `<div class="block-wrap edit-mode${selected ? ' selected' : ''}" data-idx="${i}" onclick="selectBlock(${i})">`;
+      html += `<div class="block-wrap edit-mode${selected ? ' selected' : ''}" data-idx="${i}"
+        onclick="selectBlock(${i})" draggable="true"
+        ondragstart="blockDragStart(event,${i})" ondragover="blockDragOver(event,${i})"
+        ondrop="blockDrop(event,${i})" ondragend="blockDragEnd(event)">`;
       html += `<div class="block-actions">
         <button class="ba-btn" onclick="event.stopPropagation();moveBlock(${i},-1)" title="Monter">↑</button>
         <button class="ba-btn" onclick="event.stopPropagation();moveBlock(${i},1)" title="Descendre">↓</button>
@@ -856,7 +866,7 @@ function renderBlocks() {
         <button class="ba-btn danger" onclick="event.stopPropagation();deleteBlock(${i})" title="Supprimer">✕</button>
       </div>`;
     }
-    html += renderOneBlock(b, i);
+    html += NahiraRenderer.renderBlock(b, i, rendererOpts);
     if (isEdit) {
       html += `</div>`;
       html += `<div class="add-block-zone"><button class="add-block-btn" onclick="openBlockPicker(${i},'after')">+ Ajouter un bloc</button></div>`;
@@ -981,6 +991,92 @@ function toggleAddBlockEnd() {
   el.classList.toggle('hidden', !ST.currentLesson || ST.mode !== 'edit');
 }
 
+// ─── Block drag & drop ────────────────────────────────────────────────
+let _dragBlockIdx = null;
+
+function blockDragStart(event, idx) {
+  _dragBlockIdx = idx;
+  event.dataTransfer.effectAllowed = 'move';
+  event.currentTarget.style.opacity = '0.4';
+  event.stopPropagation();
+}
+
+function blockDragOver(event, idx) {
+  if (_dragBlockIdx === null) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+}
+
+function blockDrop(event, idx) {
+  event.preventDefault();
+  if (_dragBlockIdx === null || _dragBlockIdx === idx) { _dragBlockIdx = null; return; }
+  pushUndo();
+  const moved = ST.blocks.splice(_dragBlockIdx, 1)[0];
+  const target = _dragBlockIdx < idx ? idx - 1 : idx;
+  ST.blocks.splice(target, 0, moved);
+  ST.selectedBlockIdx = target;
+  _dragBlockIdx = null;
+  markDirty();
+  renderBlocks();
+  showProps(target);
+}
+
+function blockDragEnd(event) {
+  if (event.currentTarget) event.currentTarget.style.opacity = '';
+  _dragBlockIdx = null;
+}
+
+// ─── Nav drag & drop ─────────────────────────────────────────────────
+let _navDrag = null;
+
+function navDragStart(event, type, id) {
+  _navDrag = { type, id };
+  event.dataTransfer.effectAllowed = 'move';
+  event.stopPropagation();
+}
+
+function navDragOver(event, type, id) {
+  if (!_navDrag || _navDrag.type !== type) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = 'move';
+}
+
+async function navDrop(event, type, id) {
+  event.preventDefault();
+  if (!_navDrag || _navDrag.type !== type || _navDrag.id === id) { _navDrag = null; return; }
+  const srcId = _navDrag.id;
+  _navDrag = null;
+  if (type === 'lesson') {
+    await reorderLesson(srcId, id);
+  } else {
+    await reorderModule(srcId, id);
+  }
+}
+
+async function reorderLesson(srcId, tgtId) {
+  const src = ST.lessons.find(l => l.id === srcId);
+  const tgt = ST.lessons.find(l => l.id === tgtId);
+  if (!src || !tgt || src.module_id !== tgt.module_id) return;
+  const { error: e1 } = await sb.from('academy_lessons').update({ sort_order: tgt.sort_order }).eq('id', srcId);
+  const { error: e2 } = await sb.from('academy_lessons').update({ sort_order: src.sort_order }).eq('id', tgtId);
+  if (e1 || e2) { toast('Erreur réordonnancement'); return; }
+  [src.sort_order, tgt.sort_order] = [tgt.sort_order, src.sort_order];
+  ST.lessons.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  renderNavTree();
+}
+
+async function reorderModule(srcId, tgtId) {
+  const src = ST.modules.find(m => m.id === srcId);
+  const tgt = ST.modules.find(m => m.id === tgtId);
+  if (!src || !tgt) return;
+  const { error: e1 } = await sb.from('academy_modules').update({ sort_order: tgt.sort_order }).eq('id', srcId);
+  const { error: e2 } = await sb.from('academy_modules').update({ sort_order: src.sort_order }).eq('id', tgtId);
+  if (e1 || e2) { toast('Erreur réordonnancement'); return; }
+  [src.sort_order, tgt.sort_order] = [tgt.sort_order, src.sort_order];
+  ST.modules.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  renderNavTree();
+}
+
 // ─── Mode toggle ──────────────────────────────────────────────────────
 function setMode(mode) {
   ST.mode = mode;
@@ -1101,6 +1197,9 @@ function showProps(idx) {
       html += `</div>`;
       html += `<button class="pf-btn primary" onclick="uploadMedia(${idx})">
         ${resolved ? '🔄 Remplacer le fichier' : '📤 Importer un fichier'}</button>`;
+      if (resolved) {
+        html += `<button class="pf-btn danger" style="margin-top:4px" onclick="deleteMedia(${idx})">🗑️ Supprimer le fichier</button>`;
+      }
       break;
     }
     case 'image':
@@ -1312,7 +1411,8 @@ async function addModule() {
 
 async function addLesson() {
   if (!ST.modules.length) { toast('Créez d\'abord un module'); return; }
-  const mod = ST.modules[0];
+  const activeModId = ST.currentLesson?.module_id;
+  const mod = (activeModId && ST.modules.find(m => m.id === activeModId)) || ST.modules[0];
   const title = prompt('Titre de la leçon :');
   if (!title || !title.trim()) return;
   const maxOrder = ST.lessons.filter(l => l.module_id === mod.id)
@@ -1336,6 +1436,9 @@ function showCtxModule(modId, btn) {
   if (!mod) return;
   const items = [
     { label: '✏️ Renommer', action: () => renameModule(modId) },
+    { label: mod.is_hidden ? '👁 Afficher le module' : '🚫 Masquer aux élèves', action: () => toggleModuleHidden(modId) },
+    { sep: true },
+    { label: '⧉ Dupliquer le module', action: () => duplicateModule(modId) },
     { sep: true },
     { label: '🗑️ Supprimer', danger: true, action: () => deleteModule(modId) },
   ];
@@ -1349,6 +1452,8 @@ function showCtxLesson(lessonId, btn) {
     { label: '✏️ Renommer', action: () => renameLesson(lessonId) },
     { label: '⧉ Dupliquer', action: () => duplicateLesson(lessonId) },
     { label: lesson.is_preview ? '👁‍🗨 Retirer l\'aperçu' : '👁 Marquer comme aperçu', action: () => toggleLessonPreview(lessonId) },
+    { label: lesson.is_hidden ? '✅ Rendre visible aux élèves' : '🚫 Masquer aux élèves', action: () => toggleLessonHidden(lessonId) },
+    { label: '↗ Déplacer vers un module…', action: () => moveLessonToModule(lessonId) },
     { sep: true },
     { label: '🗑️ Supprimer', danger: true, action: () => deleteLesson(lessonId) },
   ];
@@ -1416,7 +1521,6 @@ async function duplicateLesson(lessonId) {
     content_blocks: lesson.content_blocks,
     sort_order: lesson.sort_order + 1,
     is_preview: false,
-    is_published: false,
   }).select().single();
   if (error) { toast('Erreur : ' + error.message); return; }
   const idx = ST.lessons.findIndex(l => l.id === lessonId);
@@ -1433,6 +1537,80 @@ async function toggleLessonPreview(lessonId) {
   if (error) { toast('Erreur : ' + error.message); return; }
   lesson.is_preview = newVal;
   toast(newVal ? 'Marquée comme aperçu' : 'Aperçu retiré');
+}
+
+async function toggleModuleHidden(modId) {
+  const mod = ST.modules.find(m => m.id === modId);
+  if (!mod) return;
+  const newVal = !mod.is_hidden;
+  const { error } = await sb.from('academy_modules').update({ is_hidden: newVal }).eq('id', modId);
+  if (error) { toast('Erreur : ' + error.message); return; }
+  mod.is_hidden = newVal;
+  renderNavTree();
+  toast(newVal ? 'Module masqué aux élèves' : 'Module visible aux élèves');
+}
+
+async function toggleLessonHidden(lessonId) {
+  const lesson = ST.lessons.find(l => l.id === lessonId);
+  if (!lesson) return;
+  const newVal = !lesson.is_hidden;
+  const { error } = await sb.from('academy_lessons').update({ is_hidden: newVal }).eq('id', lessonId);
+  if (error) { toast('Erreur : ' + error.message); return; }
+  lesson.is_hidden = newVal;
+  renderNavTree();
+  toast(newVal ? 'Leçon masquée aux élèves' : 'Leçon visible aux élèves');
+}
+
+async function duplicateModule(modId) {
+  const mod = ST.modules.find(m => m.id === modId);
+  if (!mod) return;
+  const maxOrder = ST.modules.reduce((acc, m) => Math.max(acc, m.sort_order || 0), 0);
+  const { data: newMod, error: modErr } = await sb.from('academy_modules').insert({
+    course_id: mod.course_id,
+    title: mod.title + ' (copie)',
+    sort_order: maxOrder + 1,
+  }).select().single();
+  if (modErr) { toast('Erreur : ' + modErr.message); return; }
+  const modLessons = ST.lessons.filter(l => l.module_id === modId);
+  for (const l of modLessons) {
+    const { data: nl, error: lErr } = await sb.from('academy_lessons').insert({
+      course_id: l.course_id,
+      module_id: newMod.id,
+      title: l.title,
+      content_blocks: l.content_blocks,
+      sort_order: l.sort_order,
+      is_preview: l.is_preview || false,
+    }).select().single();
+    if (!lErr && nl) ST.lessons.push(nl);
+  }
+  ST.modules.push(newMod);
+  renderNavTree();
+  toast('Module dupliqué');
+}
+
+async function moveLessonToModule(lessonId) {
+  const lesson = ST.lessons.find(l => l.id === lessonId);
+  if (!lesson) return;
+  const options = ST.modules.filter(m => m.id !== lesson.module_id);
+  if (!options.length) { toast('Aucun autre module disponible'); return; }
+  const choice = prompt(
+    'Déplacer vers quel module ?\n' +
+    options.map((m, i) => `${i + 1}. ${m.title}`).join('\n') +
+    '\n\nEntrez le numéro :'
+  );
+  const num = parseInt(choice);
+  if (isNaN(num) || num < 1 || num > options.length) return;
+  const targetMod = options[num - 1];
+  const maxOrder = ST.lessons.filter(l => l.module_id === targetMod.id)
+    .reduce((acc, l) => Math.max(acc, l.sort_order || 0), 0);
+  const { error } = await sb.from('academy_lessons')
+    .update({ module_id: targetMod.id, sort_order: maxOrder + 1 })
+    .eq('id', lessonId);
+  if (error) { toast('Erreur : ' + error.message); return; }
+  lesson.module_id = targetMod.id;
+  lesson.sort_order = maxOrder + 1;
+  renderNavTree();
+  toast(`Leçon déplacée vers "${targetMod.title}"`);
 }
 
 async function deleteModule(modId) {
@@ -1501,14 +1679,12 @@ async function publish() {
         .update({
           content_blocks: ST.blocks,
           draft_content_blocks: null,
-          is_published: true,
         })
         .eq('id', ST.currentLesson.id);
       if (btn) { btn.disabled = false; btn.textContent = 'Publier'; }
       if (error) { toast('Erreur : ' + error.message); return; }
       ST.currentLesson.content_blocks = JSON.parse(JSON.stringify(ST.blocks));
       ST.currentLesson.draft_content_blocks = null;
-      ST.currentLesson.is_published = true;
       ST.dirty = false;
       setStatus('published');
       toast('Leçon publiée ✓');
@@ -1529,28 +1705,41 @@ function uploadMedia(blockIdx) {
     const file = input.files[0];
     if (!file) return;
     toast('Importation en cours…');
-    const ext = file.name.split('.').pop();
+    const ext = file.name.split('.').pop().toLowerCase();
     const path = `${pid}.${ext}`;
-    const bucket = isVid ? 'academy-media' : 'academy-media';
-    const { error: upErr } = await sb.storage.from(bucket).upload(path, file, { upsert: true });
+    const { error: upErr } = await sb.storage.from('academy-media').upload(path, file, { upsert: true });
     if (upErr) { toast('Erreur upload : ' + upErr.message); return; }
-    // Upsert academy_media row
-    const { error: dbErr } = await sb.from('academy_media').upsert({
-      course_id: ST.course.id,
-      placeholder_id: pid,
-      storage_path: path,
-      bucket,
-      file_type: isVid ? 'video' : 'image',
-    }, { onConflict: 'placeholder_id' });
+    // Update academy_media row (id IS the placeholder string)
+    const { error: dbErr } = await sb.from('academy_media')
+      .update({ storage_path: path, media_type: isVid ? 'video' : 'image', public_url: null })
+      .eq('id', pid);
     if (dbErr) { toast('Erreur DB : ' + dbErr.message); return; }
     // Refresh signed URL
-    const { data } = await sb.storage.from(bucket).createSignedUrl(path, 3600);
+    const { data } = await sb.storage.from('academy-media').createSignedUrl(path, 3600);
     if (data?.signedUrl) ST.mediaMap[pid] = data.signedUrl;
     renderBlocks();
     showProps(blockIdx);
     toast('Fichier importé ✓');
   };
   input.click();
+}
+
+// ─── Media delete ──────────────────────────────────────────────────────
+async function deleteMedia(blockIdx) {
+  const b = ST.blocks[blockIdx];
+  const pid = b.id;
+  if (!pid) return;
+  const { data: row } = await sb.from('academy_media').select('storage_path').eq('id', pid).single();
+  if (row?.storage_path) {
+    await sb.storage.from('academy-media').remove([row.storage_path]);
+  }
+  await sb.from('academy_media')
+    .update({ storage_path: null, public_url: null })
+    .eq('id', pid);
+  delete ST.mediaMap[pid];
+  renderBlocks();
+  showProps(blockIdx);
+  toast('Média supprimé');
 }
 
 // ─── Undo / Redo ──────────────────────────────────────────────────────
@@ -1597,11 +1786,7 @@ function openPreview() {
   const mod = ST.modules.find(m => m.id === lesson.module_id);
   let html = `<div class="c-eyebrow">${esc(mod ? mod.title.toUpperCase() : '')}</div>`;
   html += `<h1 class="c-title">${esc(lesson.title)}</h1>`;
-  // render blocks in student mode (no wrappers)
-  const savedMode = ST.mode;
-  ST.mode = 'student';
-  for (const b of ST.blocks) html += renderOneBlock(b, 0);
-  ST.mode = savedMode;
+  html += NahiraRenderer.renderBlocks(ST.blocks, { mediaMap: ST.mediaMap, materials: ST.materials, studentMode: true });
   document.getElementById('preview-content').innerHTML = html;
   document.getElementById('preview').classList.add('open');
 }
