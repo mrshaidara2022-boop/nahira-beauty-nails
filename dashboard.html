@@ -2876,6 +2876,7 @@ async function acFormCharger() {
       '<div class="prod-sku">' + acE(c.slug) + ' · ' + dur + ' · ' + prix + ' · Score min ' + (c.passing_score||70) + '% · ' + niv + '</div></div>' +
       '<span class="badge ' + (pub ? 'badge-dispo' : 'badge-masque') + '">' + (pub ? 'Publiée' : 'Masquée') + '</span>' +
       '<div style="display:flex;gap:6px;flex:none">' +
+      '<a class="btn btn-primaire btn-sm" href="editeur.html?course=' + c.id + '">Éditer visuellement</a>' +
       '<button class="btn btn-sec btn-sm" onclick="acFormEditer(\'' + c.id + '\')">Modifier</button>' +
       '<button class="btn btn-sm ' + (pub ? 'btn-danger' : 'btn-primaire') + '" onclick="acFormTogglePublish(\'' + c.id + '\',' + pub + ')">' + (pub ? 'Masquer' : 'Publier') + '</button>' +
       '<button class="btn btn-danger btn-sm" onclick="acFormSupprimer(\'' + c.id + '\',\'' + acE(c.title) + '\')">✕</button>' +
