@@ -890,10 +890,14 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
       <section class="section" id="s-ac-eleves" style="display:none">
         <div class="eyebrow">Academy</div>
         <h2 class="section-titre"><em>Élèves</em> inscrites</h2>
-        <div class="filtres-barre">
-          <select class="filtre-select" id="ac-eleves-filtre" onchange="acElevesCharger()" style="flex:1">
+        <div class="filtres-barre" style="gap:8px;flex-wrap:wrap;align-items:center">
+          <select class="filtre-select" id="ac-eleves-filtre" onchange="acElevesCharger()" style="flex:1;min-width:150px">
             <option value="">Toutes les formations</option>
           </select>
+          <input type="search" id="ac-eleves-search" placeholder="Rechercher nom ou e-mail…"
+            oninput="acElevesFiltrer()"
+            style="flex:2;min-width:180px;padding:7px 10px;border:1px solid var(--bordure);border-radius:8px;background:var(--fond-card);color:var(--texte);font-family:Montserrat,sans-serif;font-size:12px;outline:none">
+          <button class="btn btn-primary btn-sm" onclick="acEleveInscrireModal()" style="white-space:nowrap;flex-shrink:0">+ Inscrire</button>
         </div>
         <div id="ac-eleves-liste" class="chargement">Chargement…</div>
       </section>
@@ -2819,7 +2823,7 @@ async function sauvegarderParametres() {
 /* ════════════════════════════════════════════════════════════════════════
    ACADEMY — state partagé
    ══════════════════════════════════════════════════════════════════════ */
-var AC = { cours: [], coursId: null };
+var AC = { cours: [], coursId: null, _elevesData: [] };
 
 async function acChargerCours() {
   if (AC.cours.length) return AC.cours;
@@ -3241,48 +3245,271 @@ async function acElevesInit() {
 async function acElevesCharger() {
   var zone = document.getElementById('ac-eleves-liste');
   zone.innerHTML = '<div class="chargement">Chargement…</div>';
-  var filtre = document.getElementById('ac-eleves-filtre').value;
+  var filtreCours = document.getElementById('ac-eleves-filtre').value;
+
+  // 1. Enrollments
   var q = NAHIRA.sb.from('academy_enrollments')
     .select('id,enrolled_at,user_id,course_id,academy_courses(title)')
-    .order('enrolled_at',{ascending:false}).limit(100);
-  if (filtre) q = q.eq('course_id', filtre);
-  var r = await q;
-  var rows = r.data || [];
-  if (!rows.length) { zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);padding:20px 0">Aucune inscription.</p>'; return; }
-
-  var uids = rows.map(function(e){return e.user_id;}).filter(Boolean);
-  uids = uids.filter(function(v,i,a){return a.indexOf(v)===i;});
-  var profMap = {};
-  if (uids.length) {
-    var rp = await NAHIRA.sb.from('profiles').select('id,display_name').in('id', uids);
-    (rp.data||[]).forEach(function(p){ profMap[p.id] = p; });
+    .order('enrolled_at', {ascending:false}).limit(200);
+  if (filtreCours) q = q.eq('course_id', filtreCours);
+  var {data: enrollments, error: enErr} = await q;
+  if (enErr) { zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:#f06fa7;padding:20px 0">Erreur : ' + acE(enErr.message) + '</p>'; return; }
+  if (!enrollments || !enrollments.length) {
+    zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);padding:20px 0">Aucune inscription.</p>';
+    AC._elevesData = [];
+    return;
   }
 
+  // 2. Unique user IDs + course IDs
+  var uids = [...new Set(enrollments.map(function(e){return e.user_id;}).filter(Boolean))];
+  var courseIds = [...new Set(enrollments.map(function(e){return e.course_id;}).filter(Boolean))];
+
+  // 3. Profiles (display_name, full_name, email)
+  var profMap = {};
+  if (uids.length) {
+    var {data: profs} = await NAHIRA.sb.from('profiles').select('id,display_name,full_name,email').in('id', uids);
+    (profs||[]).forEach(function(p){ profMap[p.id] = p; });
+  }
+
+  // 4. Accessible lesson IDs per course (non-hidden modules → non-hidden lessons)
+  var accessibleCountMap = {};  // course_id → total visible lessons
+  var lessonCourseMap = {};     // lesson_id → course_id
+
+  for (var i = 0; i < courseIds.length; i++) {
+    var cid = courseIds[i];
+    var {data: mods} = await NAHIRA.sb.from('academy_modules')
+      .select('id').eq('course_id', cid).eq('is_hidden', false);
+    var modIds = (mods||[]).map(function(m){return m.id;});
+    if (modIds.length) {
+      var {data: lessons, count: lcount} = await NAHIRA.sb.from('academy_lessons')
+        .select('id', {count:'exact'}).in('module_id', modIds).eq('is_hidden', false);
+      accessibleCountMap[cid] = lcount || 0;
+      (lessons||[]).forEach(function(l){ lessonCourseMap[l.id] = cid; });
+    } else {
+      accessibleCountMap[cid] = 0;
+    }
+  }
+
+  // 5. Progress: count completed visible lessons + MAX(completed_at) per user+course
+  var progressMap = {};  // `${userId}_${courseId}` → {count, lastDate}
+  var visibleLessonIds = Object.keys(lessonCourseMap);
+  if (uids.length && visibleLessonIds.length) {
+    var {data: progRows} = await NAHIRA.sb.from('academy_progress')
+      .select('user_id,lesson_id,completed_at')
+      .in('user_id', uids)
+      .in('lesson_id', visibleLessonIds)
+      .not('completed_at', 'is', null);
+    (progRows||[]).forEach(function(row){
+      var courseId = lessonCourseMap[row.lesson_id];
+      if (!courseId) return;
+      var key = row.user_id + '_' + courseId;
+      if (!progressMap[key]) progressMap[key] = {count:0, lastDate:null};
+      progressMap[key].count++;
+      if (!progressMap[key].lastDate || row.completed_at > progressMap[key].lastDate)
+        progressMap[key].lastDate = row.completed_at;
+    });
+  }
+
+  // 6. Certificates
+  var certSet = new Set();
+  if (uids.length && courseIds.length) {
+    var {data: certs} = await NAHIRA.sb.from('academy_certificates')
+      .select('user_id,course_id').in('user_id', uids).in('course_id', courseIds);
+    (certs||[]).forEach(function(c){ certSet.add(c.user_id + '_' + c.course_id); });
+  }
+
+  // 7. Build merged dataset
+  AC._elevesData = enrollments.map(function(e) {
+    var prof = profMap[e.user_id] || {};
+    var nom = prof.display_name || prof.full_name || prof.email || (e.user_id ? e.user_id.slice(0,8)+'…' : '—');
+    var email = prof.email || '';
+    var total = accessibleCountMap[e.course_id] || 0;
+    var key = e.user_id + '_' + e.course_id;
+    var prog = progressMap[key] || {count:0, lastDate:null};
+    var pct = total > 0 ? Math.round(prog.count / total * 100) : 0;
+    return {
+      enrollmentId: e.id,
+      userId: e.user_id,
+      courseId: e.course_id,
+      courseTitle: (e.academy_courses && e.academy_courses.title) || '—',
+      nom: nom, email: email,
+      enrolledAt: e.enrolled_at,
+      done: prog.count, total: total, pct: pct,
+      lastDate: prog.lastDate,
+      hasCert: certSet.has(key)
+    };
+  });
+
+  acElevesFiltrer();
+}
+
+function acElevesFiltrer() {
+  var q = ((document.getElementById('ac-eleves-search') || {}).value || '').toLowerCase().trim();
+  var data = AC._elevesData || [];
+  var filtered = q
+    ? data.filter(function(e){ return e.nom.toLowerCase().includes(q) || e.email.toLowerCase().includes(q); })
+    : data;
+  acElevesRender(filtered);
+}
+
+function acElevesRender(rows) {
+  var zone = document.getElementById('ac-eleves-liste');
+  if (!rows.length) {
+    zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);padding:20px 0">Aucune élève trouvée.</p>';
+    return;
+  }
+  if (window.innerWidth < 640) {
+    acElevesRenderCartes(zone, rows);
+  } else {
+    acElevesRenderTable(zone, rows);
+  }
+}
+
+function acElevesRenderTable(zone, rows) {
   zone.innerHTML = '<table style="width:100%;border-collapse:collapse;font-family:Montserrat,sans-serif;font-size:12px">' +
     '<thead><tr style="border-bottom:1px solid var(--bordure);color:var(--texte-faible)">' +
     '<th style="text-align:left;padding:8px 6px;font-weight:500">Élève</th>' +
     '<th style="text-align:left;padding:8px 6px;font-weight:500">Formation</th>' +
-    '<th style="text-align:left;padding:8px 6px;font-weight:500">Date</th>' +
-    '<th style="padding:8px 6px"></th></tr></thead><tbody>' +
+    '<th style="text-align:left;padding:8px 6px;font-weight:500;min-width:140px">Progression</th>' +
+    '<th style="text-align:left;padding:8px 6px;font-weight:500;white-space:nowrap">Dernière activité</th>' +
+    '<th style="text-align:left;padding:8px 6px;font-weight:500">Certificat</th>' +
+    '<th style="padding:8px 6px"></th>' +
+    '</tr></thead><tbody>' +
     rows.map(function(e) {
-      var prof = profMap[e.user_id] || {};
-      var nom = prof.display_name || (e.user_id ? e.user_id.slice(0,8)+'…' : '—');
+      var progBar = e.total > 0
+        ? '<div style="display:flex;align-items:center;gap:6px">' +
+          '<div style="flex:1;height:4px;background:rgba(240,111,167,.15);border-radius:2px;overflow:hidden">' +
+          '<div style="height:100%;width:' + e.pct + '%;background:var(--primaire);border-radius:2px;transition:width .3s"></div></div>' +
+          '<span style="color:var(--texte-faible);white-space:nowrap;font-size:11px">' + e.done + '/' + e.total + ' — ' + e.pct + '%</span>' +
+          '</div>'
+        : '<span style="color:var(--texte-faible)">—</span>';
+      var certBadge = e.hasCert
+        ? '<span style="display:inline-flex;align-items:center;gap:3px;background:rgba(52,199,89,.12);color:#34c759;border-radius:10px;padding:2px 8px;font-size:10px;font-weight:600">✓ Délivré</span>'
+        : '<span style="color:var(--texte-faible);font-size:11px">—</span>';
+      var safeNom = acE(e.nom).replace(/'/g, '&#39;');
+      var safeCours = acE(e.courseTitle).replace(/'/g, '&#39;');
       return '<tr style="border-bottom:1px solid rgba(240,111,167,.06)">' +
-        '<td style="padding:9px 6px;color:var(--texte)">' + acE(nom) + '</td>' +
-        '<td style="padding:9px 6px;color:var(--texte)">' + acE(e.academy_courses?.title||'—') + '</td>' +
-        '<td style="padding:9px 6px;color:var(--texte-faible)">' + fmtD(e.enrolled_at) + '</td>' +
+        '<td style="padding:9px 6px">' +
+          '<div style="font-weight:500;color:var(--texte)">' + acE(e.nom) + '</div>' +
+          (e.email ? '<div style="font-size:10px;color:var(--texte-faible);margin-top:1px">' + acE(e.email) + '</div>' : '') +
+        '</td>' +
+        '<td style="padding:9px 6px;color:var(--texte)">' + acE(e.courseTitle) + '</td>' +
+        '<td style="padding:9px 6px">' + progBar + '</td>' +
+        '<td style="padding:9px 6px;color:var(--texte-faible);font-size:11px;white-space:nowrap">' +
+          (e.lastDate ? fmtD(e.lastDate) : '—') +
+        '</td>' +
+        '<td style="padding:9px 6px">' + certBadge + '</td>' +
         '<td style="padding:9px 6px;text-align:right;white-space:nowrap">' +
-          '<button class="btn btn-sec btn-sm" onclick="acProgVoir(\'' + e.user_id + '\')" style="margin-right:4px">Progression</button>' +
-          '<button class="btn btn-danger btn-sm" onclick="acEleveRetirer(\'' + e.id + '\',\'' + acE(nom) + '\')">Retirer</button>' +
-        '</td></tr>';
-    }).join('') + '</tbody></table>';
+          '<button class="btn btn-sec btn-sm" onclick="acProgVoir(\'' + e.userId + '\')" style="margin-right:4px">Progression</button>' +
+          '<button class="btn btn-danger btn-sm" onclick="acEleveRetirer(\'' + e.enrollmentId + '\',\'' + safeNom + '\',\'' + safeCours + '\')">Retirer</button>' +
+        '</td>' +
+        '</tr>';
+    }).join('') +
+    '</tbody></table>';
 }
 
-async function acEleveRetirer(enrollmentId, nom) {
-  if (!confirm('Retirer l\'accès à ' + nom + ' ?\nLeur progression sera conservée mais ils n\'auront plus accès à la formation.')) return;
-  var r = await NAHIRA.sb.from('academy_enrollments').delete().eq('id', enrollmentId);
-  if (r.error) { toast('Erreur : '+r.error.message,'err'); return; }
-  toast('Accès retiré.'); acElevesCharger();
+function acElevesRenderCartes(zone, rows) {
+  zone.innerHTML = rows.map(function(e) {
+    var pctStr = e.total > 0 ? e.done + '/' + e.total + ' — ' + e.pct + '%' : '—';
+    var safeNom = acE(e.nom).replace(/'/g, '&#39;');
+    var safeCours = acE(e.courseTitle).replace(/'/g, '&#39;');
+    return '<div style="background:var(--fond-card);border:1px solid var(--bordure);border-radius:10px;padding:14px;margin-bottom:10px;font-family:Montserrat,sans-serif">' +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">' +
+        '<div>' +
+          '<div style="font-weight:600;color:var(--texte);font-size:13px">' + acE(e.nom) + '</div>' +
+          (e.email ? '<div style="font-size:10px;color:var(--texte-faible);margin-top:2px">' + acE(e.email) + '</div>' : '') +
+        '</div>' +
+        (e.hasCert ? '<span style="font-size:10px;background:rgba(52,199,89,.12);color:#34c759;border-radius:10px;padding:2px 8px;font-weight:600;flex-shrink:0;margin-left:8px">✓ Certif</span>' : '') +
+      '</div>' +
+      '<div style="font-size:11px;color:var(--texte-faible);margin-bottom:4px">' + acE(e.courseTitle) + '</div>' +
+      '<div style="font-size:11px;color:var(--texte-faible);margin-bottom:4px">Progression : ' + acE(pctStr) + '</div>' +
+      (e.lastDate ? '<div style="font-size:11px;color:var(--texte-faible);margin-bottom:10px">Dernière activité : ' + fmtD(e.lastDate) + '</div>' : '<div style="margin-bottom:10px"></div>') +
+      '<div style="display:flex;gap:6px">' +
+        '<button class="btn btn-sec btn-sm" style="flex:1" onclick="acProgVoir(\'' + e.userId + '\')">Progression</button>' +
+        '<button class="btn btn-danger btn-sm" style="flex:1" onclick="acEleveRetirer(\'' + e.enrollmentId + '\',\'' + safeNom + '\',\'' + safeCours + '\')">Retirer</button>' +
+      '</div>' +
+      '</div>';
+  }).join('');
+}
+
+async function acEleveRetirer(enrollmentId, nom, coursTitle) {
+  if (!confirm('Retirer l\'accès de « ' + nom + ' » à « ' + coursTitle + ' » ?\n\nLeur progression et résultats de quiz seront conservés.\nCette action est enregistrée dans les logs admin.')) return;
+  var sessRes = await NAHIRA.sb.auth.getSession();
+  var sess = sessRes.data && sessRes.data.session;
+  if (!sess || !sess.access_token) { toast('Session expirée — reconnectez-vous.', 'err'); return; }
+  toast('Retrait en cours…');
+  try {
+    var r = await fetch(NAHIRA.sb.supabaseUrl + '/functions/v1/admin-student-action', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + sess.access_token,
+        'apikey': NAHIRA.sb.supabaseKey
+      },
+      body: JSON.stringify({action:'unenroll', enrollment_id: enrollmentId})
+    });
+    var data = await r.json();
+    if (!r.ok) { toast(data.error || 'Erreur lors du retrait.', 'err'); return; }
+    toast('Accès retiré — historique conservé.');
+    await acElevesCharger();
+  } catch(e) { toast('Erreur réseau : ' + e.message, 'err'); }
+}
+
+function acEleveInscrireModal() {
+  var cours = AC.cours || [];
+  var coursOptions = cours.map(function(c){
+    return '<option value="' + acE(c.id) + '">' + acE(c.title) + '</option>';
+  }).join('');
+  modalOuvrir(
+    '+ Inscrire une élève',
+    '<div style="font-family:Montserrat,sans-serif;font-size:12px">' +
+    '<label style="display:block;margin-bottom:4px;color:var(--texte-faible);font-size:10px;text-transform:uppercase;letter-spacing:.05em">Formation</label>' +
+    '<select id="inscr-cours" style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--bordure);border-radius:6px;background:var(--fond-card);color:var(--texte);font-family:Montserrat,sans-serif;font-size:12px;margin-bottom:14px">' +
+    coursOptions + '</select>' +
+    '<label style="display:block;margin-bottom:4px;color:var(--texte-faible);font-size:10px;text-transform:uppercase;letter-spacing:.05em">E-mail de l\'élève</label>' +
+    '<input id="inscr-email" type="email" placeholder="prenom@exemple.com" autocomplete="off" ' +
+    'style="width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--bordure);border-radius:6px;background:var(--fond-card);color:var(--texte);font-family:Montserrat,sans-serif;font-size:12px" />' +
+    '<p id="inscr-feedback" style="margin-top:8px;font-size:11px;color:var(--texte-faible);min-height:18px"></p>' +
+    '</div>',
+    '<button class="btn btn-sec btn-sm" onclick="modalFermer()">Annuler</button> ' +
+    '<button class="btn btn-primary btn-sm" onclick="acEleveInscrireSubmit()">Inscrire</button>'
+  );
+  setTimeout(function(){ var el = document.getElementById('inscr-email'); if(el) el.focus(); }, 60);
+}
+
+async function acEleveInscrireSubmit() {
+  var email = ((document.getElementById('inscr-email') || {}).value || '').trim();
+  var courseId = (document.getElementById('inscr-cours') || {}).value || '';
+  var fb = document.getElementById('inscr-feedback');
+  function setFb(msg, col) { if(fb){ fb.textContent = msg; fb.style.color = col || 'var(--texte-faible)'; } }
+
+  if (!email) { setFb('Adresse e-mail requise.'); return; }
+  if (!courseId) { setFb('Formation requise.'); return; }
+
+  setFb('Inscription en cours…');
+
+  var sessRes = await NAHIRA.sb.auth.getSession();
+  var sess = sessRes.data && sessRes.data.session;
+  if (!sess || !sess.access_token) { setFb('Session expirée — reconnectez-vous.', '#f06fa7'); return; }
+
+  try {
+    var r = await fetch(NAHIRA.sb.supabaseUrl + '/functions/v1/admin-student-action', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + sess.access_token,
+        'apikey': NAHIRA.sb.supabaseKey
+      },
+      body: JSON.stringify({action:'enroll', course_id: courseId, user_email: email})
+    });
+    var data = await r.json();
+    if (r.status === 404) { setFb('Aucun compte trouvé pour cet e-mail. L\'élève doit d\'abord créer un compte.', '#f06fa7'); return; }
+    if (r.status === 409) { setFb('Cet élève est déjà inscrit(e) à cette formation.', '#f06fa7'); return; }
+    if (!r.ok) { setFb(data.error || 'Erreur lors de l\'inscription.', '#f06fa7'); return; }
+    modalFermer();
+    toast('Élève inscrite ✓');
+    await acElevesCharger();
+  } catch(e) { setFb('Erreur réseau : ' + e.message, '#f06fa7'); }
 }
 
 /* ════════════════════════════════════════════════════════════════════════
