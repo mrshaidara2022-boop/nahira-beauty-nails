@@ -902,6 +902,16 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
         <div id="ac-eleves-liste" class="chargement">Chargement…</div>
       </section>
 
+      <!-- ═══ ACADEMY : FICHE ÉLÈVE ═══════════════════════════════════════════ -->
+      <section class="section" id="s-ac-fiche" style="display:none">
+        <div class="eyebrow">Academy</div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+          <button class="btn btn-sec btn-sm" onclick="acFicheRetour()" style="white-space:nowrap">← Retour aux élèves</button>
+          <h2 class="section-titre" id="ac-fiche-titre" style="margin:0">Fiche élève</h2>
+        </div>
+        <div id="ac-fiche-contenu" class="chargement">Chargement…</div>
+      </section>
+
       <!-- ═══ ACADEMY : PROGRESSION ════════════════════════════════════════════ -->
       <section class="section" id="s-ac-progression" style="display:none">
         <div class="eyebrow">Academy</div>
@@ -1109,7 +1119,7 @@ var sectionLabels = {
   avis:'Avis', import:'Import CSV', parametres:'Paramètres',
   'ac-formations':'Academy — Formations', 'ac-contenu':'Academy — Contenu',
   'ac-quiz':'Academy — Quiz', 'ac-eleves':'Academy — Élèves',
-  'ac-progression':'Academy — Progression', 'ac-attestations':'Academy — Attestations', 'ac-reglages':'Academy — Réglages',
+  'ac-fiche':'Academy — Fiche élève', 'ac-progression':'Academy — Progression', 'ac-attestations':'Academy — Attestations', 'ac-reglages':'Academy — Réglages',
   'ac-medias':'Academy — Médias', 'ac-fiches':'Academy — Fiches', 'ac-tableau':'Academy — Tableau de bord',
 };
 
@@ -1146,6 +1156,7 @@ function goTo(id) {
   else if (id === 'ac-contenu') acContenuInit();
   else if (id === 'ac-quiz') acQuizInit();
   else if (id === 'ac-eleves') acElevesInit();
+  else if (id === 'ac-fiche') acFicheInit();
   else if (id === 'ac-progression') acProgInit();
   else if (id === 'ac-attestations') acAttestationsCharger();
   else if (id === 'ac-reglages') acReglagesInit();
@@ -3400,7 +3411,7 @@ function acElevesRenderTable(zone, rows) {
         '</td>' +
         '<td style="padding:9px 6px">' + certBadge + '</td>' +
         '<td style="padding:9px 6px;text-align:right;white-space:nowrap">' +
-          '<button class="btn btn-sec btn-sm" onclick="acProgVoir(\'' + e.userId + '\')" style="margin-right:4px">Progression</button>' +
+          '<button class="btn btn-sec btn-sm" onclick="acFicheOuvrir(\'' + e.enrollmentId + '\',\'' + e.userId + '\',\'' + e.courseId + '\')" style="margin-right:4px">Voir la fiche</button>' +
           '<button class="btn btn-danger btn-sm" onclick="acEleveRetirer(\'' + e.enrollmentId + '\',\'' + safeNom + '\',\'' + safeCours + '\')">Retirer</button>' +
         '</td>' +
         '</tr>';
@@ -3425,7 +3436,7 @@ function acElevesRenderCartes(zone, rows) {
       '<div style="font-size:11px;color:var(--texte-faible);margin-bottom:4px">Progression : ' + acE(pctStr) + '</div>' +
       (e.lastDate ? '<div style="font-size:11px;color:var(--texte-faible);margin-bottom:10px">Dernière activité : ' + fmtD(e.lastDate) + '</div>' : '<div style="margin-bottom:10px"></div>') +
       '<div style="display:flex;gap:6px">' +
-        '<button class="btn btn-sec btn-sm" style="flex:1" onclick="acProgVoir(\'' + e.userId + '\')">Progression</button>' +
+        '<button class="btn btn-sec btn-sm" style="flex:1" onclick="acFicheOuvrir(\'' + e.enrollmentId + '\',\'' + e.userId + '\',\'' + e.courseId + '\')">Voir la fiche</button>' +
         '<button class="btn btn-danger btn-sm" style="flex:1" onclick="acEleveRetirer(\'' + e.enrollmentId + '\',\'' + safeNom + '\',\'' + safeCours + '\')">Retirer</button>' +
       '</div>' +
       '</div>';
@@ -3593,6 +3604,315 @@ async function acProgCharger() {
 function acProgVoir(userId) {
   AC._progUserId = userId || null;
   goTo('ac-progression');
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   FICHE ÉLÈVE — vue détaillée (L3)
+   ══════════════════════════════════════════════════════════════════════ */
+var acFicheState = { enrollmentId: null, userId: null, courseId: null, filtre: '', search: '' };
+
+function acFicheOuvrir(enrollmentId, userId, courseId) {
+  var filtreEl = document.getElementById('ac-eleves-filtre');
+  var searchEl = document.getElementById('ac-eleves-search');
+  acFicheState.filtre      = filtreEl ? filtreEl.value : '';
+  acFicheState.search      = searchEl ? searchEl.value : '';
+  acFicheState.enrollmentId = enrollmentId;
+  acFicheState.userId       = userId;
+  acFicheState.courseId     = courseId;
+  goTo('ac-fiche');
+}
+
+function acFicheRetour() {
+  goTo('ac-eleves');
+  requestAnimationFrame(function() {
+    var filtreEl = document.getElementById('ac-eleves-filtre');
+    var searchEl = document.getElementById('ac-eleves-search');
+    if (filtreEl && acFicheState.filtre !== undefined) filtreEl.value = acFicheState.filtre;
+    if (searchEl && acFicheState.search !== undefined) searchEl.value = acFicheState.search;
+    acElevesFiltrer();
+  });
+}
+
+async function acFicheInit() {
+  var enrollmentId = acFicheState.enrollmentId;
+  var userId       = acFicheState.userId;
+  var courseId     = acFicheState.courseId;
+  if (!userId || !courseId) {
+    document.getElementById('ac-fiche-contenu').innerHTML =
+      '<p style="font-family:Montserrat,sans-serif;font-size:13px;color:var(--texte-faible);padding:20px 0">Aucune fiche sélectionnée.</p>';
+    return;
+  }
+  await acFicheCharger(enrollmentId, userId, courseId);
+}
+
+async function acFicheCharger(enrollmentId, userId, courseId) {
+  var zone = document.getElementById('ac-fiche-contenu');
+  zone.innerHTML = '<div class="chargement">Chargement…</div>';
+  try {
+    // 1. Profile
+    var rProf = await NAHIRA.sb.from('profiles')
+      .select('display_name,full_name,email').eq('id', userId).single();
+    var prof = rProf.data || {};
+    var nom = prof.display_name || prof.full_name || prof.email || (userId.slice(0,8) + '…');
+
+    // 2. Enrollment
+    var rEnr = await NAHIRA.sb.from('academy_enrollments')
+      .select('enrolled_at,last_visited_lesson_id').eq('id', enrollmentId).single();
+    var enr = rEnr.data || {};
+
+    // 3. Course title from AC.cours
+    var cours = (AC.cours || []).find(function(c){ return c.id === courseId; });
+    var coursTitle = cours ? cours.title : '—';
+
+    // 4. Modules
+    var rMod = await NAHIRA.sb.from('academy_modules')
+      .select('id,title,sort_order,is_hidden')
+      .eq('course_id', courseId).order('sort_order', {ascending: true});
+    var modules = rMod.data || [];
+
+    // 4b. All lessons for these modules in one query
+    var moduleIds = modules.map(function(m){ return m.id; });
+    var allLessons = [];
+    if (moduleIds.length) {
+      var rLes = await NAHIRA.sb.from('academy_lessons')
+        .select('id,module_id,title,sort_order,is_hidden')
+        .in('module_id', moduleIds).order('sort_order', {ascending: true});
+      allLessons = rLes.data || [];
+    }
+
+    // Group lessons by module_id
+    var lessByMod = {};
+    allLessons.forEach(function(l){
+      if (!lessByMod[l.module_id]) lessByMod[l.module_id] = [];
+      lessByMod[l.module_id].push(l);
+    });
+
+    // Visible lesson IDs (non-hidden module → non-hidden lesson) for denominator
+    var visibleLessonIds = new Set();
+    modules.forEach(function(m){
+      if (!m.is_hidden) {
+        (lessByMod[m.id] || []).forEach(function(l){ if (!l.is_hidden) visibleLessonIds.add(l.id); });
+      }
+    });
+
+    // 5. Progress (this user + this course)
+    var rProg = await NAHIRA.sb.from('academy_progress')
+      .select('lesson_id,completed_at')
+      .eq('user_id', userId).eq('course_id', courseId).not('completed_at','is',null);
+    var progMap = {};
+    var lastDateAll = null;
+    (rProg.data || []).forEach(function(p){
+      progMap[p.lesson_id] = p.completed_at;
+      if (!lastDateAll || p.completed_at > lastDateAll) lastDateAll = p.completed_at;
+    });
+
+    var totalVisible = visibleLessonIds.size;
+    var doneVisible  = 0;
+    visibleLessonIds.forEach(function(lid){ if (progMap[lid]) doneVisible++; });
+    var pctGlobal = totalVisible > 0 ? Math.round(doneVisible / totalVisible * 100) : 0;
+
+    // 6. Last visited lesson + module titles (no date — only lesson reference)
+    var lastLessonTitle = null, lastModuleTitle = null;
+    if (enr.last_visited_lesson_id) {
+      var lastLesson = allLessons.find(function(l){ return l.id === enr.last_visited_lesson_id; });
+      if (lastLesson) {
+        lastLessonTitle = lastLesson.title;
+        var lastMod = modules.find(function(m){ return m.id === lastLesson.module_id; });
+        lastModuleTitle = lastMod ? lastMod.title : null;
+      }
+    }
+
+    // 7. Quiz attempts
+    var rQuiz = await NAHIRA.sb.from('academy_quiz_attempts')
+      .select('id,score,passed,correct_count,total_questions,attempted_at,completed_at,status')
+      .eq('user_id', userId).eq('course_id', courseId)
+      .order('attempted_at', {ascending: false});
+    var quizAttempts = rQuiz.data || [];
+
+    // 8. Certificate
+    var rCert = await NAHIRA.sb.from('academy_certificates')
+      .select('id,reference,issued_at,recipient_name,score,correct_count,total_questions')
+      .eq('user_id', userId).eq('course_id', courseId)
+      .order('issued_at', {ascending: false}).limit(1);
+    var cert = (rCert.data || [])[0] || null;
+
+    // Render
+    var titreEl = document.getElementById('ac-fiche-titre');
+    if (titreEl) titreEl.textContent = 'Fiche — ' + nom;
+
+    zone.innerHTML =
+      acFicheRenderHeader({ nom: nom, email: prof.email, coursTitle: coursTitle,
+        enrolledAt: enr.enrolled_at, lastDate: lastDateAll,
+        doneVisible: doneVisible, totalVisible: totalVisible, pctGlobal: pctGlobal,
+        cert: cert, lastLessonTitle: lastLessonTitle, lastModuleTitle: lastModuleTitle }) +
+      acFicheRenderModules(modules, lessByMod, progMap) +
+      acFicheRenderQuiz(quizAttempts) +
+      acFicheRenderCert(cert);
+
+  } catch(err) {
+    zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:13px;color:var(--rouge,#ff3b30);padding:20px 0">Erreur : ' + acE(err.message) + '</p>';
+  }
+}
+
+function acFicheRenderHeader(d) {
+  var progBar = d.totalVisible > 0
+    ? '<div style="display:flex;align-items:center;gap:8px;margin-top:4px">' +
+      '<div style="flex:1;height:6px;background:rgba(240,111,167,.15);border-radius:3px;overflow:hidden">' +
+      '<div style="height:100%;width:' + d.pctGlobal + '%;background:linear-gradient(90deg,var(--primaire),var(--or));border-radius:3px;transition:width .3s"></div></div>' +
+      '<span style="font-size:11px;color:var(--texte-faible);white-space:nowrap">' + d.doneVisible + '/' + d.totalVisible + ' — ' + d.pctGlobal + '%</span></div>'
+    : '<span style="font-size:12px;color:var(--texte-faible)">—</span>';
+
+  var certBadge = d.cert
+    ? ' <span style="display:inline-flex;align-items:center;gap:3px;background:rgba(52,199,89,.12);color:#34c759;border-radius:10px;padding:2px 10px;font-size:10px;font-weight:600">✓ Certifié</span>'
+    : '';
+
+  var lastLeconBlock = d.lastLessonTitle
+    ? '<div style="margin-top:10px;padding:10px 12px;background:rgba(240,111,167,.06);border-radius:8px;border-left:3px solid var(--primaire)">' +
+      '<div style="font-size:10px;color:var(--texte-faible);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Leçon actuelle</div>' +
+      '<div style="font-size:12px;color:var(--texte);font-weight:500">' + acE(d.lastLessonTitle) + '</div>' +
+      (d.lastModuleTitle ? '<div style="font-size:10px;color:var(--texte-faible);margin-top:2px">' + acE(d.lastModuleTitle) + '</div>' : '') +
+      '</div>'
+    : '';
+
+  return '<div style="background:var(--fond-card);border:1px solid var(--bordure);border-radius:12px;padding:18px 20px;margin-bottom:16px;font-family:Montserrat,sans-serif">' +
+    '<div style="font-size:17px;font-weight:700;color:var(--texte)">' + acE(d.nom) + certBadge + '</div>' +
+    (d.email ? '<div style="font-size:12px;color:var(--texte-faible);margin-top:2px">' + acE(d.email) + '</div>' : '') +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:14px">' +
+      '<div><div style="font-size:10px;color:var(--texte-faible);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Formation</div>' +
+        '<div style="font-size:12px;color:var(--texte);font-weight:500">' + acE(d.coursTitle) + '</div></div>' +
+      '<div><div style="font-size:10px;color:var(--texte-faible);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Inscrite le</div>' +
+        '<div style="font-size:12px;color:var(--texte)">' + (d.enrolledAt ? fmtD(d.enrolledAt) : '—') + '</div></div>' +
+      '<div><div style="font-size:10px;color:var(--texte-faible);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Dernière activité</div>' +
+        '<div style="font-size:12px;color:var(--texte)">' + (d.lastDate ? fmtD(d.lastDate) : '—') + '</div></div>' +
+      '<div><div style="font-size:10px;color:var(--texte-faible);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Progression</div>' +
+        progBar + '</div>' +
+    '</div>' +
+    lastLeconBlock +
+    '</div>';
+}
+
+function acFicheRenderModules(modules, lessByMod, progMap) {
+  if (!modules.length) return '';
+  var html = '<div style="margin-bottom:16px;font-family:Montserrat,sans-serif">' +
+    '<h3 style="font-size:13px;font-weight:600;color:var(--texte);margin:0 0 10px;text-transform:uppercase;letter-spacing:.06em">Progression par module</h3>';
+
+  modules.forEach(function(mod, mIdx) {
+    var lessons = lessByMod[mod.id] || [];
+    var visLessons = lessons.filter(function(l){ return !l.is_hidden; });
+    var modTotal = mod.is_hidden ? lessons.length : visLessons.length;
+    var modDone  = lessons.filter(function(l){ return !!progMap[l.id]; }).length;
+    var modVisDone = visLessons.filter(function(l){ return !!progMap[l.id]; }).length;
+    var countNum = mod.is_hidden ? modDone : modVisDone;
+    var modPct  = modTotal > 0 ? Math.round(countNum / modTotal * 100) : 0;
+
+    var hiddenBadge = mod.is_hidden
+      ? ' <span style="font-size:9px;background:rgba(255,140,0,.12);color:#ff8c00;border-radius:6px;padding:1px 6px;font-weight:600">Masqué</span>'
+      : '';
+    var progBarMod = modTotal > 0
+      ? '<div style="flex-shrink:0;width:60px;height:3px;background:rgba(240,111,167,.12);border-radius:2px;overflow:hidden">' +
+        '<div style="height:100%;width:' + modPct + '%;background:var(--primaire);border-radius:2px"></div></div>'
+      : '';
+
+    var accId = 'fiche-mod-' + mIdx;
+    html += '<div style="border:1px solid var(--bordure);border-radius:10px;margin-bottom:8px;overflow:hidden">' +
+      '<button onclick="acFicheToggleMod(\'' + accId + '\')" style="width:100%;display:flex;align-items:center;gap:8px;padding:11px 14px;background:var(--fond-card);border:none;cursor:pointer;text-align:left;font-family:Montserrat,sans-serif">' +
+        '<span id="' + accId + '-ico" style="font-size:10px;color:var(--texte-faible);flex-shrink:0">▶</span>' +
+        '<span style="font-size:12px;font-weight:600;color:var(--texte);flex:1">' + acE(mod.title) + hiddenBadge + '</span>' +
+        progBarMod +
+        '<span style="font-size:11px;color:var(--texte-faible);white-space:nowrap;margin-left:6px">' + countNum + '/' + modTotal + ' — ' + modPct + '%</span>' +
+      '</button>' +
+      '<div id="' + accId + '" style="display:none;border-top:1px solid var(--bordure)">';
+
+    lessons.forEach(function(les) {
+      var done   = !!progMap[les.id];
+      var dateStr = done ? fmtD(progMap[les.id]) : null;
+      var lesHidden = les.is_hidden
+        ? ' <span style="font-size:9px;background:rgba(255,140,0,.12);color:#ff8c00;border-radius:6px;padding:1px 5px;font-weight:600">Masqué</span>'
+        : '';
+      var statusIco = done
+        ? '<span style="font-size:11px;color:#34c759;flex-shrink:0">✓</span>'
+        : '<span style="font-size:11px;color:var(--texte-faible);flex-shrink:0">○</span>';
+      html += '<div style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid rgba(240,111,167,.05)">' +
+        statusIco +
+        '<span style="font-size:11px;color:var(--texte);flex:1">' + acE(les.title) + lesHidden + '</span>' +
+        (done
+          ? '<span style="font-size:10px;color:var(--texte-faible);white-space:nowrap">' + dateStr + '</span>'
+          : '<span style="font-size:10px;color:var(--texte-faible)">Non terminée</span>') +
+        '</div>';
+    });
+
+    html += '</div></div>';
+  });
+  return html + '</div>';
+}
+
+function acFicheToggleMod(id) {
+  var el  = document.getElementById(id);
+  var ico = document.getElementById(id + '-ico');
+  if (!el) return;
+  var open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : '';
+  if (ico) ico.textContent = open ? '▶' : '▼';
+}
+
+function acFicheRenderQuiz(attempts) {
+  var html = '<div style="margin-bottom:16px;font-family:Montserrat,sans-serif">' +
+    '<h3 style="font-size:13px;font-weight:600;color:var(--texte);margin:0 0 10px;text-transform:uppercase;letter-spacing:.06em">Tentatives de quiz</h3>';
+  if (!attempts.length) {
+    return html + '<p style="font-size:12px;color:var(--texte-faible);padding:12px;background:var(--fond-card);border:1px solid var(--bordure);border-radius:10px">Aucune tentative de quiz.</p></div>';
+  }
+  var bestScore = attempts.reduce(function(best, a){ return Math.max(best, a.score || 0); }, -1);
+
+  html += '<div style="border:1px solid var(--bordure);border-radius:10px;overflow:hidden">';
+  html += '<div style="display:grid;grid-template-columns:1fr 60px 80px 70px 70px;gap:4px;padding:8px 14px;background:var(--fond-card);border-bottom:1px solid var(--bordure);font-size:10px;color:var(--texte-faible);text-transform:uppercase;letter-spacing:.05em">' +
+    '<div>Date</div><div>Score</div><div>Réponses</div><div>Résultat</div><div>Statut</div></div>';
+
+  attempts.forEach(function(a) {
+    var isBest  = bestScore >= 0 && (a.score || 0) === bestScore;
+    var dateA   = a.attempted_at || a.completed_at || a.started_at;
+    var scoreTxt = a.score !== null && a.score !== undefined ? a.score + '%' : '—';
+    var repTxt  = (a.correct_count !== null && a.total_questions) ? a.correct_count + '/' + a.total_questions : '—';
+    var passedBadge = a.passed === true
+      ? '<span style="font-size:10px;color:#34c759;font-weight:600">Réussi</span>'
+      : a.passed === false
+        ? '<span style="font-size:10px;color:var(--rouge,#ff3b30);font-weight:600">Échoué</span>'
+        : '<span style="font-size:10px;color:var(--texte-faible)">—</span>';
+    var bestMark = isBest
+      ? '<span style="font-size:9px;background:rgba(255,200,0,.15);color:#c49a00;border-radius:6px;padding:1px 5px;font-weight:700;margin-left:5px">★</span>'
+      : '';
+    html += '<div style="display:grid;grid-template-columns:1fr 60px 80px 70px 70px;gap:4px;padding:9px 14px;border-bottom:1px solid rgba(240,111,167,.04);font-size:11px;color:var(--texte)">' +
+      '<div style="color:var(--texte-faible)">' + (dateA ? fmtD(dateA) : '—') + '</div>' +
+      '<div style="font-weight:500">' + acE(scoreTxt) + bestMark + '</div>' +
+      '<div>' + acE(repTxt) + '</div>' +
+      '<div>' + passedBadge + '</div>' +
+      '<div style="color:var(--texte-faible)">' + acE(a.status || '—') + '</div>' +
+      '</div>';
+  });
+  return html + '</div></div>';
+}
+
+function acFicheRenderCert(cert) {
+  var html = '<div style="margin-bottom:16px;font-family:Montserrat,sans-serif">' +
+    '<h3 style="font-size:13px;font-weight:600;color:var(--texte);margin:0 0 10px;text-transform:uppercase;letter-spacing:.06em">Certificat</h3>';
+  if (!cert) {
+    return html + '<p style="font-size:12px;color:var(--texte-faible);padding:12px;background:var(--fond-card);border:1px solid var(--bordure);border-radius:10px">Aucun certificat délivré.</p></div>';
+  }
+  var scoreTxt = cert.score !== null && cert.score !== undefined ? cert.score + '%' : '—';
+  var repTxt   = (cert.correct_count !== null && cert.total_questions) ? cert.correct_count + '/' + cert.total_questions : '—';
+  html += '<div style="background:var(--fond-card);border:1px solid rgba(52,199,89,.3);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">' +
+    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;flex:1">' +
+      '<div><div style="font-size:10px;color:var(--texte-faible);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Référence</div>' +
+        '<div style="font-size:12px;color:var(--or,#c49a00);font-weight:600">' + acE(cert.reference || '—') + '</div></div>' +
+      '<div><div style="font-size:10px;color:var(--texte-faible);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Délivré le</div>' +
+        '<div style="font-size:12px;color:var(--texte)">' + fmtD(cert.issued_at) + '</div></div>' +
+      '<div><div style="font-size:10px;color:var(--texte-faible);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Score</div>' +
+        '<div style="font-size:12px;color:var(--texte)">' + acE(scoreTxt) + ' (' + acE(repTxt) + ')</div></div>' +
+    '</div>' +
+    (cert.reference
+      ? '<a class="btn btn-sec btn-sm" href="certificat.html?ref=' + encodeURIComponent(cert.reference) + '" target="_blank" style="white-space:nowrap;flex-shrink:0">Voir ↗</a>'
+      : '') +
+    '</div></div>';
+  return html;
 }
 
 /* ════════════════════════════════════════════════════════════════════════
