@@ -3609,7 +3609,7 @@ function acProgVoir(userId) {
 /* ════════════════════════════════════════════════════════════════════════
    FICHE ÉLÈVE — vue détaillée (L3)
    ══════════════════════════════════════════════════════════════════════ */
-var acFicheState = { enrollmentId: null, userId: null, courseId: null, filtre: '', search: '' };
+var acFicheState = { enrollmentId: null, userId: null, courseId: null, filtre: '', search: '', nom: '', coursTitle: '' };
 
 function acFicheOuvrir(enrollmentId, userId, courseId) {
   var filtreEl = document.getElementById('ac-eleves-filtre');
@@ -3722,19 +3722,42 @@ async function acFicheCharger(enrollmentId, userId, courseId) {
       }
     }
 
-    // 7. Quiz attempts
+    // 7. Quiz attempts (with invalidation fields)
     var rQuiz = await NAHIRA.sb.from('academy_quiz_attempts')
-      .select('id,score,passed,correct_count,total_questions,attempted_at,completed_at,status')
+      .select('id,score,passed,correct_count,total_questions,attempted_at,completed_at,status,is_invalidated,invalidated_at,invalidation_reason')
       .eq('user_id', userId).eq('course_id', courseId)
       .order('attempted_at', {ascending: false});
     var quizAttempts = rQuiz.data || [];
 
-    // 8. Certificate
+    // 8. All certificates (with versioning fields)
     var rCert = await NAHIRA.sb.from('academy_certificates')
-      .select('id,reference,issued_at,recipient_name,score,correct_count,total_questions')
+      .select('id,reference,issued_at,recipient_name,score,correct_count,total_questions,is_current,superseded_by,supersedes')
       .eq('user_id', userId).eq('course_id', courseId)
-      .order('issued_at', {ascending: false}).limit(1);
-    var cert = (rCert.data || [])[0] || null;
+      .order('issued_at', {ascending: false});
+    var allCerts = rCert.data || [];
+    var cert = allCerts.find(function(c){ return c.is_current; }) || allCerts[0] || null;
+
+    // 9. Admin history for this user+course
+    var rLogs = await NAHIRA.sb.from('admin_logs')
+      .select('id,action,created_at,admin_id,details')
+      .eq('target_user_id', userId).eq('target_course_id', courseId)
+      .order('created_at', {ascending: false}).limit(15);
+    var adminLogs = rLogs.data || [];
+
+    // Fetch distinct admin names for logs
+    var adminIds = adminLogs.map(function(l){ return l.admin_id; })
+      .filter(function(v,i,a){ return v && a.indexOf(v) === i; });
+    var adminNames = {};
+    if (adminIds.length) {
+      var rAdm = await NAHIRA.sb.from('profiles').select('id,display_name,full_name,email').in('id', adminIds);
+      (rAdm.data || []).forEach(function(p){
+        adminNames[p.id] = p.display_name || p.full_name || p.email || p.id.slice(0,8) + '…';
+      });
+    }
+
+    // Save context for action functions
+    acFicheState.nom       = nom;
+    acFicheState.coursTitle = coursTitle;
 
     // Render
     var titreEl = document.getElementById('ac-fiche-titre');
@@ -3745,9 +3768,11 @@ async function acFicheCharger(enrollmentId, userId, courseId) {
         enrolledAt: enr.enrolled_at, lastDate: lastDateAll,
         doneVisible: doneVisible, totalVisible: totalVisible, pctGlobal: pctGlobal,
         cert: cert, lastLessonTitle: lastLessonTitle, lastModuleTitle: lastModuleTitle }) +
+      acFicheRenderAdminActions(enrollmentId, userId, courseId) +
       acFicheRenderModules(modules, lessByMod, progMap) +
       acFicheRenderQuiz(quizAttempts) +
-      acFicheRenderCert(cert);
+      acFicheRenderCert(allCerts, userId, courseId, nom) +
+      acFicheRenderAdminHistory(adminLogs, adminNames);
 
   } catch(err) {
     zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:13px;color:var(--rouge,#ff3b30);padding:20px 0">Erreur : ' + acE(err.message) + '</p>';
@@ -3861,58 +3886,193 @@ function acFicheRenderQuiz(attempts) {
   if (!attempts.length) {
     return html + '<p style="font-size:12px;color:var(--texte-faible);padding:12px;background:var(--fond-card);border:1px solid var(--bordure);border-radius:10px">Aucune tentative de quiz.</p></div>';
   }
-  var bestScore = attempts.reduce(function(best, a){ return Math.max(best, a.score || 0); }, -1);
+  // Best score counts only non-invalidated attempts
+  var validAttempts = attempts.filter(function(a){ return !a.is_invalidated; });
+  var bestScore = validAttempts.length
+    ? validAttempts.reduce(function(best, a){ return Math.max(best, a.score || 0); }, -1)
+    : -1;
 
   html += '<div style="border:1px solid var(--bordure);border-radius:10px;overflow:hidden">';
-  html += '<div style="display:grid;grid-template-columns:1fr 60px 80px 70px 70px;gap:4px;padding:8px 14px;background:var(--fond-card);border-bottom:1px solid var(--bordure);font-size:10px;color:var(--texte-faible);text-transform:uppercase;letter-spacing:.05em">' +
-    '<div>Date</div><div>Score</div><div>Réponses</div><div>Résultat</div><div>Statut</div></div>';
+  html += '<div style="display:grid;grid-template-columns:100px 60px 80px 70px 1fr 60px;gap:4px;padding:8px 14px;background:var(--fond-card);border-bottom:1px solid var(--bordure);font-size:10px;color:var(--texte-faible);text-transform:uppercase;letter-spacing:.05em">' +
+    '<div>Date</div><div>Score</div><div>Réponses</div><div>Résultat</div><div>État</div><div></div></div>';
 
   attempts.forEach(function(a) {
-    var isBest  = bestScore >= 0 && (a.score || 0) === bestScore;
-    var dateA   = a.attempted_at || a.completed_at || a.started_at;
-    var scoreTxt = a.score !== null && a.score !== undefined ? a.score + '%' : '—';
-    var repTxt  = (a.correct_count !== null && a.total_questions) ? a.correct_count + '/' + a.total_questions : '—';
-    var passedBadge = a.passed === true
-      ? '<span style="font-size:10px;color:#34c759;font-weight:600">Réussi</span>'
-      : a.passed === false
-        ? '<span style="font-size:10px;color:var(--rouge,#ff3b30);font-weight:600">Échoué</span>'
-        : '<span style="font-size:10px;color:var(--texte-faible)">—</span>';
+    var isInvalid = !!a.is_invalidated;
+    var isBest    = !isInvalid && bestScore >= 0 && (a.score || 0) === bestScore;
+    var dateA     = a.attempted_at || a.completed_at;
+    var scoreTxt  = a.score !== null && a.score !== undefined ? a.score + '%' : '—';
+    var repTxt    = (a.correct_count !== null && a.total_questions) ? a.correct_count + '/' + a.total_questions : '—';
+    var passedBadge = isInvalid
+      ? '<span style="font-size:10px;color:var(--texte-faible)">—</span>'
+      : a.passed === true
+        ? '<span style="font-size:10px;color:#34c759;font-weight:600">Réussi</span>'
+        : a.passed === false
+          ? '<span style="font-size:10px;color:var(--rouge,#ff3b30);font-weight:600">Échoué</span>'
+          : '<span style="font-size:10px;color:var(--texte-faible)">—</span>';
     var bestMark = isBest
       ? '<span style="font-size:9px;background:rgba(255,200,0,.15);color:#c49a00;border-radius:6px;padding:1px 5px;font-weight:700;margin-left:5px">★</span>'
       : '';
-    html += '<div style="display:grid;grid-template-columns:1fr 60px 80px 70px 70px;gap:4px;padding:9px 14px;border-bottom:1px solid rgba(240,111,167,.04);font-size:11px;color:var(--texte)">' +
+    var etatCell = isInvalid
+      ? '<span style="font-size:10px;background:rgba(255,59,48,.12);color:var(--rouge,#ff3b30);border-radius:6px;padding:2px 7px;font-weight:600">Invalidée</span>' +
+        (a.invalidation_reason ? '<div style="font-size:9px;color:var(--texte-faible);margin-top:2px">' + acE(a.invalidation_reason) + '</div>' : '')
+      : '<span style="font-size:10px;color:var(--texte-faible)">' + acE(a.status || 'completed') + '</span>';
+    var actionCell = isInvalid
+      ? ''
+      : '<button class="btn btn-danger btn-sm" style="font-size:10px;padding:3px 8px" onclick="acFicheInvalidateQuiz(\'' + a.id + '\',\'' + (dateA ? fmtD(dateA) : '?') + '\')">Invalider</button>';
+    var rowBg = isInvalid ? 'background:rgba(255,59,48,.03);' : '';
+    html += '<div style="display:grid;grid-template-columns:100px 60px 80px 70px 1fr 60px;gap:4px;padding:9px 14px;border-bottom:1px solid rgba(240,111,167,.04);font-size:11px;color:var(--texte);' + rowBg + '">' +
       '<div style="color:var(--texte-faible)">' + (dateA ? fmtD(dateA) : '—') + '</div>' +
-      '<div style="font-weight:500">' + acE(scoreTxt) + bestMark + '</div>' +
-      '<div>' + acE(repTxt) + '</div>' +
+      '<div style="font-weight:500;' + (isInvalid ? 'opacity:.4;text-decoration:line-through' : '') + '">' + acE(scoreTxt) + bestMark + '</div>' +
+      '<div style="' + (isInvalid ? 'opacity:.4' : '') + '">' + acE(repTxt) + '</div>' +
       '<div>' + passedBadge + '</div>' +
-      '<div style="color:var(--texte-faible)">' + acE(a.status || '—') + '</div>' +
+      '<div>' + etatCell + '</div>' +
+      '<div>' + actionCell + '</div>' +
       '</div>';
   });
   return html + '</div></div>';
 }
 
-function acFicheRenderCert(cert) {
+function acFicheRenderCert(allCerts, userId, courseId, nom) {
   var html = '<div style="margin-bottom:16px;font-family:Montserrat,sans-serif">' +
-    '<h3 style="font-size:13px;font-weight:600;color:var(--texte);margin:0 0 10px;text-transform:uppercase;letter-spacing:.06em">Certificat</h3>';
-  if (!cert) {
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">' +
+    '<h3 style="font-size:13px;font-weight:600;color:var(--texte);margin:0;text-transform:uppercase;letter-spacing:.06em">Certificat</h3>' +
+    '<button class="btn btn-sec btn-sm" onclick="acFicheRegenCert()" style="font-size:10px">Régénérer</button>' +
+    '</div>';
+  if (!allCerts || !allCerts.length) {
     return html + '<p style="font-size:12px;color:var(--texte-faible);padding:12px;background:var(--fond-card);border:1px solid var(--bordure);border-radius:10px">Aucun certificat délivré.</p></div>';
   }
-  var scoreTxt = cert.score !== null && cert.score !== undefined ? cert.score + '%' : '—';
-  var repTxt   = (cert.correct_count !== null && cert.total_questions) ? cert.correct_count + '/' + cert.total_questions : '—';
-  html += '<div style="background:var(--fond-card);border:1px solid rgba(52,199,89,.3);border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">' +
-    '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;flex:1">' +
-      '<div><div style="font-size:10px;color:var(--texte-faible);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Référence</div>' +
-        '<div style="font-size:12px;color:var(--or,#c49a00);font-weight:600">' + acE(cert.reference || '—') + '</div></div>' +
-      '<div><div style="font-size:10px;color:var(--texte-faible);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Délivré le</div>' +
-        '<div style="font-size:12px;color:var(--texte)">' + fmtD(cert.issued_at) + '</div></div>' +
-      '<div><div style="font-size:10px;color:var(--texte-faible);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">Score</div>' +
-        '<div style="font-size:12px;color:var(--texte)">' + acE(scoreTxt) + ' (' + acE(repTxt) + ')</div></div>' +
+  var currentCert = allCerts.find(function(c){ return c.is_current; }) || allCerts[0];
+  var historyCerts = allCerts.filter(function(c){ return c.id !== currentCert.id; });
+
+  function certCard(c, isCurrent) {
+    var scoreTxt = c.score !== null && c.score !== undefined ? c.score + '%' : '—';
+    var repTxt   = (c.correct_count !== null && c.total_questions) ? c.correct_count + '/' + c.total_questions : '—';
+    var borderColor = isCurrent ? 'rgba(52,199,89,.3)' : 'var(--bordure)';
+    var bg = isCurrent ? 'var(--fond-card)' : 'transparent';
+    var opacity = isCurrent ? '1' : '.6';
+    return '<div style="background:' + bg + ';border:1px solid ' + borderColor + ';border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;opacity:' + opacity + ';margin-bottom:6px">' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;flex:1">' +
+        '<div><div style="font-size:10px;color:var(--texte-faible);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Référence</div>' +
+          '<div style="font-size:12px;color:var(--or,#c49a00);font-weight:600">' + acE(c.reference || '—') +
+          (isCurrent ? '' : ' <span style="font-size:9px;color:var(--texte-faible);font-weight:400">(archivé)</span>') + '</div></div>' +
+        '<div><div style="font-size:10px;color:var(--texte-faible);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Délivré le</div>' +
+          '<div style="font-size:12px;color:var(--texte)">' + fmtD(c.issued_at) + '</div></div>' +
+        '<div><div style="font-size:10px;color:var(--texte-faible);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">Score</div>' +
+          '<div style="font-size:12px;color:var(--texte)">' + acE(scoreTxt) + ' (' + acE(repTxt) + ')</div></div>' +
+      '</div>' +
+      (c.reference
+        ? '<a class="btn btn-sec btn-sm" href="certificat.html?ref=' + encodeURIComponent(c.reference) + '" target="_blank" style="white-space:nowrap;flex-shrink:0;font-size:10px">Voir ↗</a>'
+        : '') +
+      '</div>';
+  }
+
+  html += certCard(currentCert, true);
+  if (historyCerts.length) {
+    html += '<div style="margin-top:8px">' +
+      '<div style="font-size:10px;color:var(--texte-faible);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Versions archivées</div>';
+    historyCerts.forEach(function(c){ html += certCard(c, false); });
+    html += '</div>';
+  }
+  return html + '</div>';
+}
+
+function acFicheRenderAdminActions(enrollmentId, userId, courseId) {
+  return '<div style="margin-bottom:16px;font-family:Montserrat,sans-serif;background:var(--fond-card);border:1px solid var(--bordure);border-radius:10px;padding:14px 16px">' +
+    '<h3 style="font-size:12px;font-weight:600;color:var(--texte-faible);margin:0 0 10px;text-transform:uppercase;letter-spacing:.06em">Actions administratives</h3>' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+      '<button class="btn btn-danger btn-sm" onclick="acFicheResetProg()" style="font-size:11px">Réinitialiser progression</button>' +
     '</div>' +
-    (cert.reference
-      ? '<a class="btn btn-sec btn-sm" href="certificat.html?ref=' + encodeURIComponent(cert.reference) + '" target="_blank" style="white-space:nowrap;flex-shrink:0">Voir ↗</a>'
-      : '') +
-    '</div></div>';
-  return html;
+    '<p style="font-size:10px;color:var(--texte-faible);margin:8px 0 0">Invalider une tentative : bouton Invalider dans la section Quiz. Régénérer le certificat : bouton Régénérer dans la section Certificat.</p>' +
+    '</div>';
+}
+
+function acFicheRenderAdminHistory(logs, adminNames) {
+  var html = '<div style="margin-bottom:16px;font-family:Montserrat,sans-serif">' +
+    '<h3 style="font-size:13px;font-weight:600;color:var(--texte);margin:0 0 10px;text-transform:uppercase;letter-spacing:.06em">Historique administratif</h3>';
+  if (!logs.length) {
+    return html + '<p style="font-size:12px;color:var(--texte-faible);padding:12px;background:var(--fond-card);border:1px solid var(--bordure);border-radius:10px">Aucune action admin enregistrée.</p></div>';
+  }
+  var actionLabels = {
+    enroll:'Inscription', unenroll:'Retrait accès', reset_progress:'Réinit. progression',
+    invalidate_quiz:'Invalidation quiz', regen_certificate:'Régén. certificat'
+  };
+  html += '<div style="border:1px solid var(--bordure);border-radius:10px;overflow:hidden">';
+  logs.forEach(function(l, i) {
+    var label = actionLabels[l.action] || l.action;
+    var adminNom = l.admin_id ? (adminNames[l.admin_id] || l.admin_id.slice(0,8) + '…') : '—';
+    var bg = i % 2 === 0 ? '' : 'background:rgba(240,111,167,.02);';
+    html += '<div style="display:flex;align-items:center;gap:10px;padding:8px 14px;border-bottom:1px solid rgba(240,111,167,.04);font-size:11px;' + bg + '">' +
+      '<span style="flex-shrink:0;font-size:10px;color:var(--texte-faible);white-space:nowrap">' + fmtD(l.created_at) + '</span>' +
+      '<span style="font-size:11px;color:var(--texte);font-weight:500;flex:1">' + acE(label) + '</span>' +
+      '<span style="font-size:10px;color:var(--texte-faible);white-space:nowrap">' + acE(adminNom) + '</span>' +
+      '</div>';
+  });
+  return html + '</div></div>';
+}
+
+async function acFicheCallAction(body) {
+  var sessRes = await NAHIRA.sb.auth.getSession();
+  var sess = sessRes.data && sessRes.data.session;
+  if (!sess || !sess.access_token) { toast('Session expirée — reconnectez-vous.', 'err'); return null; }
+  try {
+    var r = await fetch(NAHIRA.sb.supabaseUrl + '/functions/v1/admin-student-action', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + sess.access_token,
+        'apikey': NAHIRA.sb.supabaseKey
+      },
+      body: JSON.stringify(body)
+    });
+    var data = await r.json();
+    if (!r.ok) { toast(data.error || 'Erreur.', 'err'); return null; }
+    return data;
+  } catch(e) { toast('Erreur réseau : ' + e.message, 'err'); return null; }
+}
+
+async function acFicheResetProg() {
+  var s = acFicheState;
+  if (!confirm('Réinitialiser toute la progression de « ' + s.nom + ' » sur « ' + s.coursTitle + ' » ?\n\nCette action remettra les leçons à zéro mais ne supprimera ni son compte, ni ses quiz, ni ses certificats.\nCette action est journalisée.')) return;
+  var reason = prompt('Raison (facultatif — laisser vide pour aucune) :') || null;
+  if (reason === null) return; // cancelled prompt
+  toast('Réinitialisation en cours…');
+  var res = await acFicheCallAction({
+    action: 'reset_progress',
+    enrollment_id: s.enrollmentId,
+    user_id:       s.userId,
+    course_id:     s.courseId,
+    reason:        reason
+  });
+  if (!res) return;
+  toast('Progression réinitialisée (' + (res.deleted_rows || 0) + ' leçon(s) remise(s) à zéro).');
+  await acFicheCharger(s.enrollmentId, s.userId, s.courseId);
+}
+
+async function acFicheInvalidateQuiz(attemptId, dateStr) {
+  if (!confirm('Invalider la tentative du ' + dateStr + ' ?\n\nElle sera conservée dans l\'historique et clairement marquée comme invalidée. Elle ne comptera plus dans le meilleur score ni dans la logique de certification.\nCette action est journalisée.')) return;
+  var reason = prompt('Raison de l\'invalidation (facultatif) :') || null;
+  if (reason === null) return;
+  toast('Invalidation en cours…');
+  var res = await acFicheCallAction({ action: 'invalidate_quiz', attempt_id: attemptId, reason: reason });
+  if (!res) return;
+  toast('Tentative invalidée — historique conservé.');
+  var s = acFicheState;
+  await acFicheCharger(s.enrollmentId, s.userId, s.courseId);
+}
+
+async function acFicheRegenCert() {
+  var s = acFicheState;
+  if (!confirm('Régénérer le certificat de « ' + s.nom + ' » pour « ' + s.coursTitle + ' » ?\n\nL\'ancien certificat sera conservé dans l\'historique. Un nouveau certificat avec une nouvelle référence sera créé.\nCette action est journalisée.')) return;
+  toast('Régénération en cours…');
+  var res = await acFicheCallAction({
+    action:          'regen_certificate',
+    user_id:         s.userId,
+    course_id:       s.courseId,
+    recipient_name:  s.nom
+  });
+  if (!res) return;
+  toast('Certificat régénéré — référence ' + (res.new_reference || '') + '.');
+  await acFicheCharger(s.enrollmentId, s.userId, s.courseId);
 }
 
 /* ════════════════════════════════════════════════════════════════════════
