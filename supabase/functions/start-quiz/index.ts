@@ -18,8 +18,6 @@ function json(body: unknown, status = 200) {
   });
 }
 
-const QUESTIONS_PER_QUIZ = 20;
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
   if (req.method !== "POST")    return json({ error: "Method not allowed" }, 405);
@@ -56,7 +54,14 @@ serve(async (req) => {
     .eq("course_id", course_id)
     .eq("status", "in_progress");
 
-  // Draw 20 random questions (no correct_index exposed — admin fetches by sort only)
+  // Read per-formation questions_per_quiz; fallback = 20 for legacy NULL rows
+  const { data: courseConfig } = await admin.from("academy_courses")
+    .select("questions_per_quiz")
+    .eq("id", course_id)
+    .single();
+  const questionsPerQuiz: number = courseConfig?.questions_per_quiz ?? 20;
+
+  // Draw random questions (no correct_index exposed)
   const { data: questions, error: qErr } = await admin.from("academy_quiz_questions")
     .select("id, question, options")
     .eq("course_id", course_id)
@@ -65,13 +70,13 @@ serve(async (req) => {
   if (qErr || !questions || questions.length === 0)
     return json({ error: "No questions available" }, 500);
 
-  // Fisher-Yates shuffle then take first QUESTIONS_PER_QUIZ
+  // Fisher-Yates shuffle then take min(questionsPerQuiz, available)
   const pool = [...questions];
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
-  const selected = pool.slice(0, Math.min(QUESTIONS_PER_QUIZ, pool.length));
+  const selected = pool.slice(0, Math.min(questionsPerQuiz, pool.length));
 
   // Create attempt (score=0 placeholder, updated on submit)
   const { data: attempt, error: aErr } = await admin.from("academy_quiz_attempts")
