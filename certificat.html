@@ -295,31 +295,91 @@ img{max-width:100%;display:block}
   if (!ref) return fin(false);
 
   const { data: cert, error } = await sb.from('academy_certificates')
-    .select('reference, issued_at, user_id, course_id, recipient_name, score, correct_count, total_questions')
+    .select('reference,issued_at,user_id,course_id,recipient_name,score,correct_count,total_questions,template_snapshot')
     .eq('reference', ref)
     .maybeSingle();
 
   if (error || !cert) return fin(false);
 
-  // Fetch course title
-  const { data: course } = await sb.from('academy_courses')
-    .select('title')
-    .eq('id', cert.course_id)
-    .maybeSingle();
+  // Fetch course title; load current template only if cert has no snapshot
+  const [courseRes, tplRes] = await Promise.all([
+    sb.from('academy_courses').select('title').eq('id', cert.course_id).maybeSingle(),
+    cert.template_snapshot
+      ? Promise.resolve({ data: null })
+      : sb.from('academy_certificate_templates').select('*').eq('course_id', cert.course_id).maybeSingle()
+  ]);
 
-  const nom = cert.recipient_name || 'Participante';
+  // Resolved template: snapshot (issued at cert creation) > current template > empty {}
+  const tpl = cert.template_snapshot || tplRes.data || {};
+
+  // Apply template colors as CSS custom properties
+  const root = document.documentElement;
+  if (tpl.primary_color) {
+    root.style.setProperty('--or',     tpl.primary_color);
+    root.style.setProperty('--or-vif', tpl.primary_color);
+  }
+  if (tpl.secondary_color) root.style.setProperty('--rose', tpl.secondary_color);
+  if (tpl.text_color) {
+    root.style.setProperty('--texte',      tpl.text_color);
+    root.style.setProperty('--texte-doux', tpl.text_color);
+  }
+
+  // Apply template texts
+  const qs = (sel) => document.querySelector(sel);
+  if (tpl.title)          { const el = qs('.cert-band-text');  if (el) el.textContent = tpl.title; }
+  if (tpl.atteste_text)   { const el = qs('.cert-atteste');    if (el) el.textContent = tpl.atteste_text; }
+  if (tpl.completed_text) { const el = qs('.cert-a-complete'); if (el) el.textContent = tpl.completed_text; }
+  if (tpl.signature_name)  { const el = qs('.cert-sig-script'); if (el) el.textContent = tpl.signature_name; }
+  if (tpl.signature_title) { const el = qs('.cert-sig-label');  if (el) el.textContent = tpl.signature_title; }
+
+  // Logo: image if provided, else keep text + update subtitle
+  const logoDiv = qs('.cert-logo');
+  if (tpl.logo_url && logoDiv) {
+    logoDiv.innerHTML = '<img src="' + tpl.logo_url + '" alt="" style="max-height:70px;max-width:260px;object-fit:contain;display:block;margin:0 auto">';
+  } else if (tpl.subtitle) {
+    const sub = qs('.cert-logo-sub');
+    if (sub) sub.textContent = tpl.subtitle;
+  }
+
+  // Background image on the cert card
+  if (tpl.background_url) {
+    const certEl = qs('.cert');
+    if (certEl) {
+      certEl.style.backgroundImage  = 'url("' + tpl.background_url + '")';
+      certEl.style.backgroundSize   = 'cover';
+      certEl.style.backgroundPosition = 'center';
+    }
+  }
+
+  // Legal notice
+  if (tpl.legal_notice !== undefined && tpl.legal_notice !== null) {
+    const legal = qs('.cert-legal');
+    if (legal) legal.innerHTML = tpl.legal_notice +
+      ' <span id="c-ref-inline" style="color:var(--or-vif);font-weight:500"></span>';
+  }
+
+  // Show / hide meta items (date=0, score=1, organisme=2 always visible)
+  const metaItems = document.querySelectorAll('.cert-meta-item');
+  if (metaItems[0] && tpl.show_date      === false) metaItems[0].style.display = 'none';
+  if (metaItems[1] && tpl.show_score     === false) metaItems[1].style.display = 'none';
+  const refZone = qs('.cert-ref');
+  if (refZone && tpl.show_reference === false) refZone.style.display = 'none';
+
+  // Dynamic data
+  const nom     = cert.recipient_name || 'Participante';
   const dateStr = new Date(cert.issued_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
-  const score = (cert.correct_count != null && cert.total_questions)
+  const scoreStr = (cert.correct_count != null && cert.total_questions)
     ? cert.correct_count + ' / ' + cert.total_questions
     : '—';
 
-  document.title = 'Certificat ' + (course?.title || '') + ' — ' + nom + ' — Nahira Academy';
-  document.getElementById('c-nom').textContent        = nom;
-  document.getElementById('c-formation').textContent  = course?.title || '—';
-  document.getElementById('c-date').textContent       = dateStr;
-  document.getElementById('c-score').textContent      = score;
-  document.getElementById('c-ref').textContent        = cert.reference;
-  document.getElementById('c-ref-inline').textContent = cert.reference;
+  document.title = 'Certificat ' + (courseRes.data?.title || '') + ' — ' + nom + ' — Nahira Academy';
+  document.getElementById('c-nom').textContent       = nom;
+  document.getElementById('c-formation').textContent = courseRes.data?.title || '—';
+  document.getElementById('c-date').textContent      = dateStr;
+  document.getElementById('c-score').textContent     = scoreStr;
+  document.getElementById('c-ref').textContent       = cert.reference;
+  const ri = document.getElementById('c-ref-inline');
+  if (ri) ri.textContent = cert.reference;
 
   fin(true);
 })();

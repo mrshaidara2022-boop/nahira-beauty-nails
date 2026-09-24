@@ -387,6 +387,7 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
       <button class="nav-item" data-nav="ac-eleves" onclick="goTo('ac-eleves')"><span class="nav-ico">👥</span>Élèves</button>
       <button class="nav-item" data-nav="ac-progression" onclick="goTo('ac-progression')"><span class="nav-ico">📊</span>Progression</button>
       <button class="nav-item" data-nav="ac-attestations" onclick="goTo('ac-attestations')"><span class="nav-ico">✦</span>Attestations</button>
+      <button class="nav-item" data-nav="ac-certtemplate" onclick="goTo('ac-certtemplate')"><span class="nav-ico">🎨</span>Modèle certificat</button>
       <button class="nav-item" data-nav="ac-reglages" onclick="goTo('ac-reglages')"><span class="nav-ico">⚙</span>Réglages Academy</button>
       <button class="nav-item" data-nav="ac-medias" onclick="goTo('ac-medias')"><span class="nav-ico">🎞</span>Médias</button>
       <button class="nav-item" data-nav="ac-fiches" onclick="goTo('ac-fiches')"><span class="nav-ico">📄</span>Fiches</button>
@@ -932,6 +933,85 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
         <div id="ac-cert-liste" class="chargement">Chargement…</div>
       </section>
 
+      <!-- ═══ ACADEMY : MODÈLE CERTIFICAT ════════════════════════════════ -->
+      <section class="section" id="s-ac-certtemplate" style="display:none">
+        <div class="eyebrow">Academy</div>
+        <h2 class="section-titre">Modèle de <em>certificat</em></h2>
+
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+          <select class="filtre-select" id="ct-cours" onchange="acCertTemplSelectCours(this.value)" style="flex:1;max-width:320px">
+            <option value="">— Choisir une formation —</option>
+          </select>
+          <span style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible)">Chaque formation possède son propre modèle.</span>
+        </div>
+
+        <div id="ct-editor" style="display:none">
+          <div style="display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start">
+
+            <!-- Formulaire -->
+            <div class="carte" style="display:flex;flex-direction:column;gap:14px">
+              <div><label class="param-lbl">Titre (bande supérieure)</label><input class="param-input" id="ct-f-title" style="width:100%" oninput="acCertTemplApercu()"></div>
+              <div><label class="param-lbl">Sous-titre (sous le logo)</label><input class="param-input" id="ct-f-subtitle" style="width:100%" oninput="acCertTemplApercu()"></div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div><label class="param-lbl">Texte "Certifie que"</label><input class="param-input" id="ct-f-atteste" style="width:100%" oninput="acCertTemplApercu()"></div>
+                <div><label class="param-lbl">Texte "a complété…"</label><input class="param-input" id="ct-f-completed" style="width:100%" oninput="acCertTemplApercu()"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div><label class="param-lbl">Nom / signature</label><input class="param-input" id="ct-f-signame" style="width:100%" oninput="acCertTemplApercu()"></div>
+                <div><label class="param-lbl">Titre / fonction</label><input class="param-input" id="ct-f-sigtitle" style="width:100%" oninput="acCertTemplApercu()"></div>
+              </div>
+
+              <div>
+                <label class="param-lbl">Logo (URL)</label>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <input class="param-input" id="ct-f-logo" style="flex:1;font-size:11px;font-family:monospace" readonly placeholder="(aucun — cliquer Importer)" oninput="acCertTemplApercu()">
+                  <button class="btn btn-sec btn-sm" id="ct-btn-logo" type="button" onclick="document.getElementById('ct-file-logo').click()" style="white-space:nowrap">📂 Importer</button>
+                  <button class="btn btn-sec btn-sm" type="button" onclick="acCertTemplRetirer('logo')" title="Retirer le logo">✕</button>
+                </div>
+                <input type="file" id="ct-file-logo" accept="image/*" hidden onchange="acCertTemplUpload('logo')">
+              </div>
+
+              <div>
+                <label class="param-lbl">Image de fond (URL)</label>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <input class="param-input" id="ct-f-bg" style="flex:1;font-size:11px;font-family:monospace" readonly placeholder="(aucune — cliquer Importer)" oninput="acCertTemplApercu()">
+                  <button class="btn btn-sec btn-sm" id="ct-btn-bg" type="button" onclick="document.getElementById('ct-file-bg').click()" style="white-space:nowrap">📂 Importer</button>
+                  <button class="btn btn-sec btn-sm" type="button" onclick="acCertTemplRetirer('bg')" title="Retirer le fond">✕</button>
+                </div>
+                <input type="file" id="ct-file-bg" accept="image/*" hidden onchange="acCertTemplUpload('bg')">
+              </div>
+
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+                <div><label class="param-lbl">Couleur principale</label><input type="color" class="param-input" id="ct-f-primary" style="width:100%;height:38px;padding:2px 4px;cursor:pointer" onchange="acCertTemplApercu()"></div>
+                <div><label class="param-lbl">Couleur secondaire</label><input type="color" class="param-input" id="ct-f-secondary" style="width:100%;height:38px;padding:2px 4px;cursor:pointer" onchange="acCertTemplApercu()"></div>
+                <div><label class="param-lbl">Couleur du texte</label><input type="color" class="param-input" id="ct-f-textcol" style="width:100%;height:38px;padding:2px 4px;cursor:pointer" onchange="acCertTemplApercu()"></div>
+              </div>
+
+              <div style="display:flex;gap:24px;flex-wrap:wrap">
+                <div style="display:flex;align-items:center;gap:8px"><label class="param-lbl" style="margin:0">Afficher score</label><button class="param-toggle" id="ct-f-score" onclick="this.classList.toggle('on');acCertTemplApercu()"></button></div>
+                <div style="display:flex;align-items:center;gap:8px"><label class="param-lbl" style="margin:0">Afficher date</label><button class="param-toggle" id="ct-f-date" onclick="this.classList.toggle('on');acCertTemplApercu()"></button></div>
+                <div style="display:flex;align-items:center;gap:8px"><label class="param-lbl" style="margin:0">Afficher référence</label><button class="param-toggle" id="ct-f-ref" onclick="this.classList.toggle('on');acCertTemplApercu()"></button></div>
+              </div>
+
+              <div><label class="param-lbl">Mention légale</label><textarea class="param-input" id="ct-f-legal" rows="3" style="width:100%;font-size:11px" oninput="acCertTemplApercu()"></textarea></div>
+
+              <div style="display:flex;gap:10px;align-items:center;padding-top:4px">
+                <button class="btn btn-primaire" onclick="acCertTemplSauvegarder()">Enregistrer le modèle</button>
+                <span id="ct-msg" style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--or)"></span>
+              </div>
+            </div>
+
+            <!-- Aperçu -->
+            <div style="position:sticky;top:16px">
+              <div style="font-family:Montserrat,sans-serif;font-size:10px;letter-spacing:.25em;text-transform:uppercase;color:var(--texte-faible);margin-bottom:10px">Aperçu — Aminata Ndiaye</div>
+              <div id="ct-apercu" style="border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.12)"></div>
+              <div style="font-family:Montserrat,sans-serif;font-size:9px;color:var(--texte-faible);margin-top:8px;text-align:center">Données fictives · enregistrez pour voir les vrais certificats</div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
       <section class="section" id="s-ac-reglages" style="display:none">
         <div class="eyebrow">Academy</div>
         <h2 class="section-titre"><em>Réglages</em> Academy</h2>
@@ -1122,7 +1202,9 @@ var sectionLabels = {
   avis:'Avis', import:'Import CSV', parametres:'Paramètres',
   'ac-formations':'Academy — Formations', 'ac-contenu':'Academy — Contenu',
   'ac-quiz':'Academy — Quiz', 'ac-eleves':'Academy — Élèves',
-  'ac-fiche':'Academy — Fiche élève', 'ac-progression':'Academy — Progression', 'ac-attestations':'Academy — Attestations', 'ac-reglages':'Academy — Réglages',
+  'ac-fiche':'Academy — Fiche élève', 'ac-progression':'Academy — Progression', 'ac-attestations':'Academy — Attestations',
+  'ac-certtemplate':'Academy — Modèle certificat',
+  'ac-reglages':'Academy — Réglages',
   'ac-medias':'Academy — Médias', 'ac-fiches':'Academy — Fiches', 'ac-tableau':'Academy — Tableau de bord',
 };
 
@@ -1162,6 +1244,7 @@ function goTo(id) {
   else if (id === 'ac-fiche') acFicheInit();
   else if (id === 'ac-progression') acProgInit();
   else if (id === 'ac-attestations') acAttestationsCharger();
+  else if (id === 'ac-certtemplate') acCertTemplInit();
   else if (id === 'ac-reglages') acReglagesInit();
   else if (id === 'ac-medias') acMediasCharger();
   else if (id === 'ac-fiches') acFichesCharger();
@@ -4129,6 +4212,187 @@ async function acAttestationsCharger() {
 /* ════════════════════════════════════════════════════════════════════════
    RÉGLAGES ACADEMY
    ══════════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════
+   ACADEMY — MODÈLE DE CERTIFICAT
+══════════════════════════════════════════════════════════════════ */
+var CT = { coursId: null };
+
+async function acCertTemplInit() {
+  var cours = await acChargerCours();
+  var sel = document.getElementById('ct-cours');
+  if (sel) {
+    sel.innerHTML = '<option value="">— Choisir une formation —</option>' +
+      cours.map(function(c){ return '<option value="' + c.id + '">' + acE(c.title) + '</option>'; }).join('');
+  }
+  if (CT.coursId) {
+    sel.value = CT.coursId;
+    document.getElementById('ct-editor').style.display = '';
+    acCertTemplApercu();
+  } else {
+    document.getElementById('ct-editor').style.display = 'none';
+    if (cours.length === 1) { sel.value = cours[0].id; acCertTemplSelectCours(cours[0].id); }
+  }
+}
+
+async function acCertTemplSelectCours(coursId) {
+  CT.coursId = coursId || null;
+  document.getElementById('ct-editor').style.display = coursId ? '' : 'none';
+  if (!coursId) return;
+  await acCertTemplCharger(coursId);
+}
+
+async function acCertTemplCharger(coursId) {
+  var { data: t } = await NAHIRA.sb.from('academy_certificate_templates')
+    .select('*').eq('course_id', coursId).maybeSingle();
+  t = t || {};
+  document.getElementById('ct-f-title').value     = t.title          || 'Attestation de Formation Professionnelle';
+  document.getElementById('ct-f-subtitle').value  = t.subtitle       || 'École de beauté · France';
+  document.getElementById('ct-f-atteste').value   = t.atteste_text   || 'Certifie que';
+  document.getElementById('ct-f-completed').value = t.completed_text || 'a complété avec succès la formation';
+  document.getElementById('ct-f-signame').value   = t.signature_name  || 'Nahira ✦';
+  document.getElementById('ct-f-sigtitle').value  = t.signature_title || 'Fondatrice · Nahira Academy';
+  document.getElementById('ct-f-logo').value      = t.logo_url       || '';
+  document.getElementById('ct-f-bg').value        = t.background_url || '';
+  document.getElementById('ct-f-primary').value   = t.primary_color   || '#9A7A40';
+  document.getElementById('ct-f-secondary').value = t.secondary_color || '#C0456A';
+  document.getElementById('ct-f-textcol').value   = t.text_color      || '#1C120A';
+  document.getElementById('ct-f-legal').value     = t.legal_notice    || '';
+  function tog(id, on) { var e = document.getElementById(id); if (e) { if (on) e.classList.add('on'); else e.classList.remove('on'); } }
+  tog('ct-f-score', t.show_score   !== false);
+  tog('ct-f-date',  t.show_date    !== false);
+  tog('ct-f-ref',   t.show_reference !== false);
+  acCertTemplApercu();
+}
+
+async function acCertTemplSauvegarder() {
+  var coursId = CT.coursId;
+  if (!coursId) { toast('Sélectionnez une formation.', 'err'); return; }
+  var data = {
+    course_id:       coursId,
+    title:           document.getElementById('ct-f-title').value.trim()     || 'Attestation de Formation Professionnelle',
+    subtitle:        document.getElementById('ct-f-subtitle').value.trim()  || null,
+    atteste_text:    document.getElementById('ct-f-atteste').value.trim()   || 'Certifie que',
+    completed_text:  document.getElementById('ct-f-completed').value.trim() || 'a complété avec succès la formation',
+    signature_name:  document.getElementById('ct-f-signame').value.trim()   || 'Nahira',
+    signature_title: document.getElementById('ct-f-sigtitle').value.trim()  || null,
+    logo_url:        document.getElementById('ct-f-logo').value.trim()      || null,
+    background_url:  document.getElementById('ct-f-bg').value.trim()        || null,
+    primary_color:   document.getElementById('ct-f-primary').value         || '#9A7A40',
+    secondary_color: document.getElementById('ct-f-secondary').value       || '#C0456A',
+    text_color:      document.getElementById('ct-f-textcol').value          || '#1C120A',
+    show_score:      document.getElementById('ct-f-score').classList.contains('on'),
+    show_date:       document.getElementById('ct-f-date').classList.contains('on'),
+    show_reference:  document.getElementById('ct-f-ref').classList.contains('on'),
+    legal_notice:    document.getElementById('ct-f-legal').value.trim()     || null,
+    updated_at:      new Date().toISOString(),
+  };
+  var r = await NAHIRA.sb.from('academy_certificate_templates')
+    .upsert(data, { onConflict: 'course_id' });
+  if (r.error) { toast('Erreur : ' + r.error.message, 'err'); return; }
+  toast('Modèle enregistré ✦');
+  acCertTemplApercu();
+}
+
+function acCertTemplApercu() {
+  var zone = document.getElementById('ct-apercu');
+  if (!zone) return;
+  var cours = (AC.cours || []).find(function(c){ return c.id === CT.coursId; });
+  var formTitre = cours ? cours.title : 'Formation';
+  var primary   = document.getElementById('ct-f-primary')?.value   || '#9A7A40';
+  var secondary = document.getElementById('ct-f-secondary')?.value || '#C0456A';
+  var textCol   = document.getElementById('ct-f-textcol')?.value   || '#1C120A';
+  var title     = document.getElementById('ct-f-title')?.value     || 'Attestation';
+  var subtitle  = document.getElementById('ct-f-subtitle')?.value  || '';
+  var atteste   = document.getElementById('ct-f-atteste')?.value   || 'Certifie que';
+  var completed = document.getElementById('ct-f-completed')?.value || 'a complété avec succès la formation';
+  var sigName   = document.getElementById('ct-f-signame')?.value   || 'Nahira';
+  var sigTitle  = document.getElementById('ct-f-sigtitle')?.value  || '';
+  var logoUrl   = document.getElementById('ct-f-logo')?.value      || '';
+  var bgUrl     = document.getElementById('ct-f-bg')?.value        || '';
+  var legal     = document.getElementById('ct-f-legal')?.value     || '';
+  var showScore = (document.getElementById('ct-f-score') || {classList:{contains:function(){return true;}}}).classList.contains('on');
+  var showDate  = (document.getElementById('ct-f-date')  || {classList:{contains:function(){return true;}}}).classList.contains('on');
+  var showRef   = (document.getElementById('ct-f-ref')   || {classList:{contains:function(){return true;}}}).classList.contains('on');
+  var bgStyle   = bgUrl ? 'background-image:url("' + bgUrl + '");background-size:cover;background-position:center;' : 'background:#FDFBF8;';
+  var hexAlpha  = function(h,a){ var r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16); return 'rgba('+r+','+g+','+b+','+a+')'; };
+  var logoHtml  = logoUrl
+    ? '<img src="' + acE(logoUrl) + '" alt="" style="max-height:52px;max-width:160px;object-fit:contain;display:block;margin:0 auto 4px" onerror="this.style.display=\'none\'">'
+    : '<div style="font-family:Georgia,serif;font-style:italic;color:' + secondary + ';font-size:22px;line-height:1;margin-bottom:3px">Nahira Academy</div>';
+  var metaHtml = '';
+  if (showDate)  metaHtml += '<div style="flex:1;text-align:center;padding:6px 10px;border-right:1px solid '+hexAlpha(textCol,.12)+'"><div style="font-size:6px;letter-spacing:.2em;text-transform:uppercase;color:'+textCol+';opacity:.55;margin-bottom:3px">Date</div><div style="font-size:10px;color:'+textCol+'">24 jan. 2026</div></div>';
+  if (showScore) metaHtml += '<div style="flex:1;text-align:center;padding:6px 10px;border-right:1px solid '+hexAlpha(textCol,.12)+'"><div style="font-size:6px;letter-spacing:.2em;text-transform:uppercase;color:'+textCol+';opacity:.55;margin-bottom:3px">Score</div><div style="font-size:10px;color:'+textCol+'">18 / 20</div></div>';
+  metaHtml += '<div style="flex:1;text-align:center;padding:6px 10px"><div style="font-size:6px;letter-spacing:.2em;text-transform:uppercase;color:'+textCol+';opacity:.55;margin-bottom:3px">Organisme</div><div style="font-size:9px;color:'+textCol+'">Nahira Beauty</div></div>';
+  zone.innerHTML =
+    '<div style="' + bgStyle + 'border:1px solid '+hexAlpha(primary,.22)+';border-radius:12px;padding:22px 20px;position:relative;overflow:hidden;font-family:Georgia,serif">' +
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:16px"><div style="flex:1;height:1px;background:linear-gradient(90deg,transparent,'+primary+',transparent)"></div>' +
+    '<span style="font-size:6px;letter-spacing:.3em;text-transform:uppercase;font-family:Montserrat,sans-serif;color:'+primary+';white-space:nowrap">'+acE(title)+'</span>' +
+    '<div style="flex:1;height:1px;background:linear-gradient(90deg,transparent,'+primary+',transparent)"></div></div>' +
+    '<div style="text-align:center;margin-bottom:14px">' + logoHtml +
+    (subtitle ? '<div style="font-size:6px;letter-spacing:.4em;text-transform:uppercase;font-family:Montserrat,sans-serif;color:'+textCol+';opacity:.45">'+acE(subtitle)+'</div>' : '') + '</div>' +
+    '<div style="text-align:center">' +
+    '<p style="font-size:6px;letter-spacing:.25em;text-transform:uppercase;font-family:Montserrat,sans-serif;color:'+textCol+';opacity:.5;margin-bottom:6px">'+acE(atteste)+'</p>' +
+    '<p style="font-size:18px;font-style:italic;font-weight:500;color:'+textCol+';line-height:1;margin-bottom:8px">Aminata Ndiaye</p>' +
+    '<p style="font-size:6px;letter-spacing:.15em;text-transform:uppercase;font-family:Montserrat,sans-serif;color:'+textCol+';opacity:.5;margin-bottom:5px">'+acE(completed)+'</p>' +
+    '<p style="font-size:12px;font-weight:500;color:'+primary+';line-height:1.2;margin-bottom:10px">'+acE(formTitre)+'</p></div>' +
+    '<div style="display:flex;border:1px solid '+hexAlpha(textCol,.12)+';border-radius:6px;overflow:hidden;margin:0 auto 10px;max-width:280px">'+metaHtml+'</div>' +
+    (legal ? '<p style="font-size:5.5px;color:'+textCol+';opacity:.38;line-height:1.6;text-align:center;border-top:1px solid '+hexAlpha(textCol,.1)+';padding-top:8px;margin-top:8px;font-family:Montserrat,sans-serif">' + acE(legal.substring(0,180)) + '…</p>' : '') +
+    '<div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:12px;gap:8px">' +
+    '<div style="text-align:center"><div style="font-family:Georgia,serif;font-style:italic;font-size:16px;color:'+secondary+';line-height:1;margin-bottom:2px">'+acE(sigName)+'</div>' +
+    '<div style="font-size:5.5px;letter-spacing:.15em;text-transform:uppercase;font-family:Montserrat,sans-serif;color:'+textCol+';opacity:.45">'+acE(sigTitle)+'</div></div>' +
+    '<div style="width:40px;height:40px;border-radius:50%;border:2px solid '+primary+';display:flex;align-items:center;justify-content:center;background:'+hexAlpha(primary,.1)+';font-size:14px;color:'+primary+'">✦</div>' +
+    (showRef ? '<div style="text-align:right"><div style="font-size:8px;letter-spacing:.1em;font-family:Montserrat,sans-serif;color:'+primary+';font-weight:600">NAH-2026-0001</div><div style="font-size:5.5px;letter-spacing:.15em;text-transform:uppercase;font-family:Montserrat,sans-serif;color:'+textCol+';opacity:.45;margin-top:2px">Référence</div></div>' : '<div></div>') +
+    '</div></div>';
+}
+
+async function acCertTemplUpload(type) {
+  var coursId = CT.coursId;
+  var cours   = (AC.cours || []).find(function(c){ return c.id === coursId; });
+  if (!coursId) { toast('Sélectionnez une formation.', 'err'); return; }
+  var fileInput = document.getElementById('ct-file-' + type);
+  var file = fileInput ? fileInput.files[0] : null;
+  if (!file) return;
+  var btnEl = document.getElementById('ct-btn-' + type);
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = '…'; }
+  var ext  = file.name.split('.').pop().toLowerCase();
+  var path = 'cert-templates/' + coursId + '/' + type + '.' + ext;
+  var { data: signedUp, error: signErr } = await NAHIRA.sb.storage
+    .from('academy-marketing').createSignedUploadUrl(path);
+  if (signErr || !signedUp) {
+    if (btnEl) { btnEl.disabled = false; btnEl.textContent = '📂 Importer'; }
+    toast('Erreur : ' + (signErr?.message || 'URL nulle'), 'err'); return;
+  }
+  var uploadOk = false;
+  try {
+    await new Promise(function(resolve, reject) {
+      var xhr = new XMLHttpRequest();
+      xhr.upload.addEventListener('progress', function(e) {
+        if (e.lengthComputable && btnEl) btnEl.textContent = Math.round(e.loaded / e.total * 100) + ' %';
+      });
+      xhr.addEventListener('load', function() { if (xhr.status >= 200 && xhr.status < 300) { uploadOk = true; resolve(); } else reject(new Error('HTTP ' + xhr.status)); });
+      xhr.addEventListener('error', function() { reject(new Error('Erreur réseau')); });
+      xhr.open('PUT', signedUp.signedUrl);
+      xhr.setRequestHeader('x-upsert', 'true');
+      if (file.type) xhr.setRequestHeader('Content-Type', file.type);
+      xhr.send(file);
+    });
+  } catch(err) {
+    if (btnEl) { btnEl.disabled = false; btnEl.textContent = '📂 Importer'; }
+    toast('Erreur upload : ' + err.message, 'err'); return;
+  }
+  if (!uploadOk) { if (btnEl) { btnEl.disabled = false; btnEl.textContent = '📂 Importer'; } return; }
+  var publicUrl = NAHIRA.sb.storage.from('academy-marketing').getPublicUrl(path).data.publicUrl;
+  document.getElementById(type === 'logo' ? 'ct-f-logo' : 'ct-f-bg').value = publicUrl;
+  if (btnEl) { btnEl.disabled = false; btnEl.textContent = '📂 Importer'; }
+  toast('Fichier importé. Enregistrez pour appliquer.');
+  acCertTemplApercu();
+}
+
+function acCertTemplRetirer(type) {
+  document.getElementById(type === 'logo' ? 'ct-f-logo' : 'ct-f-bg').value = '';
+  acCertTemplApercu();
+  toast('Retiré. Enregistrez pour appliquer.');
+}
+
 var AC_REGLAGES_KEY = 'nahira_academy_reglages';
 
 async function acReglagesInit() {
