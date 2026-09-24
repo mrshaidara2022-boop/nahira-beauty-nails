@@ -4664,12 +4664,67 @@ async function acMediaLierSubmit(mediaId, courseId) {
 }
 
 async function acMediaDelierLecon(mediaId) {
-  if (!confirm('Retirer le lien entre ce média et sa leçon ?\n\nL\'entrée dans academy_media est conservée, seule l\'association est supprimée.')) return;
+  var row = (AC._mediaRows||[]).find(function(m){ return m.id === mediaId; });
+
+  /* Pas de leçon liée → simple confirmation */
+  if (!row || !row.lesson_id) {
+    if (!confirm('Retirer le lien ?\n\nL\'entrée est conservée.')) return;
+    await _acMediaDelierExecute(mediaId, false);
+    return;
+  }
+
+  /* Cherche les blocs qui utilisent ce média dans la leçon */
+  var { data: ld } = await NAHIRA.sb.from('academy_lessons')
+    .select('content_blocks').eq('id', row.lesson_id).maybeSingle();
+  var blocks = (ld && Array.isArray(ld.content_blocks)) ? ld.content_blocks : [];
+  var blocsUtilises = blocks.filter(function(b){ return b.type === 'placeholder' && b.id === mediaId; });
+
+  /* Aucun bloc → confirmation simple */
+  if (!blocsUtilises.length) {
+    if (!confirm('Délier « ' + acE(row.lesson_label||mediaId) + ' » ?\n\nL\'entrée média est conservée.')) return;
+    await _acMediaDelierExecute(mediaId, false);
+    return;
+  }
+
+  /* Des blocs existent → modal 3 choix */
+  var nb = blocsUtilises.length;
+  var html =
+    '<div style="font-family:Montserrat,sans-serif;display:flex;flex-direction:column;gap:12px">' +
+    '<p style="font-size:12px;margin:0">Le média <code style="background:var(--carte-2);padding:1px 5px;border-radius:4px">' + acE(mediaId) + '</code>' +
+    ' est utilisé dans <strong>' + nb + ' bloc' + (nb>1?'s':'') + '</strong> de la leçon <strong>« ' + acE(row.lesson_label||'') + ' »</strong>.</p>' +
+    '<p style="font-size:11px;color:var(--texte-faible);margin:0">Que souhaitez-vous faire ?</p>' +
+    '</div>';
+
+  var pied =
+    '<button class="btn btn-sec btn-sm" onclick="modalFermer()" style="margin-right:auto">Annuler</button>' +
+    '<button class="btn btn-sec btn-sm" onclick="_acMediaDelierExecute(\'' + mediaId + '\',false);modalFermer()"' +
+      ' style="color:var(--or);border-color:rgba(232,194,122,.4)">Délier seulement</button>' +
+    '<button class="btn btn-primaire btn-sm" onclick="_acMediaDelierExecute(\'' + mediaId + '\',true);modalFermer()">Délier et retirer le bloc</button>';
+
+  modalOuvrir('Délier ce média', html, pied);
+}
+
+async function _acMediaDelierExecute(mediaId, retirerBloc) {
+  var row = (AC._mediaRows||[]).find(function(m){ return m.id === mediaId; });
+  var lessonId = row ? row.lesson_id : null;
+
   var { error } = await NAHIRA.sb.from('academy_media').update({
     lesson_id: null, module_label: null, lesson_label: null,
   }).eq('id', mediaId);
   if (error) { toast('Erreur : ' + error.message, 'err'); return; }
-  toast('Lien supprimé.');
+
+  if (retirerBloc && lessonId) {
+    var { data: ld2 } = await NAHIRA.sb.from('academy_lessons')
+      .select('content_blocks').eq('id', lessonId).maybeSingle();
+    if (ld2 && Array.isArray(ld2.content_blocks)) {
+      var newBlocks = ld2.content_blocks.filter(function(b){
+        return !(b.type === 'placeholder' && b.id === mediaId);
+      });
+      await NAHIRA.sb.from('academy_lessons').update({ content_blocks: newBlocks }).eq('id', lessonId);
+    }
+  }
+
+  toast(retirerBloc ? 'Délié — bloc retiré de la leçon.' : 'Lien supprimé (bloc conservé).');
   acMediasCharger();
 }
 
