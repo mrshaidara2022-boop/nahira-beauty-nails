@@ -684,24 +684,32 @@ function setStatus(s) {
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────
+const _isEmbedded = new URLSearchParams(location.search).get('embedded') === '1' || window !== window.top;
+
+function _guardRedirect(url) {
+  // Inside an iframe, never redirect — show an error in-place instead
+  if (_isEmbedded) throw new Error('redirect:' + url);
+  location.href = url;
+}
+
 async function init() {
   // Auth guard
   const { data: { user } } = await sb.auth.getUser();
-  if (!user) { location.href = 'dashboard.html'; return; }
+  if (!user) { _guardRedirect('dashboard.html'); return; }
   ST.user = user;
 
   // Admin guard
   const { data: prof } = await sb.from('profiles').select('role').eq('id', user.id).single();
-  if (!prof || prof.role !== 'admin') { location.href = 'index.html'; return; }
+  if (!prof || prof.role !== 'admin') { _guardRedirect('index.html'); return; }
 
   // Get course id from URL
   const params = new URLSearchParams(location.search);
   const courseId = params.get('course');
-  if (!courseId) { location.href = 'dashboard.html'; return; }
+  if (!courseId) { _guardRedirect('dashboard.html'); return; }
 
   // Load course
   const { data: course } = await sb.from('academy_courses').select('*').eq('id', courseId).single();
-  if (!course) { location.href = 'dashboard.html'; return; }
+  if (!course) { _guardRedirect('dashboard.html'); return; }
   ST.course = course;
 
   document.getElementById('navCourseTitle').textContent = course.title;
@@ -1913,9 +1921,13 @@ function onDocClick(e) {
 
 init().catch(err => {
   console.error(err);
-  document.getElementById('loadingOverlay').innerHTML =
+  const _msg = err && err.message && err.message.startsWith('redirect:')
+    ? 'Session expirée ou accès refusé.'
+    : 'Erreur lors du chargement.';
+  const _overlay = document.getElementById('loadingOverlay');
+  if (_overlay) _overlay.innerHTML =
     `<div style="text-align:center;padding:40px;color:#D4456A;font-family:Montserrat,sans-serif;font-size:.85rem">
-      Erreur lors du chargement.<br><a href="dashboard.html" style="color:inherit;text-decoration:underline">Retour à l'Atelier</a></div>`;
+      ${_msg}${_isEmbedded ? '' : '<br><a href="dashboard.html" style="color:inherit;text-decoration:underline">Retour à l\'Atelier</a>'}</div>`;
 });
 </script>
 </body>
