@@ -1901,6 +1901,15 @@ function onDocClick(e) {
 }
 
 // ─── Start ─────────────────────────────────────────────────────────────
+// When embedded in dashboard.html iframe, suppress the top-left back link
+if (window !== window.top) {
+  const _brandLink = document.querySelector('.tb-brand a');
+  if (_brandLink) {
+    _brandLink.removeAttribute('href');
+    _brandLink.style.cssText += ';cursor:default;pointer-events:none';
+  }
+}
+
 init().catch(err => {
   console.error(err);
   document.getElementById('loadingOverlay').innerHTML =
