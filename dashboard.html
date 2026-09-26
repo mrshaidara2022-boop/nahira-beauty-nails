@@ -338,6 +338,21 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
   .prod-droite{display:none}
   .stock-actions{width:100%}
 }
+
+/* ── Contenu : éditeur visuel plein écran ──────────────────────────── */
+#ac-vis-editor{
+  display:none;
+  position:fixed;
+  top:0;left:0;right:0;bottom:0;
+  z-index:40;
+  flex-direction:column;
+  background:var(--noir);
+}
+#ac-vis-editor.open{display:flex}
+@media(min-width:769px){
+  #ac-vis-editor{left:var(--cote-w)}
+}
+#ac-vis-iframe{flex:1;width:100%;border:none;display:block;min-height:0}
 </style>
 </head>
 <body>
@@ -859,13 +874,12 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
       <section class="section" id="s-ac-contenu" style="display:none">
         <div class="eyebrow">Academy</div>
         <h2 class="section-titre">Contenu <em>de la formation</em></h2>
-        <div class="filtres-barre" style="margin-bottom:16px">
-          <select class="filtre-select" id="ac-contenu-select" onchange="acContenuCharger(this.value)" style="flex:1">
+        <div class="carte" style="max-width:480px">
+          <p style="font-family:'Montserrat',sans-serif;font-size:13px;color:var(--texte-doux);margin-bottom:14px">Sélectionnez une formation pour ouvrir l'éditeur visuel complet.</p>
+          <select class="filtre-select" id="ac-contenu-select" onchange="acContenuCharger(this.value)" style="width:100%">
             <option value="">— Choisir une formation —</option>
           </select>
-        </div>
-        <div id="ac-contenu-corps">
-          <p style="font-family:'Montserrat',sans-serif;font-size:11px;color:var(--texte-faible)">Sélectionnez une formation pour gérer ses modules et leçons.</p>
+          <div id="ac-contenu-corps" style="margin-top:8px"></div>
         </div>
       </section>
 
@@ -943,6 +957,14 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
       </section>
 
     </div><!-- /#main -->
+
+    <!-- Contenu — éditeur visuel plein écran (overlay) -->
+    <div id="ac-vis-editor">
+      <iframe id="ac-vis-iframe" src="about:blank"
+        allow="clipboard-write; picture-in-picture; fullscreen"
+        title="Éditeur visuel Nahira Academy"></iframe>
+    </div>
+
   </div><!-- /.app-main -->
 
   <!-- MOBILE TABS -->
@@ -1063,6 +1085,7 @@ var sectionLabels = {
 };
 
 function goTo(id) {
+  if (id !== 'ac-contenu') acVisEditorClose();
   document.querySelectorAll('.section').forEach(function(s){ s.style.display = 'none'; });
   var sec = document.getElementById('s-' + id);
   if (sec) sec.style.display = '';
@@ -2907,51 +2930,41 @@ async function acFormSupprimer(id, titre) {
 async function acContenuInit() {
   await acChargerCours();
   acPopulateSelects();
+  // If a course was already selected, reopen the visual editor
+  if (AC.coursId) {
+    var sel = document.getElementById('ac-contenu-select');
+    if (sel) sel.value = AC.coursId;
+    acContenuCharger(AC.coursId);
+  }
 }
 
 async function acContenuCharger(coursId) {
-  var zone = document.getElementById('ac-contenu-corps');
-  if (!coursId) { zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible)">Sélectionnez une formation.</p>'; return; }
-  zone.innerHTML = '<div class="chargement">Chargement…</div>';
-  AC.coursId = coursId;
-
-  var r = await NAHIRA.sb.from('academy_modules')
-    .select('id,title,sort_order,academy_lessons(id,title,is_preview,duration_minutes,sort_order)')
-    .eq('course_id', coursId).order('sort_order');
-  var modules = r.data || [];
-
-  var html = '<div style="display:flex;gap:8px;margin-bottom:14px">' +
-    '<button class="btn btn-primaire btn-sm" onclick="acModuleNouveau()">+ Nouveau module</button></div>';
-
-  if (!modules.length) {
-    html += '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible)">Aucun module. Créez-en un pour commencer.</p>';
-  } else {
-    html += modules.map(function(mod, mi) {
-      var lessons = (mod.academy_lessons||[]).sort(function(a,b){return a.sort_order-b.sort_order;});
-      var lHtml = lessons.length
-        ? lessons.map(function(l) {
-            return '<div class="prod-ligne" style="margin:4px 0;padding:8px 12px;gap:10px">' +
-              '<div style="font-size:12px;flex:none;color:var(--texte-faible)">' + (l.is_preview ? '👁' : '🔒') + '</div>' +
-              '<div class="prod-info"><div class="prod-nom" style="font-size:15px">' + acE(l.title) + '</div>' +
-              '<div class="prod-sku">' + (l.duration_minutes ? l.duration_minutes + ' min' : '—') + '</div></div>' +
-              '<div style="display:flex;gap:5px;flex:none">' +
-              '<button class="btn btn-sec btn-sm" onclick="acLeconEditer(\'' + mod.id + '\',\'' + l.id + '\')">Modifier</button>' +
-              '<button class="btn btn-danger btn-sm" onclick="acLeconSupprimer(\'' + l.id + '\')">✕</button>' +
-              '</div></div>';
-          }).join('')
-        : '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);padding:8px 12px">Aucune leçon.</p>';
-      return '<div class="carte" style="margin-bottom:12px">' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">' +
-        '<div><div class="eyebrow" style="margin-bottom:2px">Module ' + (mi+1) + '</div>' +
-        '<h3 style="margin:0;font-size:18px">' + acE(mod.title) + '</h3></div>' +
-        '<div style="display:flex;gap:6px">' +
-        '<button class="btn btn-primaire btn-sm" onclick="acLeconNouveau(\'' + mod.id + '\')">+ Leçon</button>' +
-        '<button class="btn btn-sec btn-sm" onclick="acModuleEditer(\'' + mod.id + '\',\'' + acE(mod.title) + '\',' + mod.sort_order + ')">Renommer</button>' +
-        '<button class="btn btn-danger btn-sm" onclick="acModuleSupprimer(\'' + mod.id + '\')">✕</button>' +
-        '</div></div>' + lHtml + '</div>';
-    }).join('');
+  if (!coursId) {
+    acVisEditorClose();
+    return;
   }
-  zone.innerHTML = html;
+  AC.coursId = coursId;
+  acVisEditorOpen(coursId);
+}
+
+function acVisEditorOpen(coursId) {
+  var overlay = document.getElementById('ac-vis-editor');
+  var iframe  = document.getElementById('ac-vis-iframe');
+  // Position overlay below the sticky header
+  var hdr = document.querySelector('.app-header');
+  var hdrH = hdr ? Math.round(hdr.getBoundingClientRect().bottom) : 0;
+  overlay.style.top = hdrH + 'px';
+  // Only reload iframe when course changes (preserve unsaved draft)
+  if (iframe.dataset.coursId !== coursId) {
+    iframe.src = 'editeur.html?course=' + encodeURIComponent(coursId);
+    iframe.dataset.coursId = coursId;
+  }
+  overlay.classList.add('open');
+}
+
+function acVisEditorClose() {
+  var overlay = document.getElementById('ac-vis-editor');
+  if (overlay) overlay.classList.remove('open');
 }
 
 function acModuleNouveau() {
