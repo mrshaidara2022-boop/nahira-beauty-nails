@@ -1901,14 +1901,15 @@ function onDocClick(e) {
 }
 
 // ─── Start ─────────────────────────────────────────────────────────────
-// When embedded in dashboard.html iframe, suppress the top-left back link
-if (window !== window.top) {
-  const _brandLink = document.querySelector('.tb-brand a');
-  if (_brandLink) {
-    _brandLink.removeAttribute('href');
-    _brandLink.style.cssText += ';cursor:default;pointer-events:none';
+// When embedded in dashboard (embedded=1 param or inside iframe), hide back nav
+(function() {
+  var _p = new URLSearchParams(location.search);
+  var _emb = _p.get('embedded') === '1' || window !== window.top;
+  if (_emb) {
+    var _brand = document.querySelector('.tb-brand');
+    if (_brand) _brand.style.display = 'none';
   }
-}
+})();
 
 init().catch(err => {
   console.error(err);

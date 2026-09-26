@@ -339,20 +339,12 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
   .stock-actions{width:100%}
 }
 
-/* ── Contenu : éditeur visuel plein écran ──────────────────────────── */
-#ac-vis-editor{
-  display:none;
-  position:fixed;
-  top:0;left:0;right:0;bottom:0;
-  z-index:40;
-  flex-direction:column;
-  background:var(--noir);
-}
-#ac-vis-editor.open{display:flex}
-@media(min-width:769px){
-  #ac-vis-editor{left:var(--cote-w)}
-}
-#ac-vis-iframe{flex:1;width:100%;border:none;display:block;min-height:0}
+/* ── Contenu : éditeur visuel dans la section ─────────────────────── */
+#main.ac-editor-in{max-width:100%;padding:0;overflow:hidden}
+#s-ac-contenu.editor-on{padding:0;display:flex!important;flex-direction:column}
+#ac-contenu-picker{padding:20px 16px}
+#ac-contenu-iframe{display:none;width:100%;border:none;flex:1}
+#s-ac-contenu.editor-on #ac-contenu-iframe{display:block}
 </style>
 </head>
 <body>
@@ -872,15 +864,19 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
 
       <!-- ═══ ACADEMY : CONTENU ════════════════════════════════════════════════ -->
       <section class="section" id="s-ac-contenu" style="display:none">
-        <div class="eyebrow">Academy</div>
-        <h2 class="section-titre">Contenu <em>de la formation</em></h2>
-        <div class="carte" style="max-width:480px">
-          <p style="font-family:'Montserrat',sans-serif;font-size:13px;color:var(--texte-doux);margin-bottom:14px">Sélectionnez une formation pour ouvrir l'éditeur visuel complet.</p>
-          <select class="filtre-select" id="ac-contenu-select" onchange="acContenuCharger(this.value)" style="width:100%">
-            <option value="">— Choisir une formation —</option>
-          </select>
-          <div id="ac-contenu-corps" style="margin-top:8px"></div>
+        <div id="ac-contenu-picker">
+          <div class="eyebrow">Academy</div>
+          <h2 class="section-titre">Contenu <em>de la formation</em></h2>
+          <div class="carte" style="max-width:480px">
+            <p style="font-family:'Montserrat',sans-serif;font-size:13px;color:var(--texte-doux);margin-bottom:14px">Sélectionnez une formation pour ouvrir l'éditeur visuel.</p>
+            <select class="filtre-select" id="ac-contenu-select" onchange="acContenuCharger(this.value)" style="width:100%">
+              <option value="">— Choisir une formation —</option>
+            </select>
+          </div>
         </div>
+        <iframe id="ac-contenu-iframe" src="about:blank"
+          allow="clipboard-write; picture-in-picture; fullscreen"
+          title="Éditeur visuel Nahira Academy"></iframe>
       </section>
 
       <!-- ═══ ACADEMY : QUIZ ═══════════════════════════════════════════════════ -->
@@ -958,12 +954,6 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
 
     </div><!-- /#main -->
 
-    <!-- Contenu — éditeur visuel plein écran (overlay) -->
-    <div id="ac-vis-editor">
-      <iframe id="ac-vis-iframe" src="about:blank"
-        allow="clipboard-write; picture-in-picture; fullscreen"
-        title="Éditeur visuel Nahira Academy"></iframe>
-    </div>
 
   </div><!-- /.app-main -->
 
@@ -2930,8 +2920,10 @@ async function acFormSupprimer(id, titre) {
 async function acContenuInit() {
   await acChargerCours();
   acPopulateSelects();
-  // If a course was already selected, reopen the visual editor
-  if (AC.coursId) {
+  var nonArchives = (AC.cours || []).filter(function(c) { return !c.is_archived; });
+  if (nonArchives.length === 1) {
+    acContenuCharger(nonArchives[0].id);
+  } else if (AC.coursId) {
     var sel = document.getElementById('ac-contenu-select');
     if (sel) sel.value = AC.coursId;
     acContenuCharger(AC.coursId);
@@ -2939,33 +2931,44 @@ async function acContenuInit() {
 }
 
 async function acContenuCharger(coursId) {
-  if (!coursId) {
-    acVisEditorClose();
-    return;
-  }
+  if (!coursId) { acVisEditorClose(); return; }
   AC.coursId = coursId;
   acVisEditorOpen(coursId);
 }
 
 function acVisEditorOpen(coursId) {
-  var overlay = document.getElementById('ac-vis-editor');
-  var iframe  = document.getElementById('ac-vis-iframe');
-  // Position overlay below the sticky header
-  var hdr = document.querySelector('.app-header');
-  var hdrH = hdr ? Math.round(hdr.getBoundingClientRect().bottom) : 0;
-  overlay.style.top = hdrH + 'px';
-  // Only reload iframe when course changes (preserve unsaved draft)
+  var picker = document.getElementById('ac-contenu-picker');
+  var iframe  = document.getElementById('ac-contenu-iframe');
+  var sec  = document.getElementById('s-ac-contenu');
+  var main = document.getElementById('main');
+  if (picker) picker.style.display = 'none';
+  main.classList.add('ac-editor-in');
+  sec.classList.add('editor-on');
   if (iframe.dataset.coursId !== coursId) {
-    iframe.src = 'editeur.html?course=' + encodeURIComponent(coursId);
+    iframe.src = 'editeur.html?course=' + encodeURIComponent(coursId) + '&embedded=1';
     iframe.dataset.coursId = coursId;
   }
-  overlay.classList.add('open');
+  acEditorSetHeight();
 }
 
 function acVisEditorClose() {
-  var overlay = document.getElementById('ac-vis-editor');
-  if (overlay) overlay.classList.remove('open');
+  var picker = document.getElementById('ac-contenu-picker');
+  var iframe  = document.getElementById('ac-contenu-iframe');
+  var sec  = document.getElementById('s-ac-contenu');
+  var main = document.getElementById('main');
+  if (picker) picker.style.display = '';
+  sec.classList.remove('editor-on');
+  main.classList.remove('ac-editor-in');
 }
+
+function acEditorSetHeight() {
+  var iframe = document.getElementById('ac-contenu-iframe');
+  if (!iframe) return;
+  var hdr = document.querySelector('.app-header');
+  var hdrBottom = hdr ? hdr.getBoundingClientRect().bottom : 59;
+  iframe.style.height = Math.max(300, Math.round(window.innerHeight - hdrBottom)) + 'px';
+}
+window.addEventListener('resize', acEditorSetHeight);
 
 function acModuleNouveau() {
   if (!AC.coursId) return;
