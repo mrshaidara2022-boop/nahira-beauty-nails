@@ -3094,8 +3094,7 @@ async function acFormDupliquer(id) {
         course_id: newCourseId, module_id: newModId,
         title: l.title, is_preview: l.is_preview, duration_minutes: l.duration_minutes,
         sort_order: l.sort_order, video_url: l.video_url,
-        content_blocks: l.content_blocks, draft_content_blocks: l.draft_content_blocks,
-        description: l.description
+        content_blocks: l.content_blocks, draft_content_blocks: l.draft_content_blocks
       });
     }
   }
@@ -3105,19 +3104,25 @@ async function acFormDupliquer(id) {
   var questions = rQ.data || [];
   for (var q of questions) {
     await NAHIRA.sb.from('academy_quiz_questions').insert({
-      course_id: newCourseId, question: q.question, answers: q.answers,
+      course_id: newCourseId, question: q.question, options: q.options,
       correct_index: q.correct_index, explanation: q.explanation,
       sort_order: q.sort_order, is_active: q.is_active
     });
   }
 
   // 4. Dupliquer template certificat
-  var rCert = await NAHIRA.sb.from('academy_cert_templates').select('*').eq('course_id', id).maybeSingle();
+  var rCert = await NAHIRA.sb.from('academy_certificate_templates').select('*').eq('course_id', id).maybeSingle();
   if (rCert.data) {
     var ct = rCert.data;
-    await NAHIRA.sb.from('academy_cert_templates').insert({
-      course_id: newCourseId, background_url: ct.background_url,
-      signature_url: ct.signature_url, template_config: ct.template_config
+    await NAHIRA.sb.from('academy_certificate_templates').insert({
+      course_id: newCourseId,
+      title: ct.title, subtitle: ct.subtitle,
+      atteste_text: ct.atteste_text, completed_text: ct.completed_text,
+      signature_name: ct.signature_name, signature_title: ct.signature_title,
+      logo_url: ct.logo_url, background_url: ct.background_url,
+      primary_color: ct.primary_color, secondary_color: ct.secondary_color, text_color: ct.text_color,
+      show_score: ct.show_score, show_reference: ct.show_reference, show_date: ct.show_date,
+      legal_notice: ct.legal_notice
     });
   }
 
@@ -3137,8 +3142,10 @@ async function acFormDupliquer(id) {
   var medias = rMedia.data || [];
   for (var med of medias) {
     await NAHIRA.sb.from('academy_media').insert({
-      course_id: newCourseId, label: med.label, public_url: med.public_url,
-      storage_path: med.storage_path, mime_type: med.mime_type, file_size: med.file_size
+      course_id: newCourseId, title: med.title, media_type: med.media_type,
+      module_label: med.module_label, lesson_label: med.lesson_label,
+      storage_path: med.storage_path, public_url: med.public_url,
+      status: med.status, file_name: med.file_name, file_size: med.file_size
     });
   }
 
