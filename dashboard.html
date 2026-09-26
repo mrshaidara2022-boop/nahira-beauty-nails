@@ -102,6 +102,7 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
 
 /* FILTRES */
 .filtres-barre{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;overflow-x:auto}
+.ac-form-tab.active{background:linear-gradient(120deg,var(--rose),var(--or));color:#1a0f14;border:none}
 .filtre-input{flex:1;min-width:140px;background:var(--carte);border:1px solid var(--bordure);border-radius:12px;padding:9px 14px;color:var(--texte);font-family:'Montserrat',sans-serif;font-size:12px}
 .filtre-input::placeholder{color:var(--texte-faible)}
 .filtre-input:focus,.filtre-select:focus{outline:none;border-color:rgba(240,111,167,.5)}
@@ -2920,12 +2921,12 @@ async function sauvegarderParametres() {
 /* ════════════════════════════════════════════════════════════════════════
    ACADEMY — state partagé
    ══════════════════════════════════════════════════════════════════════ */
-var AC = { cours: [], coursId: null, _elevesData: [] };
+var AC = { cours: [], coursId: null, _elevesData: [], formFilter: 'all' };
 
 async function acChargerCours() {
   if (AC.cours.length) return AC.cours;
   var r = await NAHIRA.sb.from('academy_courses')
-    .select('id,slug,title,is_published,is_free,level,passing_score,questions_per_quiz,max_attempts,quiz_success_title,quiz_success_message,quiz_failure_title,quiz_failure_message,product:product_id(id,price_cents),duration_minutes,cover_url,trailer_url,subtitle,description_long,product_id,created_at')
+    .select('id,slug,title,is_published,is_archived,is_free,level,passing_score,questions_per_quiz,max_attempts,quiz_success_title,quiz_success_message,quiz_failure_title,quiz_failure_message,product:product_id(id,price_cents),duration_minutes,cover_url,trailer_url,subtitle,description_long,product_id,created_at')
     .order('sort_order');
   AC.cours = r.data || [];
   return AC.cours;
@@ -2955,41 +2956,194 @@ async function acPopulateSelects() {
 /* ════════════════════════════════════════════════════════════════════════
    FORMATIONS — liste / création / publication
    ══════════════════════════════════════════════════════════════════════ */
+function acFormSetFilter(f) {
+  AC.formFilter = f;
+  document.querySelectorAll('.ac-form-tab').forEach(function(t) {
+    t.classList.toggle('active', t.dataset.filter === f);
+  });
+  acFormCharger();
+}
+
 async function acFormCharger() {
   var zone = document.getElementById('ac-form-liste');
   zone.innerHTML = '<div class="chargement">Chargement…</div>';
   AC.cours = [];
-  var cours = await acChargerCours();
+  var tous = await acChargerCours();
   acPopulateSelects();
 
+  var nbToutes = tous.length;
+  var nbPubliees = tous.filter(function(c){return c.is_published && !c.is_archived;}).length;
+  var nbBrouillons = tous.filter(function(c){return !c.is_published && !c.is_archived;}).length;
+  var nbArchivees = tous.filter(function(c){return c.is_archived;}).length;
+
+  var f = AC.formFilter || 'all';
+  var cours = tous.filter(function(c) {
+    if (f === 'published') return c.is_published && !c.is_archived;
+    if (f === 'draft')     return !c.is_published && !c.is_archived;
+    if (f === 'archived')  return c.is_archived;
+    return true;
+  });
+
+  var tabsHtml = '<div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">' +
+    '<button class="btn btn-sm ac-form-tab' + (f==='all'?' active':'') + '" data-filter="all" onclick="acFormSetFilter(\'all\')" style="font-family:Montserrat,sans-serif">Toutes <span style="opacity:.6">(' + nbToutes + ')</span></button>' +
+    '<button class="btn btn-sm ac-form-tab' + (f==='published'?' active':'') + '" data-filter="published" onclick="acFormSetFilter(\'published\')" style="font-family:Montserrat,sans-serif">Publiées <span style="opacity:.6">(' + nbPubliees + ')</span></button>' +
+    '<button class="btn btn-sm ac-form-tab' + (f==='draft'?' active':'') + '" data-filter="draft" onclick="acFormSetFilter(\'draft\')" style="font-family:Montserrat,sans-serif">Brouillons <span style="opacity:.6">(' + nbBrouillons + ')</span></button>' +
+    '<button class="btn btn-sm ac-form-tab' + (f==='archived'?' active':'') + '" data-filter="archived" onclick="acFormSetFilter(\'archived\')" style="font-family:Montserrat,sans-serif">Archivées <span style="opacity:.6">(' + nbArchivees + ')</span></button>' +
+    '</div>';
+
   if (!cours.length) {
-    zone.innerHTML = '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);padding:20px 0">Aucune formation. Créez-en une pour commencer.</p>';
+    zone.innerHTML = tabsHtml + '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);padding:20px 0">Aucune formation dans cette catégorie.</p>';
     return;
   }
-  zone.innerHTML = cours.map(function(c) {
+  zone.innerHTML = tabsHtml + cours.map(function(c) {
     var pub = c.is_published;
+    var arch = c.is_archived;
     var dur = c.duration_minutes ? Math.round(c.duration_minutes/60) + 'h' : '—';
     var prix = c.product && c.product.price_cents ? acEur(c.product.price_cents) : (c.is_free ? 'Gratuit' : '—');
     var niv = {debutant:'Débutant',intermediaire:'Intermédiaire',avance:'Avancé'}[c.level] || '—';
+    var badge = arch
+      ? '<span class="badge" style="background:var(--texte-faible);color:#fff">Archivée</span>'
+      : '<span class="badge ' + (pub ? 'badge-dispo' : 'badge-masque') + '">' + (pub ? 'Publiée' : 'Brouillon') + '</span>';
+    var publishBtn = arch
+      ? '<button class="btn btn-sm" disabled title="Restaurer avant de publier" style="opacity:.4;cursor:not-allowed">Publier</button>'
+      : '<button class="btn btn-sm ' + (pub ? 'btn-danger' : 'btn-primaire') + '" onclick="acFormTogglePublish(\'' + c.id + '\',' + pub + ')">' + (pub ? 'Masquer' : 'Publier') + '</button>';
+    var archBtn = arch
+      ? '<button class="btn btn-sec btn-sm" onclick="acFormRestorer(\'' + c.id + '\')">Restaurer</button>'
+      : '<button class="btn btn-sm" style="font-family:Montserrat,sans-serif;background:var(--texte-faible);color:#fff;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px" onclick="acFormArchiver(\'' + c.id + '\',\'' + acE(c.title) + '\')">Archiver</button>';
     return '<div class="prod-ligne" style="align-items:center;gap:12px;padding:12px 14px">' +
       '<div class="prod-vignette" style="background:linear-gradient(135deg,var(--rose),var(--or))">🎓</div>' +
       '<div class="prod-info"><div class="prod-nom">' + acE(c.title) + '</div>' +
       '<div class="prod-sku">' + acE(c.slug) + ' · ' + dur + ' · ' + prix + ' · Score min ' + (c.passing_score||70) + '% · ' + niv + '</div></div>' +
-      '<span class="badge ' + (pub ? 'badge-dispo' : 'badge-masque') + '">' + (pub ? 'Publiée' : 'Masquée') + '</span>' +
-      '<div style="display:flex;gap:6px;flex:none">' +
-      '<a class="btn btn-primaire btn-sm" href="editeur.html?course=' + c.id + '">Éditer visuellement</a>' +
+      badge +
+      '<div style="display:flex;gap:6px;flex:none;flex-wrap:wrap">' +
       '<button class="btn btn-sec btn-sm" onclick="acFormEditer(\'' + c.id + '\')">Modifier</button>' +
-      '<button class="btn btn-sm ' + (pub ? 'btn-danger' : 'btn-primaire') + '" onclick="acFormTogglePublish(\'' + c.id + '\',' + pub + ')">' + (pub ? 'Masquer' : 'Publier') + '</button>' +
-      '<button class="btn btn-danger btn-sm" onclick="acFormSupprimer(\'' + c.id + '\',\'' + acE(c.title) + '\')">✕</button>' +
+      '<a class="btn btn-sec btn-sm" href="editeur.html?course=' + c.id + '" style="text-decoration:none">Aperçu éditeur</a>' +
+      '<button class="btn btn-sec btn-sm" onclick="acFormDupliquer(\'' + c.id + '\')">Dupliquer</button>' +
+      publishBtn +
+      archBtn +
+      (arch ? '' : '<button class="btn btn-danger btn-sm" onclick="acFormSupprimer(\'' + c.id + '\',\'' + acE(c.title) + '\')">✕</button>') +
       '</div></div>';
   }).join('');
 }
 
 async function acFormTogglePublish(id, actuel) {
+  var cours = await acChargerCours();
+  var c = cours.find(function(x){ return x.id === id; });
+  if (c && c.is_archived) { toast('Restaurez la formation avant de la publier.', 'err'); return; }
   var r = await NAHIRA.sb.from('academy_courses').update({is_published: !actuel}).eq('id', id);
   if (r.error) { toast('Erreur : ' + r.error.message, 'err'); return; }
   AC.cours = [];
   toast(actuel ? 'Formation masquée.' : 'Formation publiée ✦');
+  acFormCharger();
+}
+
+async function acFormArchiver(id, titre) {
+  if (!confirm('Archiver "' + titre + '" ?\nLa formation sera dépubliée et masquée des élèves. Les données sont conservées.')) return;
+  var r = await NAHIRA.sb.from('academy_courses').update({is_archived: true, is_published: false}).eq('id', id);
+  if (r.error) { toast('Erreur : ' + r.error.message, 'err'); return; }
+  AC.cours = [];
+  toast('Formation archivée.');
+  acFormCharger();
+}
+
+async function acFormRestorer(id) {
+  var r = await NAHIRA.sb.from('academy_courses').update({is_archived: false}).eq('id', id);
+  if (r.error) { toast('Erreur : ' + r.error.message, 'err'); return; }
+  AC.cours = [];
+  toast('Formation restaurée ✦');
+  acFormCharger();
+}
+
+async function acFormDupliquer(id) {
+  var cours = await acChargerCours();
+  var src = cours.find(function(x){ return x.id === id; });
+  if (!src) { toast('Formation introuvable.', 'err'); return; }
+  toast('Duplication en cours…');
+
+  // 1. Dupliquer la formation
+  var newSlug = src.slug + '-copie';
+  var slugCheck = await NAHIRA.sb.from('academy_courses').select('id').eq('slug', newSlug);
+  if (slugCheck.data && slugCheck.data.length) newSlug = newSlug + '-' + Date.now().toString(36);
+  var courseData = {
+    slug: newSlug, title: src.title + ' (copie)', subtitle: src.subtitle,
+    description_long: src.description_long, level: src.level,
+    duration_minutes: src.duration_minutes, passing_score: src.passing_score,
+    questions_per_quiz: src.questions_per_quiz, max_attempts: src.max_attempts,
+    quiz_success_title: src.quiz_success_title, quiz_success_message: src.quiz_success_message,
+    quiz_failure_title: src.quiz_failure_title, quiz_failure_message: src.quiz_failure_message,
+    cover_url: src.cover_url, trailer_url: src.trailer_url,
+    is_free: src.is_free, product_id: src.product_id,
+    is_published: false, is_archived: false, sort_order: null
+  };
+  var rCourse = await NAHIRA.sb.from('academy_courses').insert(courseData).select('id').single();
+  if (rCourse.error) { toast('Erreur duplication : ' + rCourse.error.message, 'err'); return; }
+  var newCourseId = rCourse.data.id;
+
+  // 2. Dupliquer modules + leçons
+  var rMods = await NAHIRA.sb.from('academy_modules')
+    .select('id,title,sort_order,academy_lessons(id,title,is_preview,duration_minutes,sort_order,video_url,content_blocks,draft_content_blocks,description)')
+    .eq('course_id', id).order('sort_order');
+  var mods = rMods.data || [];
+  for (var m of mods) {
+    var rMod = await NAHIRA.sb.from('academy_modules').insert({course_id: newCourseId, title: m.title, sort_order: m.sort_order}).select('id').single();
+    if (rMod.error) continue;
+    var newModId = rMod.data.id;
+    var lessons = (m.academy_lessons || []).sort(function(a,b){return a.sort_order-b.sort_order;});
+    for (var l of lessons) {
+      await NAHIRA.sb.from('academy_lessons').insert({
+        course_id: newCourseId, module_id: newModId,
+        title: l.title, is_preview: l.is_preview, duration_minutes: l.duration_minutes,
+        sort_order: l.sort_order, video_url: l.video_url,
+        content_blocks: l.content_blocks, draft_content_blocks: l.draft_content_blocks,
+        description: l.description
+      });
+    }
+  }
+
+  // 3. Dupliquer questions quiz
+  var rQ = await NAHIRA.sb.from('academy_quiz_questions').select('*').eq('course_id', id);
+  var questions = rQ.data || [];
+  for (var q of questions) {
+    await NAHIRA.sb.from('academy_quiz_questions').insert({
+      course_id: newCourseId, question: q.question, answers: q.answers,
+      correct_index: q.correct_index, explanation: q.explanation,
+      sort_order: q.sort_order, is_active: q.is_active
+    });
+  }
+
+  // 4. Dupliquer template certificat
+  var rCert = await NAHIRA.sb.from('academy_cert_templates').select('*').eq('course_id', id).maybeSingle();
+  if (rCert.data) {
+    var ct = rCert.data;
+    await NAHIRA.sb.from('academy_cert_templates').insert({
+      course_id: newCourseId, background_url: ct.background_url,
+      signature_url: ct.signature_url, template_config: ct.template_config
+    });
+  }
+
+  // 5. Dupliquer fiches (academy_materials)
+  var rMat = await NAHIRA.sb.from('academy_materials').select('*').eq('course_id', id);
+  var mats = rMat.data || [];
+  for (var mat of mats) {
+    await NAHIRA.sb.from('academy_materials').insert({
+      course_id: newCourseId, title: mat.title, description: mat.description,
+      file_url: mat.file_url, file_type: mat.file_type,
+      sort_order: mat.sort_order, fiche_num: mat.fiche_num
+    });
+  }
+
+  // 6. Dupliquer médias
+  var rMedia = await NAHIRA.sb.from('academy_media').select('*').eq('course_id', id);
+  var medias = rMedia.data || [];
+  for (var med of medias) {
+    await NAHIRA.sb.from('academy_media').insert({
+      course_id: newCourseId, label: med.label, public_url: med.public_url,
+      storage_path: med.storage_path, mime_type: med.mime_type, file_size: med.file_size
+    });
+  }
+
+  AC.cours = [];
+  toast('Formation dupliquée ✦ — "' + src.title + ' (copie)" créée en brouillon.');
   acFormCharger();
 }
 
@@ -3113,7 +3267,7 @@ async function acContenuCharger(coursId) {
   AC.coursId = coursId;
 
   var r = await NAHIRA.sb.from('academy_modules')
-    .select('id,title,sort_order,academy_lessons(id,title,is_preview,duration_minutes,sort_order)')
+    .select('id,title,sort_order,is_hidden,academy_lessons(id,title,is_preview,is_hidden,duration_minutes,sort_order)')
     .eq('course_id', coursId).order('sort_order');
   var modules = r.data || [];
 
@@ -3125,23 +3279,29 @@ async function acContenuCharger(coursId) {
   } else {
     html += modules.map(function(mod, mi) {
       var lessons = (mod.academy_lessons||[]).sort(function(a,b){return a.sort_order-b.sort_order;});
+      var modHidden = !!mod.is_hidden;
       var lHtml = lessons.length
         ? lessons.map(function(l) {
-            return '<div class="prod-ligne" style="margin:4px 0;padding:8px 12px;gap:10px">' +
+            var lHid = !!l.is_hidden;
+            return '<div class="prod-ligne" style="margin:4px 0;padding:8px 12px;gap:10px;opacity:' + (lHid?'0.55':'1') + '">' +
               '<div style="font-size:12px;flex:none;color:var(--texte-faible)">' + (l.is_preview ? '👁' : '🔒') + '</div>' +
               '<div class="prod-info"><div class="prod-nom" style="font-size:15px">' + acE(l.title) + '</div>' +
               '<div class="prod-sku">' + (l.duration_minutes ? l.duration_minutes + ' min' : '—') + '</div></div>' +
+              '<span class="badge ' + (lHid ? 'badge-masque' : 'badge-dispo') + '" style="font-size:10px">' + (lHid ? 'Masquée' : 'Visible') + '</span>' +
               '<div style="display:flex;gap:5px;flex:none">' +
+              '<button class="btn btn-sec btn-sm" onclick="acLeconToggleHidden(\'' + l.id + '\',' + lHid + ')">' + (lHid ? 'Afficher' : 'Masquer') + '</button>' +
               '<button class="btn btn-sec btn-sm" onclick="acLeconEditer(\'' + mod.id + '\',\'' + l.id + '\')">Modifier</button>' +
               '<button class="btn btn-danger btn-sm" onclick="acLeconSupprimer(\'' + l.id + '\')">✕</button>' +
               '</div></div>';
           }).join('')
         : '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);padding:8px 12px">Aucune leçon.</p>';
-      return '<div class="carte" style="margin-bottom:12px">' +
+      return '<div class="carte" style="margin-bottom:12px;opacity:' + (modHidden?'0.65':'1') + '">' +
         '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">' +
         '<div><div class="eyebrow" style="margin-bottom:2px">Module ' + (mi+1) + '</div>' +
         '<h3 style="margin:0;font-size:18px">' + acE(mod.title) + '</h3></div>' +
-        '<div style="display:flex;gap:6px">' +
+        '<div style="display:flex;gap:6px;flex-wrap:wrap">' +
+        '<span class="badge ' + (modHidden ? 'badge-masque' : 'badge-dispo') + '" style="font-size:10px">' + (modHidden ? 'Masqué' : 'Visible') + '</span>' +
+        '<button class="btn btn-sec btn-sm" onclick="acModuleToggleHidden(\'' + mod.id + '\',' + modHidden + ')">' + (modHidden ? 'Afficher' : 'Masquer') + '</button>' +
         '<button class="btn btn-primaire btn-sm" onclick="acLeconNouveau(\'' + mod.id + '\')">+ Leçon</button>' +
         '<button class="btn btn-sec btn-sm" onclick="acModuleEditer(\'' + mod.id + '\',\'' + acE(mod.title) + '\',' + mod.sort_order + ')">Renommer</button>' +
         '<button class="btn btn-danger btn-sm" onclick="acModuleSupprimer(\'' + mod.id + '\')">✕</button>' +
@@ -3189,6 +3349,20 @@ async function acModuleSupprimer(id) {
   var r = await NAHIRA.sb.from('academy_modules').delete().eq('id',id);
   if (r.error) { toast('Erreur : '+r.error.message,'err'); return; }
   toast('Module supprimé.'); acContenuCharger(AC.coursId);
+}
+
+async function acModuleToggleHidden(id, estMasque) {
+  var r = await NAHIRA.sb.from('academy_modules').update({is_hidden: !estMasque}).eq('id', id);
+  if (r.error) { toast('Erreur : '+r.error.message,'err'); return; }
+  toast(estMasque ? 'Module rendu visible.' : 'Module masqué.');
+  acContenuCharger(AC.coursId);
+}
+
+async function acLeconToggleHidden(id, estMasque) {
+  var r = await NAHIRA.sb.from('academy_lessons').update({is_hidden: !estMasque}).eq('id', id);
+  if (r.error) { toast('Erreur : '+r.error.message,'err'); return; }
+  toast(estMasque ? 'Leçon rendue visible.' : 'Leçon masquée.');
+  acContenuCharger(AC.coursId);
 }
 
 function acLeconNouveau(moduleId) {
@@ -5566,12 +5740,28 @@ function acFicheFormHtml(f) {
   var coursOpts = (AC.cours||[]).map(function(c){
     return '<option value="' + c.id + '"' + (f.course_id===c.id?' selected':'') + '>' + acE(c.title) + '</option>';
   }).join('');
+  var hasFile = !!(f.file_url);
+  var previewHtml = hasFile
+    ? '<div id="ac-fi-preview" style="font-family:Montserrat,sans-serif;font-size:11px;margin-top:6px">' +
+      '<a href="' + acE(f.file_url||'') + '" target="_blank" rel="noopener" style="color:var(--or)">📄 Voir le fichier actuel</a>' +
+      '</div>'
+    : '<div id="ac-fi-preview" style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);margin-top:6px">Aucun fichier.</div>';
   return '<div style="display:flex;flex-direction:column;gap:12px">' +
     '<div><label class="param-lbl">Titre *</label><input class="param-input" id="ac-fi-titre" value="' + acE(f.title||'') + '" style="width:100%"></div>' +
     '<div><label class="param-lbl">Description</label><textarea class="param-input" id="ac-fi-desc" rows="2" style="width:100%">' + acE(f.description||'') + '</textarea></div>' +
     '<div><label class="param-lbl">Formation *</label><select class="param-input" id="ac-fi-cours" style="width:100%"><option value="">— Choisir —</option>' + coursOpts + '</select></div>' +
     '<div><label class="param-lbl">Type de fichier</label><select class="param-input" id="ac-fi-type" style="width:100%"><option value="pdf"' + (f.file_type==='pdf'?' selected':'') + '>PDF</option><option value="image"' + (f.file_type==='image'?' selected':'') + '>Image</option><option value="html"' + (f.file_type==='html'?' selected':'') + '>HTML</option><option value="video"' + (f.file_type==='video'?' selected':'') + '>Vidéo</option></select></div>' +
-    '<div><label class="param-lbl">URL du fichier *</label><input class="param-input" id="ac-fi-url" value="' + acE(f.file_url||'') + '" style="width:100%"></div>' +
+    '<div>' +
+      '<label class="param-lbl">Fichier PDF</label>' +
+      '<div style="display:flex;gap:8px;align-items:center;margin-top:4px">' +
+        '<input type="file" id="ac-fi-file" accept=".pdf,application/pdf" hidden>' +
+        '<button class="btn btn-sec btn-sm" type="button" onclick="document.getElementById(\'ac-fi-file\').click()">' + (hasFile ? '🔄 Remplacer' : '📂 Importer un PDF') + '</button>' +
+        (hasFile ? '<button class="btn btn-sm" style="font-family:Montserrat,sans-serif;font-size:11px;border:none;background:transparent;color:var(--texte-faible);cursor:pointer;text-decoration:underline" type="button" onclick="acFicheRetirerFichier()">Retirer</button>' : '') +
+      '</div>' +
+      previewHtml +
+      '<div id="ac-fi-upload-status" style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible);margin-top:4px"></div>' +
+    '</div>' +
+    '<input type="hidden" id="ac-fi-url" value="' + acE(f.file_url||'') + '">' +
     '<div><label class="param-lbl">Ordre d\'affichage</label><input class="param-input" id="ac-fi-ordre" type="number" value="' + (f.sort_order||0) + '" style="width:80px"></div>' +
     '</div>';
 }
@@ -5579,6 +5769,7 @@ function acFicheFormHtml(f) {
 function acFicheNouveau() {
   modalOuvrir('Nouvelle fiche', acFicheFormHtml(null),
     '<button class="btn btn-primaire" onclick="acFicheSauvegarder(null)">Créer la fiche</button>');
+  acFicheBindFileInput(null, null);
 }
 
 async function acFicheEditer(id) {
@@ -5586,6 +5777,52 @@ async function acFicheEditer(id) {
   var f = r.data || {};
   modalOuvrir('Modifier — ' + f.title, acFicheFormHtml(f),
     '<button class="btn btn-primaire" onclick="acFicheSauvegarder(\'' + id + '\')">Enregistrer</button>');
+  acFicheBindFileInput(id, f.course_id);
+}
+
+function acFicheBindFileInput(ficheId, courseId) {
+  var inp = document.getElementById('ac-fi-file');
+  if (!inp) return;
+  inp.addEventListener('change', function() {
+    var file = inp.files[0];
+    if (!file) return;
+    var cId = document.getElementById('ac-fi-cours').value || courseId;
+    acFicheUploadPdf(ficheId, cId, file);
+  });
+}
+
+function acFicheRetirerFichier() {
+  document.getElementById('ac-fi-url').value = '';
+  var prev = document.getElementById('ac-fi-preview');
+  if (prev) prev.innerHTML = '<span style="color:var(--texte-faible)">Aucun fichier.</span>';
+  toast('Fichier retiré (non encore enregistré).');
+}
+
+async function acFicheUploadPdf(ficheId, courseId, file) {
+  var status = document.getElementById('ac-fi-upload-status');
+  if (status) status.textContent = 'Envoi en cours…';
+  var coursId = courseId || document.getElementById('ac-fi-cours').value;
+  if (!coursId) { toast('Choisir la formation avant d\'importer.','err'); if(status) status.textContent=''; return; }
+  var ts = Date.now().toString(36);
+  var ext = 'pdf';
+  var path = 'fiches/' + coursId + '/' + ts + '.' + ext;
+  var { data: signedUp, error: signErr } = await NAHIRA.sb.storage
+    .from('academy-marketing').createSignedUploadUrl(path);
+  if (signErr) { toast('Erreur signature upload : ' + signErr.message, 'err'); if(status) status.textContent=''; return; }
+  await new Promise(function(resolve, reject) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('PUT', signedUp.signedUrl);
+    xhr.setRequestHeader('Content-Type', 'application/pdf');
+    xhr.setRequestHeader('x-upsert', 'true');
+    xhr.onload = function() { resolve(); };
+    xhr.onerror = function() { reject(new Error('Erreur réseau')); };
+    xhr.send(file);
+  }).catch(function(e) { toast('Erreur upload : ' + e.message, 'err'); if(status) status.textContent=''; });
+  var publicUrl = NAHIRA.sb.storage.from('academy-marketing').getPublicUrl(path).data.publicUrl;
+  document.getElementById('ac-fi-url').value = publicUrl;
+  var prev = document.getElementById('ac-fi-preview');
+  if (prev) prev.innerHTML = '<a href="' + acE(publicUrl) + '" target="_blank" rel="noopener" style="color:var(--or);font-family:Montserrat,sans-serif;font-size:11px">📄 ' + acE(file.name) + ' — Voir</a>';
+  if (status) status.textContent = '✓ Fichier prêt — cliquer Enregistrer pour sauvegarder.';
 }
 
 async function acFicheSauvegarder(id) {
@@ -5595,7 +5832,8 @@ async function acFicheSauvegarder(id) {
   var type   = document.getElementById('ac-fi-type').value;
   var url    = document.getElementById('ac-fi-url').value.trim();
   var ordre  = parseInt(document.getElementById('ac-fi-ordre').value)||0;
-  if (!titre || !coursId || !url) { toast('Titre, formation et URL requis.','err'); return; }
+  if (!titre || !coursId) { toast('Titre et formation requis.','err'); return; }
+  if (!url) { toast('Importer ou conserver un fichier avant d\'enregistrer.','err'); return; }
   var data = {title:titre, description:desc, course_id:coursId, file_type:type, file_url:url, sort_order:ordre};
   var r = id
     ? await NAHIRA.sb.from('academy_materials').update(data).eq('id',id)
