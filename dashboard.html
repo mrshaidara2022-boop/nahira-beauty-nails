@@ -2925,7 +2925,7 @@ var AC = { cours: [], coursId: null, _elevesData: [] };
 async function acChargerCours() {
   if (AC.cours.length) return AC.cours;
   var r = await NAHIRA.sb.from('academy_courses')
-    .select('id,slug,title,is_published,is_free,level,passing_score,questions_per_quiz,product:product_id(id,price_cents),duration_minutes,cover_url,trailer_url,subtitle,description_long,product_id,created_at')
+    .select('id,slug,title,is_published,is_free,level,passing_score,questions_per_quiz,max_attempts,quiz_success_title,quiz_success_message,quiz_failure_title,quiz_failure_message,product:product_id(id,price_cents),duration_minutes,cover_url,trailer_url,subtitle,description_long,product_id,created_at')
     .order('sort_order');
   AC.cours = r.data || [];
   return AC.cours;
@@ -3016,6 +3016,20 @@ function acFormFormHtml(c) {
     '<div><label class="param-lbl">Durée totale (minutes)</label><input class="param-input" id="ac-f-dur" type="number" value="' + (c.duration_minutes||'') + '" style="width:100%"></div>' +
     '<div><label class="param-lbl">Score minimum pour certification (%)</label><input class="param-input" id="ac-f-score" type="number" min="0" max="100" value="' + (c.passing_score||70) + '" style="width:100%"></div>' +
     '<div><label class="param-lbl">Nombre de questions par quiz</label><input class="param-input" id="ac-f-qpq" type="number" min="1" value="' + (c.questions_per_quiz||20) + '" style="width:100%"><div style="font-family:Montserrat,sans-serif;font-size:10px;color:var(--texte-faible);margin-top:4px">Nombre de questions tirées aléatoirement pour chaque tentative.</div></div>' +
+    '<div><label class="param-lbl">Nombre maximal de tentatives</label>' +
+    '<div style="display:flex;gap:8px;align-items:center">' +
+    '<input class="param-input" id="ac-f-maxatt" type="number" min="1" value="' + (c.max_attempts != null ? c.max_attempts : '') + '" style="flex:1" placeholder="Illimité">' +
+    '</div>' +
+    '<div style="font-family:Montserrat,sans-serif;font-size:10px;color:var(--texte-faible);margin-top:4px">Laisser vide pour autoriser un nombre illimité de tentatives. Les tentatives invalidées par l\'admin ne sont pas comptées.</div></div>' +
+    '<div style="border-top:1px solid var(--bordure);padding-top:12px;margin-top:4px"><div style="font-family:Montserrat,sans-serif;font-size:11px;font-weight:600;color:var(--texte);margin-bottom:10px">Textes de résultat du quiz</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+    '<div><label class="param-lbl">Titre réussite</label><input class="param-input" id="ac-f-succ-t" value="' + acE(c.quiz_success_title||'') + '" style="width:100%" placeholder="Félicitations ✦"></div>' +
+    '<div><label class="param-lbl">Titre échec</label><input class="param-input" id="ac-f-fail-t" value="' + acE(c.quiz_failure_title||'') + '" style="width:100%" placeholder="Presque…"></div>' +
+    '</div>' +
+    '<div style="margin-top:8px"><label class="param-lbl">Message réussite</label><textarea class="param-input" id="ac-f-succ-m" rows="2" style="width:100%;font-size:11px" placeholder="Utilisez {score} pour insérer le score.">' + acE(c.quiz_success_message||'') + '</textarea></div>' +
+    '<div style="margin-top:8px"><label class="param-lbl">Message échec</label><textarea class="param-input" id="ac-f-fail-m" rows="2" style="width:100%;font-size:11px" placeholder="Utilisez {score} pour le score, {seuil} pour le seuil.">' + acE(c.quiz_failure_message||'') + '</textarea></div>' +
+    '<div style="font-family:Montserrat,sans-serif;font-size:10px;color:var(--texte-faible);margin-top:4px">Placeholders : {score} = résultat (ex: 18 / 20) · {seuil} = seuil de réussite. Aucun code HTML.</div>' +
+    '</div>' +
     '<div><label class="param-lbl">Image de couverture</label>' +
     '<div style="display:flex;gap:8px;align-items:center">' +
     '<input class="param-input" id="ac-f-cover" value="' + acE(c.cover_url||'') + '" style="flex:1;font-size:11px;font-family:monospace" readonly placeholder="(aucune — cliquer Importer)">' +
@@ -3044,12 +3058,19 @@ async function acFormSauvegarder(id) {
   var dur    = parseInt(document.getElementById('ac-f-dur').value) || null;
   var score  = parseInt(document.getElementById('ac-f-score').value) || 70;
   var qpq    = parseInt(document.getElementById('ac-f-qpq').value);
+  var maxAttRaw = document.getElementById('ac-f-maxatt').value.trim();
+  var maxAtt  = maxAttRaw === '' ? null : parseInt(maxAttRaw);
   var cover   = document.getElementById('ac-f-cover').value.trim() || null;
   var trailer = document.getElementById('ac-f-trailer').value.trim() || null;
   var isFree  = document.getElementById('ac-f-free').classList.contains('on');
   var prodId  = document.getElementById('ac-f-prodid').value.trim() || null;
+  var succT   = document.getElementById('ac-f-succ-t').value.trim() || null;
+  var succM   = document.getElementById('ac-f-succ-m').value.trim() || null;
+  var failT   = document.getElementById('ac-f-fail-t').value.trim() || null;
+  var failM   = document.getElementById('ac-f-fail-m').value.trim() || null;
   if (!titre || !slug) { toast('Titre et slug requis.', 'err'); return; }
   if (!qpq || qpq < 1) { toast('Le nombre de questions doit être au moins 1.', 'err'); return; }
+  if (maxAtt !== null && (isNaN(maxAtt) || maxAtt < 1)) { toast('Nombre maximal de tentatives : minimum 1 (ou laisser vide pour illimité).', 'err'); return; }
   if (id) {
     var { count: qCount } = await NAHIRA.sb.from('academy_quiz_questions')
       .select('id', { count: 'exact', head: true }).eq('course_id', id);
@@ -3057,7 +3078,7 @@ async function acFormSauvegarder(id) {
       toast('⚠ Cette formation possède ' + qCount + ' question(s) disponible(s). Le quiz utilisera au maximum ' + qCount + ' question(s).');
     }
   }
-  var data = { title:titre, subtitle:sous||null, slug, description_long:desc, level:niveau, duration_minutes:dur, passing_score:score, questions_per_quiz:qpq, cover_url:cover, trailer_url:trailer, is_free:isFree, product_id:prodId };
+  var data = { title:titre, subtitle:sous||null, slug, description_long:desc, level:niveau, duration_minutes:dur, passing_score:score, questions_per_quiz:qpq, max_attempts:maxAtt, quiz_success_title:succT, quiz_success_message:succM, quiz_failure_title:failT, quiz_failure_message:failM, cover_url:cover, trailer_url:trailer, is_free:isFree, product_id:prodId };
   var r = id
     ? await NAHIRA.sb.from('academy_courses').update(data).eq('id', id)
     : await NAHIRA.sb.from('academy_courses').insert({...data, is_published:false});
@@ -3252,32 +3273,51 @@ async function acQuizCharger(coursId) {
   zone.innerHTML = '<div class="chargement">Chargement…</div>';
   AC.coursId = coursId;
 
+  var filtreActif = document.getElementById('ac-quiz-filtre') ? document.getElementById('ac-quiz-filtre').value : 'all';
+
   var r = await NAHIRA.sb.from('academy_quiz_questions')
-    .select('id,question,options,correct_index,explanation,sort_order')
+    .select('id,question,options,correct_index,explanation,sort_order,is_active')
     .eq('course_id', coursId).order('sort_order');
   var qs = r.data || [];
 
-  var html = '<div style="display:flex;gap:8px;margin-bottom:14px">' +
-    '<button class="btn btn-primaire btn-sm" onclick="acQuizNouveau()">+ Ajouter une question</button></div>';
+  var nbActive   = qs.filter(function(q){ return q.is_active !== false; }).length;
+  var nbInactive = qs.length - nbActive;
 
-  if (!qs.length) {
-    html += '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible)">Aucune question. Ajoutez-en pour activer le quiz.</p>';
+  var html = '<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">' +
+    '<button class="btn btn-primaire btn-sm" onclick="acQuizNouveau()">+ Ajouter une question</button>' +
+    '<select class="filtre-select" id="ac-quiz-filtre" onchange="acQuizCharger(\'' + coursId + '\')" style="font-size:11px">' +
+    '<option value="all"' + (filtreActif==='all'?' selected':'') + '>Toutes (' + qs.length + ')</option>' +
+    '<option value="active"' + (filtreActif==='active'?' selected':'') + '>Actives (' + nbActive + ')</option>' +
+    '<option value="inactive"' + (filtreActif==='inactive'?' selected':'') + '>Désactivées (' + nbInactive + ')</option>' +
+    '</select></div>';
+
+  var qsFiltered = qs.filter(function(q) {
+    if (filtreActif === 'active')   return q.is_active !== false;
+    if (filtreActif === 'inactive') return q.is_active === false;
+    return true;
+  });
+
+  if (!qsFiltered.length) {
+    html += '<p style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-faible)">Aucune question' + (filtreActif === 'all' ? '. Ajoutez-en pour activer le quiz.' : ' dans cette catégorie.') + '</p>';
   } else {
-    html += qs.map(function(q, qi) {
+    html += qsFiltered.map(function(q, qi) {
       var opts = Array.isArray(q.options) ? q.options : [];
+      var isActive = q.is_active !== false;
       var optsHtml = opts.map(function(o,i) {
         var txt = typeof o === 'object' ? o.text : o;
         return '<div style="font-family:Montserrat,sans-serif;font-size:11px;padding:3px 6px;border-radius:6px;' + (i===q.correct_index?'background:rgba(127,216,164,.15);color:var(--ok)':'color:var(--texte-faible)') + '">' + (i===q.correct_index?'✓ ':'') + acE(String(txt)) + '</div>';
       }).join('');
-      return '<div class="carte" style="margin-bottom:10px">' +
+      return '<div class="carte" style="margin-bottom:10px' + (!isActive ? ';opacity:.55' : '') + '">' +
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">' +
-        '<div style="flex:1"><div class="eyebrow" style="margin-bottom:4px">Q' + (qi+1) + '</div>' +
+        '<div style="flex:1"><div class="eyebrow" style="margin-bottom:4px">Q' + (qi+1) +
+        '<span style="margin-left:8px;font-size:9px;padding:2px 7px;border-radius:10px;font-weight:600;' + (isActive ? 'background:rgba(127,216,164,.15);color:var(--ok)' : 'background:rgba(255,80,80,.1);color:#c0392b') + '">' + (isActive ? 'Active' : 'Désactivée') + '</span></div>' +
         '<div style="font-size:16px;color:var(--blanc);margin-bottom:10px">' + acE(q.question) + '</div>' +
         optsHtml +
         (q.explanation ? '<div style="font-family:Montserrat,sans-serif;font-size:10px;color:var(--texte-faible);margin-top:8px;font-style:italic">💡 ' + acE(q.explanation) + '</div>' : '') +
         '</div>' +
-        '<div style="display:flex;gap:5px;flex:none">' +
+        '<div style="display:flex;flex-direction:column;gap:5px;flex:none">' +
         '<button class="btn btn-sec btn-sm" onclick="acQuizEditer(\'' + q.id + '\')">Modifier</button>' +
+        '<button class="btn ' + (isActive ? 'btn-sec' : 'btn-primaire') + ' btn-sm" onclick="acQuizToggleActif(\'' + q.id + '\',' + !isActive + ')">' + (isActive ? 'Désactiver' : 'Activer') + '</button>' +
         '<button class="btn btn-danger btn-sm" onclick="acQuizSupprimer(\'' + q.id + '\')">✕</button>' +
         '</div></div></div>';
     }).join('');
@@ -3338,6 +3378,13 @@ async function acQuizSupprimer(id) {
   var r = await NAHIRA.sb.from('academy_quiz_questions').delete().eq('id',id);
   if (r.error) { toast('Erreur : '+r.error.message,'err'); return; }
   toast('Question supprimée.'); acQuizCharger(AC.coursId);
+}
+
+async function acQuizToggleActif(id, newVal) {
+  var r = await NAHIRA.sb.from('academy_quiz_questions').update({ is_active: newVal }).eq('id', id);
+  if (r.error) { toast('Erreur : ' + r.error.message, 'err'); return; }
+  toast(newVal ? 'Question activée.' : 'Question désactivée.');
+  acQuizCharger(AC.coursId);
 }
 
 /* ════════════════════════════════════════════════════════════════════════

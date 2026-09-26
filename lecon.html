@@ -845,6 +845,22 @@ async function showQuiz() {
     return;
   }
 
+  // P2.1 — max attempts reached
+  if (startResult.error === 'max_attempts_reached') {
+    document.getElementById('quizQuestions').innerHTML =
+      `<p style="text-align:center;padding:40px 0;color:var(--texte-pale);font-family:'Montserrat',sans-serif;font-size:.85rem">Vous avez utilisé toutes vos tentatives pour ce quiz.</p>`;
+    document.getElementById('quizSubmitZone').hidden = true;
+    return;
+  }
+
+  // P2.2 — no active questions
+  if (startResult.error === 'no_active_questions') {
+    document.getElementById('quizQuestions').innerHTML =
+      `<p style="text-align:center;padding:40px 0;color:var(--texte-pale);font-family:'Montserrat',sans-serif;font-size:.85rem">Le quiz sera disponible prochainement.</p>`;
+    document.getElementById('quizSubmitZone').hidden = true;
+    return;
+  }
+
   if (!startResult.attempt_id || !startResult.questions?.length) {
     document.getElementById('quizQuestions').innerHTML =
       `<p style="text-align:center;padding:40px 0;color:var(--texte-pale);font-family:'Montserrat',sans-serif;font-size:.85rem">Le quiz sera disponible prochainement.</p>`;
@@ -852,7 +868,15 @@ async function showQuiz() {
     return;
   }
 
-  STATE.quizAttemptId = startResult.attempt_id;
+  STATE.quizAttemptId      = startResult.attempt_id;
+  STATE.attemptsRemaining  = startResult.attempts_remaining ?? null;
+  // P2.3 — store custom texts (null = use frontend fallback)
+  STATE.quizTexts = {
+    successTitle:   startResult.quiz_success_title   ?? null,
+    successMessage: startResult.quiz_success_message ?? null,
+    failureTitle:   startResult.quiz_failure_title   ?? null,
+    failureMessage: startResult.quiz_failure_message ?? null,
+  };
   const questions = startResult.questions;
 
   const container = document.getElementById('quizQuestions');
@@ -956,13 +980,35 @@ function showQuizResult(passed, correctCount, totalQuestions, certRef, results) 
   const cbg  = passed ? 'var(--vert-pale)' : 'var(--rose-pale)';
   const passingCount = Math.ceil(((STATE.course.passing_score ?? 70) / 100) * (totalQuestions ?? 20));
   const scoreLabel   = (correctCount != null && totalQuestions != null) ? `${correctCount} / ${totalQuestions}` : '';
+  const seuilLabel   = `${passingCount} / ${totalQuestions ?? 20}`;
+
+  // P2.3 — use custom texts if available, with {score}/{seuil} replacement
+  const texts = STATE.quizTexts || {};
+  function applyPlaceholders(tpl) {
+    return (tpl || '').replace('{score}', scoreLabel).replace('{seuil}', seuilLabel);
+  }
+  const titleText   = passed
+    ? (texts.successTitle   || 'Félicitations ✦')
+    : (texts.failureTitle   || 'Presque…');
+  const msgText = passed
+    ? applyPlaceholders(texts.successMessage || `Vous avez obtenu {score} — votre certificat d'attestation est prêt.`)
+    : applyPlaceholders(texts.failureMessage || `Vous avez obtenu {score}. Le seuil de réussite est de {seuil}. Revoyez les leçons et réessayez quand vous vous sentez prête.`);
+
+  // P2.1 — remaining attempts info
+  const remaining = STATE.attemptsRemaining ?? null;
+  const canRetry  = remaining === null || remaining > 0;
+  const retryLabel = remaining === null ? 'Réessayer →'
+    : remaining === 0 ? null
+    : `Réessayer (${remaining} tentative${remaining > 1 ? 's' : ''} restante${remaining > 1 ? 's' : ''})`;
 
   let actions = '';
   if (passed && certRef)
     actions += `<a class="nav-btn btn-suite" href="certificat.html?ref=${encodeURIComponent(certRef)}" style="white-space:nowrap">Obtenir mon certificat ✦</a>`;
   actions += `<a class="nav-btn" href="compte.html?tab=formations">Mes formations</a>`;
-  if (!passed)
-    actions += `<button class="nav-btn btn-terminer" onclick="location.reload()">Réessayer →</button>`;
+  if (!passed && canRetry && retryLabel)
+    actions += `<button class="nav-btn btn-terminer" onclick="location.reload()">${retryLabel}</button>`;
+  if (!passed && !canRetry)
+    actions += `<span style="font-family:'Montserrat',sans-serif;font-size:.78rem;color:var(--texte-pale)">Vous avez épuisé toutes vos tentatives.</span>`;
 
   el.innerHTML = `
     <div class="quiz-score-circle" style="border-color:${c};background:${cbg}">
@@ -970,13 +1016,9 @@ function showQuizResult(passed, correctCount, totalQuestions, certRef, results) 
       ${totalQuestions ? `<span class="quiz-score-label" style="color:${c}">questions correctes</span>` : ''}
     </div>
     <div class="quiz-result-title" style="color:${passed ? 'var(--vert)' : 'var(--texte)'}">
-      ${passed ? 'Félicitations ✦' : 'Presque…'}
+      ${esc(titleText)}
     </div>
-    <div class="quiz-result-sub">
-      ${passed
-        ? `Vous avez obtenu <strong>${scoreLabel}</strong> — votre certificat d'attestation est prêt.`
-        : `Vous avez obtenu <strong>${scoreLabel}</strong>. Le seuil de réussite est de <strong>${passingCount} / ${totalQuestions ?? 20}</strong>.<br>Revoyez les leçons et réessayez quand vous vous sentez prête.`}
-    </div>
+    <div class="quiz-result-sub">${esc(msgText).replace(/\n/g, '<br>')}</div>
     <div class="quiz-result-actions">${actions}</div>`;
   el.hidden = false;
 }
