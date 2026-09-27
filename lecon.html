@@ -427,6 +427,11 @@ const SUPABASE_URL      = "https://mxbmjtzrggahbwahxmkp.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14Ym1qdHpyZ2dhaGJ3YWh4bWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyMzc5NDQsImV4cCI6MjA5NjgxMzk0NH0.iTibkVCaTZYoMzQO4TQvddlKeZY40vNcfJ-kEgIHXpE";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+const PREVIEW = new URLSearchParams(location.search).get('preview') === '1';
+if (PREVIEW) {
+  document.querySelector('.b-nav')?.style.setProperty('display','none');
+}
+
 let STATE = {
   course: null, modules: [], lessons: [], currentLesson: null,
   completedIds: new Set(), enrolled: false, user: null,
@@ -443,29 +448,30 @@ async function init() {
   const courseSlug = params.get('course');
   const lessonId   = params.get('lesson');
 
-  if (!courseSlug) { location.href = 'academy.html'; return; }
+  if (!courseSlug) { if (!PREVIEW) location.href = 'academy.html'; return; }
 
   // User session
   const { data: { user } } = await sb.auth.getUser();
   STATE.user = user;
 
-  // Fetch course
-  const { data: course, error: cErr } = await sb
-    .from('academy_courses')
+  // Fetch course (preview bypasses is_published filter)
+  let courseQuery = sb.from('academy_courses')
     .select('id, slug, title, is_published, passing_score')
-    .eq('slug', courseSlug)
-    .eq('is_published', true)
-    .maybeSingle();
+    .eq('slug', courseSlug);
+  if (!PREVIEW) courseQuery = courseQuery.eq('is_published', true);
+  const { data: course, error: cErr } = await courseQuery.maybeSingle();
 
-  if (cErr || !course) { location.href = 'academy.html'; return; }
+  if (cErr || !course) { if (!PREVIEW) location.href = 'academy.html'; return; }
   STATE.course = course;
 
   document.title = `${course.title} — Nahira Academy`;
   document.getElementById('navCourseTitle').textContent = course.title;
   document.getElementById('sidebarCourseTitle').textContent = course.title;
 
-  // Check enrollment
-  if (user) {
+  // Check enrollment (preview = always enrolled, no tracking)
+  if (PREVIEW) {
+    STATE.enrolled = true;
+  } else if (user) {
     const { data: enroll } = await sb
       .from('academy_enrollments')
       .select('id, last_visited_lesson_id')
@@ -488,8 +494,8 @@ async function init() {
     (m.academy_lessons || []).sort((a,b) => a.sort_order - b.sort_order)
   );
 
-  // Fetch completed lessons
-  if (user && STATE.enrolled) {
+  // Fetch completed lessons (skip in preview — no real progress)
+  if (!PREVIEW && user && STATE.enrolled) {
     const { data: progress } = await sb
       .from('academy_progress')
       .select('lesson_id')
@@ -503,7 +509,7 @@ async function init() {
 
   // Quiz mode
   if (params.get('quiz') === '1') {
-    if (!STATE.user || !STATE.enrolled) {
+    if (!PREVIEW && (!STATE.user || !STATE.enrolled)) {
       document.getElementById('loadingState').hidden = true;
       showGate('formation.html?slug=' + courseSlug, !STATE.user);
     } else {
@@ -573,7 +579,7 @@ async function loadLesson(lessonId) {
   const lesson = STATE.lessons.find(l => l.id === lessonId);
   if (!lesson) { showGate('formation.html?slug=' + STATE.course.slug); return; }
 
-  const accessible = lesson.is_preview || STATE.enrolled;
+  const accessible = PREVIEW || lesson.is_preview || STATE.enrolled;
   if (!accessible) {
     document.getElementById('loadingState').hidden = true;
     showGate('formation.html?slug=' + STATE.course.slug, !STATE.user);
@@ -582,8 +588,8 @@ async function loadLesson(lessonId) {
 
   STATE.currentLesson = lesson;
 
-  // Persist last visited lesson in Supabase (fire-and-forget)
-  if (STATE.user && STATE.enrolled) {
+  // Persist last visited lesson (skip in preview — no tracking)
+  if (!PREVIEW && STATE.user && STATE.enrolled) {
     sb.from('academy_enrollments')
       .update({ last_visited_lesson_id: lessonId })
       .eq('user_id', STATE.user.id)
@@ -626,16 +632,21 @@ async function loadLesson(lessonId) {
   btnNext.disabled = !nextLesson;
   btnNext.onclick = nextLesson ? () => navigateTo(nextLesson.id) : null;
 
-  const isDone = STATE.completedIds.has(lessonId);
-  if (isDone) {
-    btnTerminer.textContent = '✓ Leçon terminée';
-    btnTerminer.classList.add('done');
+  if (PREVIEW) {
+    btnTerminer.style.display = 'none';
   } else {
-    btnTerminer.textContent = "J'ai terminé cette leçon ✓";
-    btnTerminer.classList.remove('done');
+    btnTerminer.style.display = '';
+    const isDone = STATE.completedIds.has(lessonId);
+    if (isDone) {
+      btnTerminer.textContent = '✓ Leçon terminée';
+      btnTerminer.classList.add('done');
+    } else {
+      btnTerminer.textContent = "J'ai terminé cette leçon ✓";
+      btnTerminer.classList.remove('done');
+    }
+    btnTerminer.disabled = isDone || !STATE.enrolled;
+    btnTerminer.onclick = STATE.enrolled ? () => markComplete(lessonId) : null;
   }
-  btnTerminer.disabled = isDone || !STATE.enrolled;
-  btnTerminer.onclick = STATE.enrolled ? () => markComplete(lessonId) : null;
 
   // Scroll en haut
   document.querySelector('.lecon-main')?.scrollTo(0, 0);
@@ -769,6 +780,14 @@ function renderBlocks(lesson) {
     html += `<div class="block-text" style="color:var(--texte-pale);font-family:Montserrat,sans-serif;font-size:.85rem;text-align:center;padding:40px 0">Le contenu de cette leçon sera ajouté prochainement.</div>`;
   }
 
+  // Phase B prep: add data-block-index to each top-level block div in preview
+  if (PREVIEW && blocks.length > 0) {
+    let idx = 0;
+    html = html.replace(/<div class="(block-[^"]+)"/g, (m, cls) => {
+      return `<div class="${cls}" data-block-index="${idx++}" data-block-type="${cls.replace('block-','')}"`;
+    });
+  }
+
   return html;
 }
 
@@ -840,6 +859,44 @@ async function showQuiz() {
   document.getElementById('quizState').hidden    = false;
 
   document.getElementById('quizEyebrow').textContent = `Quiz final · ${STATE.course.title}`;
+
+  // Preview mode: load questions directly without creating an attempt
+  if (PREVIEW) {
+    const { data: previewQs } = await sb.from('academy_questions')
+      .select('id, question, options, sort_order')
+      .eq('course_id', STATE.course.id)
+      .order('sort_order')
+      .limit(20);
+    const qs = (previewQs || []);
+    if (!qs.length) {
+      document.getElementById('quizQuestions').innerHTML =
+        `<p style="text-align:center;padding:40px 0;color:var(--texte-pale);font-family:'Montserrat',sans-serif;font-size:.85rem">Aucune question de quiz pour cette formation.</p>`;
+      document.getElementById('quizSubmitZone').hidden = true;
+    } else {
+      document.getElementById('quizQuestions').innerHTML = qs.map((q, qi) => {
+        const opts = Array.isArray(q.options) ? q.options : [];
+        const optsHtml = opts.map((opt, oi) => {
+          const label = typeof opt === 'object' ? opt.text : opt;
+          return `<label class="quiz-opt" id="qo-${esc(q.id)}-${oi}">
+            <input type="radio" name="q_${esc(q.id)}" value="${oi}" onchange="selectOpt('${esc(q.id)}',${oi},${opts.length})">
+            ${esc(String(label))}
+          </label>`;
+        }).join('');
+        return `<div class="quiz-q" id="qq-${esc(q.id)}">
+          <div class="quiz-q-num">Question ${qi + 1} / ${qs.length}</div>
+          <div class="quiz-q-text">${esc(q.question)}</div>
+          <div class="quiz-opts">${optsHtml}</div>
+        </div>`;
+      }).join('');
+      const submitBtn = document.getElementById('btnSubmitQuiz');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Aperçu uniquement — aucune correction';
+        submitBtn.style.opacity = '0.5';
+      }
+    }
+    return;
+  }
 
   // Check for existing passing attempt
   const { data: prev } = await sb.from('academy_quiz_attempts')

@@ -291,7 +291,28 @@ img{max-width:100%;display:block}
     document.getElementById(ok ? 'certWrap' : 'introuvable').hidden = false;
   }
 
-  const ref = new URLSearchParams(location.search).get('ref') || '';
+  const _cp = new URLSearchParams(location.search);
+  if (_cp.get('preview') === '1') {
+    const nom      = _cp.get('student')      || 'Aminata Ndiaye';
+    const scoreNum = parseInt(_cp.get('score') || '18');
+    const totalNum = parseInt(_cp.get('total') || '20');
+    const cTitle   = _cp.get('course_title')  || 'Nahira Academy';
+    const today    = new Date().toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'});
+    const fakeRef  = 'NA-' + Date.now().toString(36).toUpperCase().slice(-8);
+    document.title = `Certificat ${cTitle} — ${nom} — Nahira Academy`;
+    document.getElementById('c-nom').textContent       = nom;
+    document.getElementById('c-formation').textContent = cTitle;
+    document.getElementById('c-date').textContent      = today;
+    document.getElementById('c-score').textContent     = scoreNum + ' / ' + totalNum;
+    document.getElementById('c-ref').textContent       = fakeRef;
+    document.getElementById('c-ref-inline').textContent = fakeRef;
+    // Hide download/share buttons in preview (cert-nav-actions)
+    document.querySelector('.cert-nav-actions')?.style.setProperty('display','none');
+    document.querySelector('.cert-nav')?.style.setProperty('display','none');
+    return fin(true);
+  }
+
+  const ref = _cp.get('ref') || '';
   if (!ref) return fin(false);
 
   const { data: cert, error } = await sb.from('academy_certificates')

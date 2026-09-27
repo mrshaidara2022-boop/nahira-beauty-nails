@@ -284,6 +284,12 @@ const SUPABASE_URL      = "https://mxbmjtzrggahbwahxmkp.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14Ym1qdHpyZ2dhaGJ3YWh4bWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyMzc5NDQsImV4cCI6MjA5NjgxMzk0NH0.iTibkVCaTZYoMzQO4TQvddlKeZY40vNcfJ-kEgIHXpE";
 const CHECKOUT_URL      = SUPABASE_URL + "/functions/v1/create-checkout";
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const PREVIEW = new URLSearchParams(location.search).get('preview') === '1';
+if (PREVIEW) {
+  document.querySelector('.b-nav')?.style.setProperty('display','none');
+  document.querySelector('.ac-breadcrumb')?.style.setProperty('display','none');
+  document.querySelector('footer')?.style.setProperty('display','none');
+}
 
 // ── Utilitaires ──────────────────────────────────────────────────────────
 const burger = document.getElementById('navBurger');
@@ -311,13 +317,12 @@ async function init() {
   const slug   = params.get('slug');
   if (!slug) { showError(); return; }
 
-  // Fetch course
-  const { data: course, error: cErr } = await sb
-    .from('academy_courses')
+  // Fetch course (preview bypasses is_published filter)
+  let courseQuery = sb.from('academy_courses')
     .select(`*, products(id, price_cents, product_type)`)
-    .eq('slug', slug)
-    .eq('is_published', true)
-    .maybeSingle();
+    .eq('slug', slug);
+  if (!PREVIEW) courseQuery = courseQuery.eq('is_published', true);
+  const { data: course, error: cErr } = await courseQuery.maybeSingle();
 
   if (cErr || !course) { showError(); return; }
 
@@ -390,16 +395,19 @@ function renderPage(course, modules, enrolled, user) {
               ? `<img src="${course.cover_url}" alt="${course.title}">`
               : `<div class="fm-cover-ph">✦</div>`}
           </div>
-          <div class="fm-price">${priceStr}<small>${price ? ' TTC' : ''}</small></div>
-          ${enrolled
-            ? `<a href="lecon.html?course=${course.slug}" class="fm-btn fm-btn-enrolled">Continuer la formation →</a>
-               <div style="font-family:'Montserrat',sans-serif;font-size:.7rem;color:var(--vert);text-align:center;margin-top:8px">✓ Vous êtes déjà inscrit(e)</div>`
-            : course.is_free
-              ? `<button class="fm-btn fm-btn-primary" id="btnAcheter">Accéder gratuitement →</button>`
-              : `<button class="fm-btn fm-btn-primary" id="btnAcheter">S'inscrire — ${priceStr}</button>`
+          ${PREVIEW
+            ? `<div style="font-family:'Montserrat',sans-serif;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--texte-pale);text-align:center;padding:10px 0">Aperçu admin</div>`
+            : `<div class="fm-price">${priceStr}<small>${price ? ' TTC' : ''}</small></div>
+              ${enrolled
+                ? `<a href="lecon.html?course=${course.slug}" class="fm-btn fm-btn-enrolled">Continuer la formation →</a>
+                   <div style="font-family:'Montserrat',sans-serif;font-size:.7rem;color:var(--vert);text-align:center;margin-top:8px">✓ Vous êtes déjà inscrit(e)</div>`
+                : course.is_free
+                  ? `<button class="fm-btn fm-btn-primary" id="btnAcheter">Accéder gratuitement →</button>`
+                  : `<button class="fm-btn fm-btn-primary" id="btnAcheter">S'inscrire — ${priceStr}</button>`
+              }
+              ${!enrolled ? `<div class="fm-guarantee">🔒 Paiement sécurisé · Stripe</div>` : ''}
+              <div class="fm-msg" id="fmMsg"></div>`
           }
-          ${!enrolled ? `<div class="fm-guarantee">🔒 Paiement sécurisé · Stripe</div>` : ''}
-          <div class="fm-msg" id="fmMsg"></div>
         </div>
       </div>
     </div>`;

@@ -339,10 +339,22 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
   .stock-actions{width:100%}
 }
 
-/* ── Contenu : éditeur visuel dans la section ─────────────────────── */
+/* ── Contenu : aperçu élève dans la section ───────────────────────── */
 #main.ac-editor-in{max-width:100%;padding:0;overflow:hidden}
 #s-ac-contenu.editor-on{padding:0;display:flex!important;flex-direction:column}
-#ac-contenu-picker{padding:20px 16px}
+#ac-preview-bar{display:none;flex:none;align-items:center;justify-content:space-between;
+  gap:12px;padding:10px 16px;background:var(--carte);border-bottom:1px solid var(--ligne);flex-wrap:wrap}
+#s-ac-contenu.editor-on #ac-preview-bar{display:flex}
+.ac-preview-select-wrap{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.ac-preview-tabs{display:flex;gap:4px;flex-wrap:wrap}
+.ac-tab{font-family:'Montserrat',sans-serif;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
+  padding:6px 13px;border-radius:99px;border:1px solid var(--ligne);background:transparent;
+  color:var(--texte-doux);cursor:pointer;transition:all .2s;white-space:nowrap}
+.ac-tab:hover{border-color:var(--or-vif);color:var(--texte)}
+.ac-tab.actif{background:var(--or-pale);border-color:var(--or-vif);color:var(--texte);font-weight:600}
+.ac-preview-badge{font-family:'Montserrat',sans-serif;font-size:.58rem;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--texte-pale);white-space:nowrap;padding:4px 10px;
+  border:1px solid var(--ligne);border-radius:99px;flex:none}
 #ac-contenu-iframe{display:none;width:100%;border:none;flex:1}
 #s-ac-contenu.editor-on #ac-contenu-iframe{display:block}
 </style>
@@ -864,19 +876,23 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
 
       <!-- ═══ ACADEMY : CONTENU ════════════════════════════════════════════════ -->
       <section class="section" id="s-ac-contenu" style="display:none">
-        <div id="ac-contenu-picker">
-          <div class="eyebrow">Academy</div>
-          <h2 class="section-titre">Contenu <em>de la formation</em></h2>
-          <div class="carte" style="max-width:480px">
-            <p style="font-family:'Montserrat',sans-serif;font-size:13px;color:var(--texte-doux);margin-bottom:14px">Sélectionnez une formation pour ouvrir l'éditeur visuel.</p>
-            <select class="filtre-select" id="ac-contenu-select" onchange="acContenuCharger(this.value)" style="width:100%">
-              <option value="">— Choisir une formation —</option>
+        <div id="ac-preview-bar">
+          <div class="ac-preview-select-wrap">
+            <select class="filtre-select" id="ac-contenu-select" onchange="acContenuCharger(this.value)" style="max-width:220px">
+              <option value="">— Formation —</option>
             </select>
+            <div class="ac-preview-tabs">
+              <button class="ac-tab actif" data-tab="accueil" onclick="acPreviewTab('accueil')">Accueil</button>
+              <button class="ac-tab" data-tab="lecons" onclick="acPreviewTab('lecons')">Leçons</button>
+              <button class="ac-tab" data-tab="quiz" onclick="acPreviewTab('quiz')">Quiz</button>
+              <button class="ac-tab" data-tab="certificat" onclick="acPreviewTab('certificat')">Certificat</button>
+            </div>
           </div>
+          <div class="ac-preview-badge">Aperçu élève</div>
         </div>
         <iframe id="ac-contenu-iframe" src="about:blank"
           allow="clipboard-write; picture-in-picture; fullscreen"
-          title="Éditeur visuel Nahira Academy"></iframe>
+          title="Aperçu élève — Nahira Academy"></iframe>
       </section>
 
       <!-- ═══ ACADEMY : QUIZ ═══════════════════════════════════════════════════ -->
@@ -2917,6 +2933,8 @@ async function acFormSupprimer(id, titre) {
 /* ════════════════════════════════════════════════════════════════════════
    CONTENU — modules & leçons
    ══════════════════════════════════════════════════════════════════════ */
+var AC_PREVIEW_TAB = 'accueil';
+
 async function acContenuInit() {
   await acChargerCours();
   acPopulateSelects();
@@ -2930,6 +2948,14 @@ async function acContenuInit() {
   }
 }
 
+function acPreviewTab(tab) {
+  AC_PREVIEW_TAB = tab;
+  document.querySelectorAll('.ac-tab').forEach(function(b) {
+    b.classList.toggle('actif', b.dataset.tab === tab);
+  });
+  if (AC.coursId) acVisEditorOpen(AC.coursId);
+}
+
 async function acContenuCharger(coursId) {
   if (!coursId) { acVisEditorClose(); return; }
   AC.coursId = coursId;
@@ -2937,26 +2963,39 @@ async function acContenuCharger(coursId) {
 }
 
 function acVisEditorOpen(coursId) {
-  var picker = document.getElementById('ac-contenu-picker');
-  var iframe  = document.getElementById('ac-contenu-iframe');
-  var sec  = document.getElementById('s-ac-contenu');
-  var main = document.getElementById('main');
-  if (picker) picker.style.display = 'none';
+  var cours  = (AC.cours || []).find(function(c) { return c.id === coursId; });
+  var slug   = cours ? cours.slug   : coursId;
+  var title  = cours ? cours.title  : '';
+  var iframe = document.getElementById('ac-contenu-iframe');
+  var sec    = document.getElementById('s-ac-contenu');
+  var main   = document.getElementById('main');
+
   main.classList.add('ac-editor-in');
   sec.classList.add('editor-on');
-  if (iframe.dataset.coursId !== coursId) {
-    iframe.src = 'editeur.html?course=' + encodeURIComponent(coursId) + '&embedded=1';
-    iframe.dataset.coursId = coursId;
+
+  var tab = AC_PREVIEW_TAB;
+  var url;
+  if (tab === 'accueil') {
+    url = 'formation.html?slug=' + encodeURIComponent(slug) + '&preview=1';
+  } else if (tab === 'lecons') {
+    url = 'lecon.html?course=' + encodeURIComponent(slug) + '&preview=1';
+  } else if (tab === 'quiz') {
+    url = 'lecon.html?course=' + encodeURIComponent(slug) + '&quiz=1&preview=1';
+  } else {
+    url = 'certificat.html?preview=1&student=Aminata+Ndiaye&score=18&total=20'
+        + '&course_title=' + encodeURIComponent(title);
+  }
+
+  if (iframe.dataset.loadedUrl !== url) {
+    iframe.src = url;
+    iframe.dataset.loadedUrl = url;
   }
   acEditorSetHeight();
 }
 
 function acVisEditorClose() {
-  var picker = document.getElementById('ac-contenu-picker');
-  var iframe  = document.getElementById('ac-contenu-iframe');
   var sec  = document.getElementById('s-ac-contenu');
   var main = document.getElementById('main');
-  if (picker) picker.style.display = '';
   sec.classList.remove('editor-on');
   main.classList.remove('ac-editor-in');
 }
@@ -2965,8 +3004,10 @@ function acEditorSetHeight() {
   var iframe = document.getElementById('ac-contenu-iframe');
   if (!iframe) return;
   var hdr = document.querySelector('.app-header');
+  var bar = document.getElementById('ac-preview-bar');
   var hdrBottom = hdr ? hdr.getBoundingClientRect().bottom : 59;
-  iframe.style.height = Math.max(300, Math.round(window.innerHeight - hdrBottom)) + 'px';
+  var barH = (bar && bar.offsetParent) ? bar.getBoundingClientRect().height : 0;
+  iframe.style.height = Math.max(300, Math.round(window.innerHeight - hdrBottom - barH)) + 'px';
 }
 window.addEventListener('resize', acEditorSetHeight);
 
