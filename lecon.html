@@ -862,7 +862,7 @@ async function showQuiz() {
 
   // Preview mode: load questions directly without creating an attempt
   if (PREVIEW) {
-    const { data: previewQs } = await sb.from('academy_questions')
+    const { data: previewQs } = await sb.from('academy_quiz_questions')
       .select('id, question, options, sort_order')
       .eq('course_id', STATE.course.id)
       .order('sort_order')
