@@ -7,6 +7,7 @@
 <link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Parisienne&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="academy-renderer.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -234,6 +235,23 @@ a{color:inherit;text-decoration:none}
 }
 .block-fiche-btn:hover{background:var(--or-vif);color:#fff}
 
+/* Placeholder média — emplacement identifié pour photo/vidéo à venir */
+.block-placeholder{
+  display:flex;align-items:center;gap:18px;
+  padding:18px 22px;margin-bottom:18px;
+  background:repeating-linear-gradient(-45deg,rgba(154,122,64,.03),rgba(154,122,64,.03) 6px,transparent 6px,transparent 14px);
+  border:2px dashed rgba(154,122,64,.35);border-radius:10px;
+}
+.block-placeholder-icon{font-size:1.8rem;flex:none;opacity:.75}
+.block-placeholder-info{flex:1;min-width:0}
+.block-placeholder-id{
+  font-family:'Montserrat',sans-serif;font-size:.62rem;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--or-vif);font-weight:700;margin-bottom:4px;
+}
+.block-placeholder-label{
+  font-family:'Cormorant Garamond',serif;font-size:.95rem;color:var(--texte-doux);font-style:italic;
+}
+
 /* Barre de navigation entre leçons */
 .lecon-nav{
   position:fixed;bottom:0;left:280px;right:0;
@@ -435,7 +453,7 @@ if (PREVIEW) {
 let STATE = {
   course: null, modules: [], lessons: [], currentLesson: null,
   completedIds: new Set(), enrolled: false, user: null,
-  enrollment: null,
+  enrollment: null, mediaMap: {}, mediaRows: {}, materials: [],
 };
 
 // ── Utils ──────────────────────────────────────────────────────────────────
@@ -493,6 +511,24 @@ async function init() {
   STATE.lessons = STATE.modules.flatMap(m =>
     (m.academy_lessons || []).sort((a,b) => a.sort_order - b.sort_order)
   );
+
+  // Resolve placeholder media — fetch rows (storage_path needed for signed URLs)
+  const { data: mediaRows } = await sb
+    .from('academy_media')
+    .select('id, public_url, storage_path, module_label')
+    .eq('course_id', course.id);
+  STATE.mediaRows = {};
+  STATE.mediaMap  = {};
+  (mediaRows || []).forEach(m => {
+    STATE.mediaRows[m.id] = m;
+    // Cover + trailer sont dans le bucket public : URL directe
+    if (!m.module_label && m.public_url) STATE.mediaMap[m.id] = m.public_url;
+  });
+
+  // Fetch academy_materials for fiche resolution (non-blocking)
+  sb.from('academy_materials').select('id, title, file_url, fiche_num, sort_order')
+    .eq('course_id', course.id).order('sort_order')
+    .then(function(r){ STATE.materials = r.data || []; });
 
   // Fetch completed lessons (skip in preview — no real progress)
   if (!PREVIEW && user && STATE.enrolled) {
@@ -602,6 +638,24 @@ async function loadLesson(lessonId) {
   url.searchParams.set('lesson', lessonId);
   history.replaceState({}, '', url);
 
+  // Génère les URLs signées pour les placeholders de cette leçon (bucket privé)
+  {
+    const placeholderIds = (lesson.content_blocks || [])
+      .filter(b => b.type === 'placeholder' && b.id && !STATE.mediaMap[b.id])
+      .map(b => b.id);
+    if (placeholderIds.length) {
+      await Promise.all(placeholderIds.map(async pid => {
+        const row = STATE.mediaRows[pid];
+        if (row && row.storage_path) {
+          const { data } = await sb.storage
+            .from('academy-media')
+            .createSignedUrl(row.storage_path, 3600);
+          if (data?.signedUrl) STATE.mediaMap[pid] = data.signedUrl;
+        }
+      }));
+    }
+  }
+
   // Render
   document.getElementById('loadingState').hidden = true;
   document.getElementById('leconContent').hidden = false;
@@ -655,13 +709,13 @@ async function loadLesson(lessonId) {
   renderSidebar();
 }
 
-// ── Blocs de contenu ───────────────────────────────────────────────────────
+// ── Blocs de contenu — rendu délégué à academy-renderer.js ───────────────────
 function renderBlocks(lesson) {
   let html = '';
 
-  // Vidéo en premier si disponible
+  // Vidéo en premier si disponible (spécifique à la vue leçon)
   if (lesson.video_url) {
-    const isYT = /youtu\.be|youtube\.com/.test(lesson.video_url);
+    const isYT    = /youtu\.be|youtube\.com/.test(lesson.video_url);
     const isVimeo = /vimeo\.com/.test(lesson.video_url);
     if (isYT) {
       const id = lesson.video_url.match(/(?:v=|youtu\.be\/)([^&?]+)/)?.[1] || '';
@@ -674,107 +728,13 @@ function renderBlocks(lesson) {
     }
   }
 
-  // Blocs JSONB
+  // Blocs JSONB — rendu partagé via NahiraRenderer
   const blocks = Array.isArray(lesson.content_blocks) ? lesson.content_blocks : [];
-  for (const block of blocks) {
-    switch (block.type) {
-      case 'text':
-        html += `<div class="block-text">${block.content.split('\n').map(l => l ? `<p>${esc(l)}</p>` : '').join('')}</div>`;
-        break;
-      case 'heading':
-        html += `<h2 class="block-heading">${esc(block.content)}</h2>`;
-        break;
-      case 'image':
-        html += `<figure class="block-image">
-          <img src="${esc(block.url)}" alt="${esc(block.alt||'')}">
-          ${block.caption ? `<figcaption>${esc(block.caption)}</figcaption>` : ''}
-        </figure>`;
-        break;
-      case 'tip':
-        html += `<div class="block-tip">${esc(block.content || '').replace(/\n/g,'<br>')}</div>`;
-        break;
-      case 'warning':
-        html += `<div class="block-warning">${esc(block.content || '').replace(/\n/g,'<br>')}</div>`;
-        break;
-      case 'info':
-        html += `<div class="block-info">${esc(block.content || '').replace(/\n/g,'<br>')}</div>`;
-        break;
-      case 'divider':
-        html += `<hr class="block-divider">`;
-        break;
-      case 'step': {
-        const stepNum = block.number ?? (blocks.filter((b,bi) => b.type==='step' && bi<=blocks.indexOf(block)).length);
-        const stepTitle = block.title ? `<strong style="color:var(--texte)">${esc(block.title)}</strong><br>` : '';
-        html += `<div class="block-step"><div class="block-step-num">${stepNum}</div><div>${stepTitle}${esc(block.content || '')}</div></div>`;
-        break;
-      }
-      case 'material': {
-        const items = Array.isArray(block.items) ? block.items : [];
-        html += `<div class="block-material">${block.title ? `<h4>${esc(block.title)}</h4>` : ''}<ul>${items.map(i => `<li>${esc(i)}</li>`).join('')}</ul></div>`;
-        break;
-      }
-      case 'gallery': {
-        const imgs = Array.isArray(block.images) ? block.images : [];
-        if (imgs.length) html += `<div class="block-gallery">${imgs.map(img => {
-          const src = typeof img === 'string' ? img : img.url;
-          const alt = typeof img === 'object' ? (img.alt||'') : '';
-          return `<img src="${esc(src)}" alt="${esc(alt)}" loading="lazy">`;
-        }).join('')}</div>`;
-        break;
-      }
-      case 'video': {
-        const vUrl = block.url || '';
-        let vHtml = '';
-        if (/youtu\.be|youtube\.com/.test(vUrl)) {
-          const vid = vUrl.match(/(?:v=|youtu\.be\/)([^&?]+)/)?.[1] || '';
-          vHtml = `<iframe src="https://www.youtube.com/embed/${vid}" allow="autoplay;encrypted-media" allowfullscreen loading="lazy"></iframe>`;
-        } else if (/vimeo\.com/.test(vUrl)) {
-          const vid = vUrl.match(/vimeo\.com\/(\d+)/)?.[1] || '';
-          vHtml = `<iframe src="https://player.vimeo.com/video/${vid}" allow="autoplay;fullscreen" allowfullscreen loading="lazy"></iframe>`;
-        } else {
-          vHtml = `<video src="${esc(vUrl)}" controls playsinline></video>`;
-        }
-        html += `<div class="block-video-inline">${vHtml}</div>`;
-        break;
-      }
-      case 'section':
-        html += `<div class="block-section">${esc(block.label || '')}</div>`;
-        break;
-      case 'je_maitrise': {
-        const jmItems = Array.isArray(block.items) ? block.items : [];
-        const jmBody = jmItems.map(i => `<p style="margin:0 0 6px;padding-left:1.2em;text-indent:-1.2em">✓ ${esc(i)}</p>`).join('');
-        html += `<div class="block-je-maitrise">${jmBody}${esc(block.content || '')}</div>`;
-        break;
-      }
-      case 'table': {
-        const tHeaders = Array.isArray(block.headers) ? block.headers : [];
-        const tRows    = Array.isArray(block.rows)    ? block.rows    : [];
-        html += `<div class="block-table-wrap"><table class="block-table">` +
-          `<thead><tr>${tHeaders.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead>` +
-          `<tbody>${tRows.map(r => `<tr>${(Array.isArray(r) ? r : []).map(c => `<td>${esc(String(c ?? ''))}</td>`).join('')}</tr>`).join('')}</tbody>` +
-          `</table></div>`;
-        break;
-      }
-      case 'fiche': {
-        const fNum   = esc(block.num   || '');
-        const fTitle = esc(block.title || '');
-        const fFile  = esc(block.filename || '');
-        const fHref  = fFile ? `/fiches-pdf/${fFile}` : '#';
-        html += `<div class="block-fiche">` +
-          `<div class="block-fiche-badge">${fNum}</div>` +
-          `<div class="block-fiche-info">` +
-            `<div class="block-fiche-label">Fiche de référence</div>` +
-            `<div class="block-fiche-title">${fTitle}</div>` +
-          `</div>` +
-          `<a class="block-fiche-btn" href="${fHref}" download="${fFile}" target="_blank">Télécharger</a>` +
-          `</div>`;
-        break;
-      }
-      case 'placeholder':
-        // Media placeholder — renders nothing for students; visible in admin editor (Action 08)
-        break;
-    }
-  }
+  html += NahiraRenderer.renderBlocks(blocks, {
+    mediaMap: STATE.mediaMap,
+    materials: STATE.materials,
+    studentMode: true,
+  });
 
   if (!lesson.video_url && blocks.length === 0) {
     html += `<div class="block-text" style="color:var(--texte-pale);font-family:Montserrat,sans-serif;font-size:.85rem;text-align:center;padding:40px 0">Le contenu de cette leçon sera ajouté prochainement.</div>`;
@@ -942,6 +902,22 @@ async function showQuiz() {
     return;
   }
 
+  // P2.1 — max attempts reached
+  if (startResult.error === 'max_attempts_reached') {
+    document.getElementById('quizQuestions').innerHTML =
+      `<p style="text-align:center;padding:40px 0;color:var(--texte-pale);font-family:'Montserrat',sans-serif;font-size:.85rem">Vous avez utilisé toutes vos tentatives pour ce quiz.</p>`;
+    document.getElementById('quizSubmitZone').hidden = true;
+    return;
+  }
+
+  // P2.2 — no active questions
+  if (startResult.error === 'no_active_questions') {
+    document.getElementById('quizQuestions').innerHTML =
+      `<p style="text-align:center;padding:40px 0;color:var(--texte-pale);font-family:'Montserrat',sans-serif;font-size:.85rem">Le quiz sera disponible prochainement.</p>`;
+    document.getElementById('quizSubmitZone').hidden = true;
+    return;
+  }
+
   if (!startResult.attempt_id || !startResult.questions?.length) {
     document.getElementById('quizQuestions').innerHTML =
       `<p style="text-align:center;padding:40px 0;color:var(--texte-pale);font-family:'Montserrat',sans-serif;font-size:.85rem">Le quiz sera disponible prochainement.</p>`;
@@ -949,7 +925,15 @@ async function showQuiz() {
     return;
   }
 
-  STATE.quizAttemptId = startResult.attempt_id;
+  STATE.quizAttemptId      = startResult.attempt_id;
+  STATE.attemptsRemaining  = startResult.attempts_remaining ?? null;
+  // P2.3 — store custom texts (null = use frontend fallback)
+  STATE.quizTexts = {
+    successTitle:   startResult.quiz_success_title   ?? null,
+    successMessage: startResult.quiz_success_message ?? null,
+    failureTitle:   startResult.quiz_failure_title   ?? null,
+    failureMessage: startResult.quiz_failure_message ?? null,
+  };
   const questions = startResult.questions;
 
   const container = document.getElementById('quizQuestions');
@@ -1053,13 +1037,35 @@ function showQuizResult(passed, correctCount, totalQuestions, certRef, results) 
   const cbg  = passed ? 'var(--vert-pale)' : 'var(--rose-pale)';
   const passingCount = Math.ceil(((STATE.course.passing_score ?? 70) / 100) * (totalQuestions ?? 20));
   const scoreLabel   = (correctCount != null && totalQuestions != null) ? `${correctCount} / ${totalQuestions}` : '';
+  const seuilLabel   = `${passingCount} / ${totalQuestions ?? 20}`;
+
+  // P2.3 — use custom texts if available, with {score}/{seuil} replacement
+  const texts = STATE.quizTexts || {};
+  function applyPlaceholders(tpl) {
+    return (tpl || '').replace('{score}', scoreLabel).replace('{seuil}', seuilLabel);
+  }
+  const titleText   = passed
+    ? (texts.successTitle   || 'Félicitations ✦')
+    : (texts.failureTitle   || 'Presque…');
+  const msgText = passed
+    ? applyPlaceholders(texts.successMessage || `Vous avez obtenu {score} — votre certificat d'attestation est prêt.`)
+    : applyPlaceholders(texts.failureMessage || `Vous avez obtenu {score}. Le seuil de réussite est de {seuil}. Revoyez les leçons et réessayez quand vous vous sentez prête.`);
+
+  // P2.1 — remaining attempts info
+  const remaining = STATE.attemptsRemaining ?? null;
+  const canRetry  = remaining === null || remaining > 0;
+  const retryLabel = remaining === null ? 'Réessayer →'
+    : remaining === 0 ? null
+    : `Réessayer (${remaining} tentative${remaining > 1 ? 's' : ''} restante${remaining > 1 ? 's' : ''})`;
 
   let actions = '';
   if (passed && certRef)
     actions += `<a class="nav-btn btn-suite" href="certificat.html?ref=${encodeURIComponent(certRef)}" style="white-space:nowrap">Obtenir mon certificat ✦</a>`;
   actions += `<a class="nav-btn" href="compte.html?tab=formations">Mes formations</a>`;
-  if (!passed)
-    actions += `<button class="nav-btn btn-terminer" onclick="location.reload()">Réessayer →</button>`;
+  if (!passed && canRetry && retryLabel)
+    actions += `<button class="nav-btn btn-terminer" onclick="location.reload()">${retryLabel}</button>`;
+  if (!passed && !canRetry)
+    actions += `<span style="font-family:'Montserrat',sans-serif;font-size:.78rem;color:var(--texte-pale)">Vous avez épuisé toutes vos tentatives.</span>`;
 
   el.innerHTML = `
     <div class="quiz-score-circle" style="border-color:${c};background:${cbg}">
@@ -1067,13 +1073,9 @@ function showQuizResult(passed, correctCount, totalQuestions, certRef, results) 
       ${totalQuestions ? `<span class="quiz-score-label" style="color:${c}">questions correctes</span>` : ''}
     </div>
     <div class="quiz-result-title" style="color:${passed ? 'var(--vert)' : 'var(--texte)'}">
-      ${passed ? 'Félicitations ✦' : 'Presque…'}
+      ${esc(titleText)}
     </div>
-    <div class="quiz-result-sub">
-      ${passed
-        ? `Vous avez obtenu <strong>${scoreLabel}</strong> — votre certificat d'attestation est prêt.`
-        : `Vous avez obtenu <strong>${scoreLabel}</strong>. Le seuil de réussite est de <strong>${passingCount} / ${totalQuestions ?? 20}</strong>.<br>Revoyez les leçons et réessayez quand vous vous sentez prête.`}
-    </div>
+    <div class="quiz-result-sub">${esc(msgText).replace(/\n/g, '<br>')}</div>
     <div class="quiz-result-actions">${actions}</div>`;
   el.hidden = false;
 }

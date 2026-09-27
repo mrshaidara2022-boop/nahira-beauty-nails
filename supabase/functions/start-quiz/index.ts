@@ -18,8 +18,6 @@ function json(body: unknown, status = 200) {
   });
 }
 
-const QUESTIONS_PER_QUIZ = 20;
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: CORS });
   if (req.method !== "POST")    return json({ error: "Method not allowed" }, 405);
@@ -48,30 +46,74 @@ serve(async (req) => {
     .maybeSingle();
   if (!enrollment) return json({ error: "Not enrolled" }, 403);
 
-  // Abort any stale in_progress attempts for this user+course
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+  // Read course config: questions_per_quiz, max_attempts, quiz texts
+  const { data: courseConfig } = await admin.from("academy_courses")
+    .select("questions_per_quiz, max_attempts, quiz_success_title, quiz_success_message, quiz_failure_title, quiz_failure_message")
+    .eq("id", course_id)
+    .single();
+
+  const questionsPerQuiz: number  = courseConfig?.questions_per_quiz ?? 20;
+  const maxAttempts: number | null = courseConfig?.max_attempts ?? null;
+
+  // P2.1 — Max attempts check (counts only completed, non-invalidated attempts)
+  if (maxAttempts !== null) {
+    const { count } = await admin.from("academy_quiz_attempts")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("course_id", course_id)
+      .eq("status", "completed")
+      .eq("is_invalidated", false);
+
+    const used = count ?? 0;
+    if (used >= maxAttempts) {
+      return json({
+        error:          "max_attempts_reached",
+        attempts_used:  used,
+        max_attempts:   maxAttempts,
+      }, 403);
+    }
+  }
+
+  // Abort any stale in_progress attempts for this user+course
   await admin.from("academy_quiz_attempts")
     .update({ status: "abandoned" })
     .eq("user_id", user.id)
     .eq("course_id", course_id)
     .eq("status", "in_progress");
 
-  // Draw 20 random questions (no correct_index exposed — admin fetches by sort only)
+  // P2.2 — Draw random active questions only (no correct_index exposed)
   const { data: questions, error: qErr } = await admin.from("academy_quiz_questions")
     .select("id, question, options")
     .eq("course_id", course_id)
+    .eq("is_active", true)
     .order("sort_order");
 
   if (qErr || !questions || questions.length === 0)
-    return json({ error: "No questions available" }, 500);
+    return json({ error: "no_active_questions" }, 500);
 
-  // Fisher-Yates shuffle then take first QUESTIONS_PER_QUIZ
+  // Fisher-Yates shuffle then take min(questionsPerQuiz, available)
   const pool = [...questions];
   for (let i = pool.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
-  const selected = pool.slice(0, Math.min(QUESTIONS_PER_QUIZ, pool.length));
+  const selected = pool.slice(0, Math.min(questionsPerQuiz, pool.length));
+
+  // Compute remaining attempts for the client (null = unlimited)
+  let attemptsRemaining: number | null = null;
+  if (maxAttempts !== null) {
+    const { count: usedSoFar } = await admin.from("academy_quiz_attempts")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("course_id", course_id)
+      .eq("status", "completed")
+      .eq("is_invalidated", false);
+    // +1 because we're about to create one
+    attemptsRemaining = maxAttempts - ((usedSoFar ?? 0) + 1);
+    if (attemptsRemaining < 0) attemptsRemaining = 0;
+  }
 
   // Create attempt (score=0 placeholder, updated on submit)
   const { data: attempt, error: aErr } = await admin.from("academy_quiz_attempts")
@@ -98,13 +140,18 @@ serve(async (req) => {
   const { error: aqErr } = await admin.from("academy_quiz_attempt_questions").insert(rows);
   if (aqErr) return json({ error: "Could not assign questions" }, 500);
 
-  // Return attempt_id + questions (NO correct_index, NO explanation)
+  // P2.3 — Return quiz texts (null means use frontend fallback)
   return json({
-    attempt_id: attempt.id,
-    questions:  selected.map((q) => ({
+    attempt_id:         attempt.id,
+    questions:          selected.map((q) => ({
       question_id: q.id,
       question:    q.question,
       options:     q.options,
     })),
+    attempts_remaining: attemptsRemaining,
+    quiz_success_title:   courseConfig?.quiz_success_title   ?? null,
+    quiz_success_message: courseConfig?.quiz_success_message ?? null,
+    quiz_failure_title:   courseConfig?.quiz_failure_title   ?? null,
+    quiz_failure_message: courseConfig?.quiz_failure_message ?? null,
   });
 });
