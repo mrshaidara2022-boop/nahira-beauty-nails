@@ -1538,7 +1538,7 @@ function prodFormHTML(p, collections, currentColIds) {
       finishes.map(function(s){ return '<option'+(v('finish','')==s?' selected':'')+'>'+s+'</option>'; }).join('') +
     '</select></div>' +
     '<div class="champ"><label>Longueur (mm)</label><input id="fp-length" type="text" placeholder="ex : 26" value="'+esc(v('length_mm',''))+'"></div>' +
-    '<div class="champ"><label>Nombre de capsules</label><input id="fp-nails" type="number" min="1" placeholder="30" value="'+esc(v('nail_count',30))+'"></div>' +
+    '<div class="champ"><label>Nombre de capsules</label><input id="fp-nails" type="number" min="1" placeholder="24" value="'+esc(v('nail_count',24))+'"></div>' +
     '<div class="form-sep"></div><div class="form-legend">Descriptions</div>' +
     '<div class="champ form-plein"><label>Description courte <span style="font-weight:400;font-size:11px">(sous le titre sur la page produit)</span></label>' +
       '<textarea id="fp-desc-s" rows="2">'+esc(v('description_short',''))+'</textarea></div>' +
@@ -1568,7 +1568,7 @@ async function prodNouveauModal() {
   var cols = await _loadCollections();
   modalOuvrir('Nouveau produit', prodFormHTML(null, cols, []),
     '<button class="btn btn-sec" onclick="modalFermer()">Annuler</button>' +
-    '<button class="btn btn-primaire" onclick="prodEnregistrer()">Créer le produit</button>');
+    '<button class="btn btn-primaire" id="btn-sauv-prod" onclick="prodEnregistrer()">Créer le produit</button>');
   document.getElementById('fp-name').addEventListener('input', function() {
     var sl = document.getElementById('fp-slug');
     if (!sl._edited) sl.value = slugify(this.value);
@@ -1584,7 +1584,7 @@ async function prodModifier(id) {
   var curColIds = (rPC.data||[]).map(function(x){ return x.collection_id; });
   modalOuvrir('Modifier — '+p.name, prodFormHTML(p, cols, curColIds),
     '<button class="btn btn-sec" onclick="modalFermer()">Annuler</button>' +
-    '<button class="btn btn-primaire" onclick="prodEnregistrer()">Enregistrer</button>');
+    '<button class="btn btn-primaire" id="btn-sauv-prod" onclick="prodEnregistrer()">Enregistrer</button>');
   document.getElementById('fp-slug')._edited = true;
 }
 
@@ -1594,6 +1594,12 @@ async function prodEnregistrer() {
   var slug = document.getElementById('fp-slug').value.trim();
   var prixV = parseFloat(document.getElementById('fp-prix').value)||0;
   if (!name||!slug||prixV<=0) { toast('Nom, slug et prix sont obligatoires.','err'); return; }
+
+  // État de chargement — empêche le double-clic
+  var btn = document.getElementById('btn-sauv-prod');
+  var origLabel = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Enregistrement…'; }
+
   var compareV = parseFloat(document.getElementById('fp-compare').value)||0;
   var payload = {
     name: name,
@@ -1607,7 +1613,7 @@ async function prodEnregistrer() {
     shape: document.getElementById('fp-shape').value||null,
     finish: document.getElementById('fp-finish').value||null,
     length_mm: document.getElementById('fp-length').value.trim()||null,
-    nail_count: parseInt(document.getElementById('fp-nails').value)||30,
+    nail_count: parseInt(document.getElementById('fp-nails').value)||24,
     description_short: document.getElementById('fp-desc-s').value.trim()||null,
     description: document.getElementById('fp-desc').value.trim()||null,
     sort_order: parseInt(document.getElementById('fp-sort').value)||null,
@@ -1625,19 +1631,33 @@ async function prodEnregistrer() {
     if (r.error) throw r.error;
     var savedId = id || r.data.id;
     // Sync collections: delete existing then insert selected
-    await NAHIRA.sb.from('product_collections').delete().eq('product_id', savedId);
+    var rDel = await NAHIRA.sb.from('product_collections').delete().eq('product_id', savedId);
+    if (rDel.error) console.warn('collections delete:', rDel.error.message);
     if (selectedCols.length) {
       var rows = selectedCols.map(function(cid){ return {product_id: savedId, collection_id: cid}; });
       var rIns = await NAHIRA.sb.from('product_collections').insert(rows);
-      if (rIns.error) console.warn('collections sync:', rIns.error.message);
+      if (rIns.error) console.warn('collections insert:', rIns.error.message);
     }
     modalFermer();
-    toast(id ? 'Produit enregistré.' : 'Produit créé !', 'ok');
+    toast(id ? 'Produit enregistré ✓' : 'Produit créé ✓', 'ok');
     chargerProduits();
     tableauCharge = false;
   } catch(e) {
-    console.error(e);
-    toast('Erreur : '+(e.message||''),'err');
+    console.error('[prodEnregistrer]', e);
+    // Réactiver le bouton + afficher l'erreur dans le modal (ne jamais afficher "enregistré" si erreur)
+    if (btn) { btn.disabled = false; btn.textContent = origLabel; }
+    var msg = e.message || 'Erreur inconnue';
+    // Afficher l'erreur en rouge dans le modal ET en toast
+    var errEl = document.getElementById('fp-erreur');
+    if (!errEl) {
+      errEl = document.createElement('div');
+      errEl.id = 'fp-erreur';
+      errEl.style.cssText = 'color:#E0315A;font-family:Montserrat,sans-serif;font-size:11px;padding:8px 12px;background:rgba(224,49,90,.1);border-radius:6px;margin-top:8px;border:1px solid rgba(224,49,90,.3)';
+      var modal = document.querySelector('#modal .modal-corps');
+      if (modal) modal.appendChild(errEl);
+    }
+    errEl.textContent = '⚠ Erreur : ' + msg;
+    toast('Erreur : ' + msg, 'err');
   }
 }
 
