@@ -1415,7 +1415,7 @@ async function chargerProduits() {
   S.prodsData = [];
   try {
     var r = await NAHIRA.sb.from('products').select(
-      'id,name,slug,sku,price_cents,compare_at_cents,stock,low_stock_threshold,shape,finish,length_mm,nail_count,description_short,description,is_visible,is_new,is_bestseller,is_lazy_pick,is_featured,image_url,sort_order,product_images(id,url,position,alt_text)'
+      'id,name,slug,sku,tagline,price_cents,compare_at_cents,stock,low_stock_threshold,shape,finish,length_mm,nail_count,description_short,description,is_visible,is_new,is_bestseller,is_lazy_pick,is_featured,image_url,sort_order,product_images(id,url,position,alt_text)'
     ).order('sort_order',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false});
     if (r.error) throw r.error;
     S.prodsData = (r.data||[]).map(function(p) {
@@ -1488,22 +1488,48 @@ function prodLigne(p) {
     '</div></div>';
 }
 
-function prodFormHTML(p) {
+function prodFormHTML(p, collections, currentColIds) {
   function v(k,d){ return p ? (p[k]!=null?p[k]:d) : d; }
   function chk(k){ return (p&&p[k])?'checked':''; }
   var shapes = ['carré','amande','coffin','stiletto','rond'];
   var finishes = ['brillant','mat','velours','holographique','miroir','nacré'];
+  var colSet = new Set(currentColIds||[]);
+
+  var colHtml = '';
+  if (collections && collections.length) {
+    colHtml = '<div class="form-sep"></div><div class="form-legend">Collection</div>' +
+      '<div class="flags form-plein">' +
+      (collections||[]).map(function(c) {
+        return '<label class="flag"><input type="checkbox" class="fp-col-chk" value="'+esc(c.id)+'"'+(colSet.has(c.id)?' checked':'')+'>'+esc(c.name)+'</label>';
+      }).join('') + '</div>';
+  }
+
+  var photoHtml = '';
+  if (p && p.id) {
+    var nbPhotos = (p.product_images||[]).length;
+    photoHtml = '<div class="champ form-plein" style="display:flex;align-items:center;gap:10px">' +
+      '<label style="flex:none;margin-bottom:0">Photos</label>' +
+      '<button type="button" class="btn btn-sec btn-sm" onclick="modalFermer();setTimeout(function(){goImages(\''+esc(p.id)+'\')},120)">📷 Gérer les photos'+(nbPhotos?' ('+nbPhotos+')')+'</button>' +
+      '</div>';
+  } else {
+    photoHtml = '<div class="champ form-plein" style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-doux)">' +
+      '📷 Les photos s\'ajoutent après la création du produit (bouton 🖼️ dans la liste).</div>';
+  }
+
   return '<div class="form-grille">' +
     '<div class="champ form-plein"><label>Nom du produit *</label><input id="fp-name" type="text" value="'+esc(v('name',''))+'"></div>' +
+    '<div class="champ form-plein"><label>Tagline <span style="font-weight:400;font-size:11px">(phrase affichée sur la page produit)</span></label>' +
+      '<input id="fp-tagline" type="text" placeholder="ex : La manucure parfaite en 10 minutes…" value="'+esc(v('tagline',''))+'"></div>' +
     '<div class="champ form-plein"><label>Slug (URL) *</label><input id="fp-slug" type="text" value="'+esc(v('slug',''))+'"></div>' +
-    '<div class="champ"><label>SKU / Référence</label><input id="fp-sku" type="text" value="'+esc(v('sku',''))+'"></div>' +
+    '<div class="champ"><label>SKU / Référence fournisseur</label><input id="fp-sku" type="text" value="'+esc(v('sku',''))+'"></div>' +
     '<div class="champ"><label>Ordre affichage</label><input id="fp-sort" type="number" min="0" value="'+esc(v('sort_order',''))+'"></div>' +
     '<div class="form-sep"></div><div class="form-legend">Tarification</div>' +
-    '<div class="champ"><label>Prix (€) *</label><input id="fp-prix" type="number" step="0.01" min="0" value="'+(p&&p.price_cents?(p.price_cents/100).toFixed(2):'')+'"></div>' +
-    '<div class="champ"><label>Prix barré (€)</label><input id="fp-compare" type="number" step="0.01" min="0" value="'+(p&&p.compare_at_cents?(p.compare_at_cents/100).toFixed(2):'')+'"></div>' +
+    '<div class="champ"><label>Prix de vente (€) *</label><input id="fp-prix" type="number" step="0.01" min="0" value="'+(p&&p.price_cents?(p.price_cents/100).toFixed(2):'')+'"></div>' +
+    '<div class="champ"><label>Prix barré / comparaison (€) <span style="font-weight:400;font-size:11px">0 = aucun</span></label>' +
+      '<input id="fp-compare" type="number" step="0.01" min="0" placeholder="0" value="'+(p&&p.compare_at_cents?(p.compare_at_cents/100).toFixed(2):'')+'"></div>' +
     '<div class="form-sep"></div><div class="form-legend">Stock</div>' +
     '<div class="champ"><label>Stock actuel *</label><input id="fp-stock" type="number" min="0" value="'+v('stock',0)+'"></div>' +
-    '<div class="champ"><label>Seuil alerte</label><input id="fp-seuil" type="number" min="0" value="'+v('low_stock_threshold',3)+'"></div>' +
+    '<div class="champ"><label>Seuil alerte stock</label><input id="fp-seuil" type="number" min="0" value="'+v('low_stock_threshold',3)+'"></div>' +
     '<div class="form-sep"></div><div class="form-legend">Caractéristiques</div>' +
     '<div class="champ"><label>Forme</label><select id="fp-shape"><option value="">— Sélectionner —</option>'+
       shapes.map(function(s){ return '<option'+(v('shape','')==s?' selected':'')+'>'+s+'</option>'; }).join('') +
@@ -1511,13 +1537,15 @@ function prodFormHTML(p) {
     '<div class="champ"><label>Finition</label><select id="fp-finish"><option value="">— Sélectionner —</option>'+
       finishes.map(function(s){ return '<option'+(v('finish','')==s?' selected':'')+'>'+s+'</option>'; }).join('') +
     '</select></div>' +
-    '<div class="champ"><label>Longueur (mm)</label><input id="fp-length" type="number" min="0" value="'+esc(v('length_mm',''))+'"></div>' +
-    '<div class="champ"><label>Nombre de capsules</label><input id="fp-nails" type="number" min="1" placeholder="24" value="'+esc(v('nail_count',24))+'"></div>' +
+    '<div class="champ"><label>Longueur (mm)</label><input id="fp-length" type="text" placeholder="ex : 26" value="'+esc(v('length_mm',''))+'"></div>' +
+    '<div class="champ"><label>Nombre de capsules</label><input id="fp-nails" type="number" min="1" placeholder="30" value="'+esc(v('nail_count',30))+'"></div>' +
     '<div class="form-sep"></div><div class="form-legend">Descriptions</div>' +
-    '<div class="champ form-plein"><label>Description courte</label><textarea id="fp-desc-s" rows="2">'+esc(v('description_short',''))+'</textarea></div>' +
+    '<div class="champ form-plein"><label>Description courte <span style="font-weight:400;font-size:11px">(sous le titre sur la page produit)</span></label>' +
+      '<textarea id="fp-desc-s" rows="2">'+esc(v('description_short',''))+'</textarea></div>' +
     '<div class="champ form-plein"><label>Description complète</label><textarea id="fp-desc" rows="4">'+esc(v('description',''))+'</textarea></div>' +
-    '<div class="champ form-plein"><label>Image URL (legacy)</label><input id="fp-img" type="url" value="'+esc(v('image_url',''))+'"></div>' +
-    '<div class="form-sep"></div><div class="form-legend">Visibilité & flags</div>' +
+    colHtml +
+    '<div class="form-sep"></div>' + photoHtml +
+    '<div class="form-sep"></div><div class="form-legend">Visibilité & badges</div>' +
     '<div class="flags form-plein">' +
       '<label class="flag"><input type="checkbox" id="fp-vis" '+chk('is_visible')+'> Visible</label>' +
       '<label class="flag"><input type="checkbox" id="fp-new" '+chk('is_new')+'> Nouveau</label>' +
@@ -1529,8 +1557,16 @@ function prodFormHTML(p) {
     '</div>';
 }
 
-function prodNouveauModal() {
-  modalOuvrir('Nouveau produit', prodFormHTML(null),
+async function _loadCollections() {
+  if (S.collectionsList) return S.collectionsList;
+  var r = await NAHIRA.sb.from('collections').select('id,name').eq('is_active',true).order('sort_order');
+  S.collectionsList = r.data || [];
+  return S.collectionsList;
+}
+
+async function prodNouveauModal() {
+  var cols = await _loadCollections();
+  modalOuvrir('Nouveau produit', prodFormHTML(null, cols, []),
     '<button class="btn btn-sec" onclick="modalFermer()">Annuler</button>' +
     '<button class="btn btn-primaire" onclick="prodEnregistrer()">Créer le produit</button>');
   document.getElementById('fp-name').addEventListener('input', function() {
@@ -1540,10 +1576,13 @@ function prodNouveauModal() {
   document.getElementById('fp-slug').addEventListener('input', function(){ this._edited = true; });
 }
 
-function prodModifier(id) {
+async function prodModifier(id) {
   var p = S.prodsData.find(function(x){ return x.id===id; });
   if (!p) return;
-  modalOuvrir('Modifier — '+p.name, prodFormHTML(p),
+  var cols = await _loadCollections();
+  var rPC = await NAHIRA.sb.from('product_collections').select('collection_id').eq('product_id', id);
+  var curColIds = (rPC.data||[]).map(function(x){ return x.collection_id; });
+  modalOuvrir('Modifier — '+p.name, prodFormHTML(p, cols, curColIds),
     '<button class="btn btn-sec" onclick="modalFermer()">Annuler</button>' +
     '<button class="btn btn-primaire" onclick="prodEnregistrer()">Enregistrer</button>');
   document.getElementById('fp-slug')._edited = true;
@@ -1555,20 +1594,22 @@ async function prodEnregistrer() {
   var slug = document.getElementById('fp-slug').value.trim();
   var prixV = parseFloat(document.getElementById('fp-prix').value)||0;
   if (!name||!slug||prixV<=0) { toast('Nom, slug et prix sont obligatoires.','err'); return; }
+  var compareV = parseFloat(document.getElementById('fp-compare').value)||0;
   var payload = {
-    name:name, slug:slug,
+    name: name,
+    slug: slug,
+    tagline: document.getElementById('fp-tagline').value.trim()||null,
     sku: document.getElementById('fp-sku').value.trim()||null,
     price_cents: Math.round(prixV*100),
-    compare_at_cents: (parseFloat(document.getElementById('fp-compare').value)||0)>0 ? Math.round(parseFloat(document.getElementById('fp-compare').value)*100) : null,
+    compare_at_cents: compareV>0 ? Math.round(compareV*100) : null,
     stock: parseInt(document.getElementById('fp-stock').value)||0,
     low_stock_threshold: parseInt(document.getElementById('fp-seuil').value)||3,
     shape: document.getElementById('fp-shape').value||null,
     finish: document.getElementById('fp-finish').value||null,
-    length_mm: parseInt(document.getElementById('fp-length').value)||null,
-    nail_count: parseInt(document.getElementById('fp-nails').value)||24,
+    length_mm: document.getElementById('fp-length').value.trim()||null,
+    nail_count: parseInt(document.getElementById('fp-nails').value)||30,
     description_short: document.getElementById('fp-desc-s').value.trim()||null,
     description: document.getElementById('fp-desc').value.trim()||null,
-    image_url: document.getElementById('fp-img').value.trim()||null,
     sort_order: parseInt(document.getElementById('fp-sort').value)||null,
     is_visible: document.getElementById('fp-vis').checked,
     is_new: document.getElementById('fp-new').checked,
@@ -1576,11 +1617,20 @@ async function prodEnregistrer() {
     is_lazy_pick: document.getElementById('fp-lazy').checked,
     is_featured: document.getElementById('fp-feat').checked,
   };
+  var selectedCols = Array.from(document.querySelectorAll('.fp-col-chk:checked')).map(function(el){ return el.value; });
   try {
     var r = id
       ? await NAHIRA.sb.from('products').update(payload).eq('id',id)
-      : await NAHIRA.sb.from('products').insert(payload);
+      : await NAHIRA.sb.from('products').insert(payload).select('id').single();
     if (r.error) throw r.error;
+    var savedId = id || r.data.id;
+    // Sync collections: delete existing then insert selected
+    await NAHIRA.sb.from('product_collections').delete().eq('product_id', savedId);
+    if (selectedCols.length) {
+      var rows = selectedCols.map(function(cid){ return {product_id: savedId, collection_id: cid}; });
+      var rIns = await NAHIRA.sb.from('product_collections').insert(rows);
+      if (rIns.error) console.warn('collections sync:', rIns.error.message);
+    }
     modalFermer();
     toast(id ? 'Produit enregistré.' : 'Produit créé !', 'ok');
     chargerProduits();
@@ -1596,7 +1646,7 @@ async function prodDupliquer(id) {
   if (!p) return;
   var payload = {
     name:p.name+' (Copie)', slug:p.slug+'-'+Date.now().toString(36),
-    sku:p.sku?p.sku+'-C':null,
+    tagline:p.tagline||null, sku:p.sku?p.sku+'-C':null,
     price_cents:p.price_cents, compare_at_cents:p.compare_at_cents||null,
     stock:0, low_stock_threshold:p.low_stock_threshold||3,
     shape:p.shape||null, finish:p.finish||null,
