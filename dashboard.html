@@ -1601,6 +1601,10 @@ async function prodEnregistrer() {
   if (btn) { btn.disabled = true; btn.textContent = 'Enregistrement…'; }
 
   var compareV = parseFloat(document.getElementById('fp-compare').value)||0;
+  var sortRaw = document.getElementById('fp-sort').value.trim();
+  var stockRaw = document.getElementById('fp-stock').value.trim();
+  var seuilRaw = document.getElementById('fp-seuil').value.trim();
+  var existingProd = id ? (S.prodsData||[]).find(function(p){ return p.id === id; }) : null;
   var payload = {
     name: name,
     slug: slug,
@@ -1608,15 +1612,15 @@ async function prodEnregistrer() {
     sku: document.getElementById('fp-sku').value.trim()||null,
     price_cents: Math.round(prixV*100),
     compare_at_cents: compareV>0 ? Math.round(compareV*100) : null,
-    stock: parseInt(document.getElementById('fp-stock').value)||0,
-    low_stock_threshold: parseInt(document.getElementById('fp-seuil').value)||3,
+    stock: stockRaw !== '' ? parseInt(stockRaw) : (existingProd ? (existingProd.stock||0) : 0),
+    low_stock_threshold: seuilRaw !== '' ? parseInt(seuilRaw) : (existingProd ? (existingProd.low_stock_threshold||3) : 3),
     shape: document.getElementById('fp-shape').value||null,
     finish: document.getElementById('fp-finish').value||null,
     length_mm: document.getElementById('fp-length').value.trim()||null,
     nail_count: parseInt(document.getElementById('fp-nails').value)||24,
     description_short: document.getElementById('fp-desc-s').value.trim()||null,
     description: document.getElementById('fp-desc').value.trim()||null,
-    sort_order: parseInt(document.getElementById('fp-sort').value)||null,
+    sort_order: sortRaw !== '' ? parseInt(sortRaw) : (existingProd ? (existingProd.sort_order !== null ? existingProd.sort_order : 0) : 0),
     is_visible: document.getElementById('fp-vis').checked,
     is_new: document.getElementById('fp-new').checked,
     is_bestseller: document.getElementById('fp-best').checked,
