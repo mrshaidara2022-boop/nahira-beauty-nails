@@ -493,6 +493,11 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
             <option value="oui">Visibles</option>
             <option value="non">Masqués</option>
           </select>
+          <select class="filtre-select" id="filtre-archive" onchange="prodFiltrer()">
+            <option value="">Actifs</option>
+            <option value="archived">Archivés</option>
+            <option value="all">Tous</option>
+          </select>
         </div>
         <div class="chargement" id="p-loading">Chargement…</div>
         <div id="p-liste" class="liste-produits" style="display:none"></div>
@@ -1407,16 +1412,22 @@ function renderChart(orders) {
 }
 
 /* ====== PRODUITS ====== */
-var prodFiltre = { search:'', shape:'', finish:'', visible:'' };
+var prodFiltre = { search:'', shape:'', finish:'', visible:'', archive:'' };
 
 async function chargerProduits() {
   document.getElementById('p-loading').style.display = '';
   document.getElementById('p-liste').style.display = 'none';
   S.prodsData = [];
   try {
-    var r = await NAHIRA.sb.from('products').select(
-      'id,name,slug,sku,tagline,price_cents,compare_at_cents,stock,low_stock_threshold,shape,finish,length_mm,nail_count,description_short,description,is_visible,is_new,is_bestseller,is_lazy_pick,is_featured,image_url,sort_order,product_images(id,url,position,alt_text)'
-    ).is('deleted_at',null).order('sort_order',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false});
+    var baseQ = NAHIRA.sb.from('products').select(
+      'id,name,slug,sku,tagline,price_cents,compare_at_cents,stock,low_stock_threshold,shape,finish,length_mm,nail_count,description_short,description,is_visible,is_new,is_bestseller,is_lazy_pick,is_featured,image_url,sort_order,deleted_at,product_images(id,url,position,alt_text)'
+    );
+    var filtQ = prodFiltre.archive === 'archived'
+      ? baseQ.not('deleted_at','is',null)
+      : prodFiltre.archive === 'all'
+        ? baseQ
+        : baseQ.is('deleted_at',null);
+    var r = await filtQ.order('sort_order',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false});
     if (r.error) throw r.error;
     S.prodsData = (r.data||[]).map(function(p) {
       var imgs = (p.product_images||[]).slice().sort(function(a,b){ return a.position-b.position; });
@@ -1434,11 +1445,17 @@ async function chargerProduits() {
 function rafraichirProduits() { chargerProduits(); }
 
 function prodFiltrer() {
+  var oldArchive = prodFiltre.archive;
   prodFiltre.search = document.getElementById('filtre-search').value.toLowerCase();
   prodFiltre.shape = document.getElementById('filtre-shape').value;
   prodFiltre.finish = document.getElementById('filtre-finish').value;
   prodFiltre.visible = document.getElementById('filtre-visible').value;
-  renderProduits();
+  prodFiltre.archive = document.getElementById('filtre-archive').value;
+  if (prodFiltre.archive !== oldArchive) {
+    chargerProduits(); // re-fetch depuis le serveur avec le bon filtre deleted_at
+  } else {
+    renderProduits();
+  }
 }
 
 function renderProduits() {
@@ -1469,8 +1486,17 @@ function prodLigne(p) {
   var visH = p.is_visible
     ? '<span class="badge badge-dispo">Visible</span>'
     : '<span class="badge badge-masque">Masqué</span>';
+  var archBadge = p.deleted_at
+    ? '<span class="badge" style="background:#7a4a4a;color:#ffd;font-size:9px;letter-spacing:.8px">ARCHIVÉ</span>'
+    : '';
   var id = esc(p.id);
-  return '<div class="prod-ligne'+(p.is_visible?'':' masque')+'" id="prod-'+id+'">' +
+  var actions = p.deleted_at
+    ? '<button class="btn btn-sm btn-sec" style="font-size:11px;padding:3px 10px" onclick="restaurerProduit(\''+id+'\')">↩ Restaurer</button>'
+    : '<button class="btn btn-sm btn-sec btn-ico" title="Modifier" onclick="prodModifier(\''+id+'\')">✏️</button>' +
+      '<button class="btn btn-sm btn-sec btn-ico" title="Images" onclick="goImages(\''+id+'\')">🖼️</button>' +
+      '<button class="btn btn-sm btn-sec btn-ico" title="Dupliquer" onclick="prodDupliquer(\''+id+'\')">⧉</button>' +
+      '<button class="btn btn-sm btn-danger btn-ico" title="Supprimer" onclick="prodSupprimer(\''+id+'\')">🗑️</button>';
+  return '<div class="prod-ligne'+(p.is_visible?'':' masque')+(p.deleted_at?' archive':'')+'" id="prod-'+id+'">' +
     img +
     '<div class="prod-info">' +
       '<div class="prod-nom">'+esc(p.name)+'</div>' +
@@ -1478,13 +1504,8 @@ function prodLigne(p) {
       '<div class="prod-prix">'+prix+'</div>' +
     '</div>' +
     '<div class="prod-droite">' +
-      '<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">'+stockH+' '+visH+'</div>' +
-      '<div class="prod-actions">' +
-        '<button class="btn btn-sm btn-sec btn-ico" title="Modifier" onclick="prodModifier(\''+id+'\')">✏️</button>' +
-        '<button class="btn btn-sm btn-sec btn-ico" title="Images" onclick="goImages(\''+id+'\')">🖼️</button>' +
-        '<button class="btn btn-sm btn-sec btn-ico" title="Dupliquer" onclick="prodDupliquer(\''+id+'\')">⧉</button>' +
-        '<button class="btn btn-sm btn-danger btn-ico" title="Supprimer" onclick="prodSupprimer(\''+id+'\')">🗑️</button>' +
-      '</div>' +
+      '<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">'+archBadge+' '+stockH+' '+visH+'</div>' +
+      '<div class="prod-actions">'+actions+'</div>' +
     '</div></div>';
 }
 
@@ -1707,18 +1728,26 @@ async function confirmerSuppr(id) {
   try {
     var chk = await NAHIRA.sb.from('order_items').select('id').eq('product_id',id).limit(1);
     var hasOrders = chk.data && chk.data.length > 0;
-    // Nettoyage des relations non-historiques
-    await NAHIRA.sb.from('product_collections').delete().eq('product_id',id);
-    await NAHIRA.sb.from('product_images').delete().eq('product_id',id);
     if (hasOrders) {
-      // Suppression douce : archive le produit, préserve la FK order_items
+      // Archivage : rendre invisible uniquement, TOUT préserver (images, collections, données)
       var r = await NAHIRA.sb.from('products')
         .update({ deleted_at: new Date().toISOString(), is_visible: false })
         .eq('id',id);
       if (r.error) throw r.error;
-      modalFermer(); toast('Produit archivé — historique commandes préservé.','ok');
+      modalFermer(); toast('Produit archivé — données et historique préservés.','ok');
     } else {
-      // Suppression physique : aucune commande, aucun historique à préserver
+      // Suppression physique : tenter de supprimer les fichiers Storage associés
+      var imgR = await NAHIRA.sb.from('product_images').select('url').eq('product_id',id);
+      if (imgR.data && imgR.data.length) {
+        var paths = imgR.data.map(function(img){
+          var m = (img.url||'').match(/\/storage\/v1\/object\/public\/products\/(.+)$/);
+          return m ? m[1] : null;
+        }).filter(Boolean);
+        if (paths.length) {
+          try { await NAHIRA.sb.storage.from('products').remove(paths); } catch(se) {}
+        }
+      }
+      // CASCADE supprime automatiquement product_images, product_collections, favorites, etc.
       var r = await NAHIRA.sb.from('products').delete().eq('id',id);
       if (r.error) throw r.error;
       modalFermer(); toast('Produit supprimé.','ok');
@@ -1726,6 +1755,31 @@ async function confirmerSuppr(id) {
     chargerProduits();
   } catch(e) {
     if (btn) { btn.disabled = false; btn.textContent = 'Confirmer'; }
+    toast('Erreur : '+(e.message||''),'err');
+  }
+}
+
+async function restaurerProduit(id) {
+  var p = S.prodsData.find(function(x){ return x.id===id; });
+  if (!p) return;
+  modalOuvrir('Restaurer ' + esc(p.name),
+    '<p style="color:var(--texte-doux);font-size:16px;margin-bottom:8px">Restaurer <strong style="color:var(--blanc)">'+esc(p.name)+'</strong> dans la liste des produits actifs ?</p>' +
+    '<p style="color:var(--alerte);font-family:Montserrat,sans-serif;font-size:10px;letter-spacing:.5px">Le produit restera masqué (is_visible=false) — publie-le manuellement quand tu es prête.</p>',
+    '<button class="btn btn-sec" onclick="modalFermer()">Annuler</button>' +
+    '<button class="btn btn-primaire" id="btn-restaurer" onclick="confirmerRestaurer(\''+esc(id)+'\')">Restaurer</button>');
+}
+
+async function confirmerRestaurer(id) {
+  var btn = document.getElementById('btn-restaurer');
+  if (btn) { btn.disabled = true; btn.textContent = 'Restauration…'; }
+  try {
+    var r = await NAHIRA.sb.from('products').update({ deleted_at: null }).eq('id',id);
+    if (r.error) throw r.error;
+    modalFermer();
+    toast('Produit restauré. Pense à le rendre visible manuellement.','ok');
+    chargerProduits();
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Restaurer'; }
     toast('Erreur : '+(e.message||''),'err');
   }
 }
