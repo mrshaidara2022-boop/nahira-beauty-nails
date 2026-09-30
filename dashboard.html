@@ -360,8 +360,9 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
 #ac-contenu-iframe{display:none;width:100%;border:none;flex:1}
 #s-ac-contenu.editor-on #ac-contenu-iframe{display:block}
 /* BOTTOM SHEET MOBILE ACTIONS PRODUIT */
-.prod-menu-btn{display:none;background:var(--carte);border:1px solid var(--bordure);border-radius:10px;color:var(--texte-doux);font-size:18px;padding:0;cursor:pointer;flex:none;align-items:center;justify-content:center;width:44px;height:44px;line-height:1;-webkit-tap-highlight-color:transparent}
+.prod-menu-btn{display:flex;background:var(--carte);border:1px solid var(--bordure);border-radius:10px;color:var(--texte-doux);font-size:18px;padding:0;cursor:pointer;flex:none;align-items:center;justify-content:center;width:44px;height:44px;line-height:1;-webkit-tap-highlight-color:transparent}
 .prod-menu-btn:active{background:var(--carte-2)}
+@media(min-width:521px){.prod-menu-btn{display:none}}
 .bsheet-voile{position:fixed;inset:0;z-index:290;background:rgba(6,4,6,.72);display:none}
 .bsheet-voile.actif{display:block}
 .bsheet{position:fixed;bottom:0;left:0;right:0;z-index:291;background:var(--carte);border-top:1px solid var(--bordure);border-radius:22px 22px 0 0;padding-bottom:calc(60px + var(--sb));transform:translateY(100%);transition:transform .28s cubic-bezier(.32,1,.68,1);max-height:72vh;overflow-y:auto}
@@ -1518,11 +1519,13 @@ function prodLigne(p) {
       '<button class="btn btn-sm btn-sec btn-ico" title="Dupliquer" onclick="prodDupliquer(\''+id+'\')">⧉</button>' +
       '<button class="btn btn-sm btn-danger btn-ico" title="Supprimer" onclick="prodSupprimer(\''+id+'\')">🗑️</button>';
   return '<div class="prod-ligne'+(p.is_visible?'':' masque')+(p.deleted_at?' archive':'')+'" id="prod-'+id+'">' +
+    '<div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;cursor:pointer" onclick="prodModifier(\''+id+'\')" role="button" tabindex="0">' +
     img +
     '<div class="prod-info">' +
       '<div class="prod-nom">'+esc(p.name)+'</div>' +
       '<div class="prod-sku">'+(p.sku||'—')+'</div>' +
       '<div class="prod-prix">'+prix+'</div>' +
+    '</div>' +
     '</div>' +
     '<div class="prod-droite">' +
       '<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">'+archBadge+' '+stockH+' '+visH+'</div>' +
@@ -1544,10 +1547,8 @@ function bsheetOuvrir(btn) {
       '<span class="bsheet-ico">↩</span>Restaurer</button>';
   } else {
     corps.innerHTML =
-      '<button class="bsheet-btn" onclick="bsheetFermer();setTimeout(function(){prodModifier(\''+id+'\')},120)">' +
-      '<span class="bsheet-ico">✏️</span>Modifier</button>' +
       '<button class="bsheet-btn" onclick="bsheetFermer();setTimeout(function(){goImages(\''+id+'\')},120)">' +
-      '<span class="bsheet-ico">🖼️</span>Images</button>' +
+      '<span class="bsheet-ico">🖼️</span>Gérer les images</button>' +
       '<button class="bsheet-btn" onclick="bsheetFermer();setTimeout(function(){prodDupliquer(\''+id+'\')},120)">' +
       '<span class="bsheet-ico">⧉</span>Dupliquer</button>' +
       '<button class="bsheet-btn danger" onclick="bsheetFermer();setTimeout(function(){prodSupprimer(\''+id+'\')},120)">' +
