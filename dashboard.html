@@ -338,6 +338,7 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
   .form-grille{grid-template-columns:1fr}
   .prod-droite{display:none}
   .stock-actions{width:100%}
+  .prod-menu-btn{display:flex}
 }
 
 /* ── Contenu : aperçu élève dans la section ───────────────────────── */
@@ -358,10 +359,30 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
   border:1px solid var(--ligne);border-radius:99px;flex:none}
 #ac-contenu-iframe{display:none;width:100%;border:none;flex:1}
 #s-ac-contenu.editor-on #ac-contenu-iframe{display:block}
+/* BOTTOM SHEET MOBILE ACTIONS PRODUIT */
+.prod-menu-btn{display:none;background:var(--carte);border:1px solid var(--bordure);border-radius:10px;color:var(--texte-doux);font-size:18px;padding:0;cursor:pointer;flex:none;align-items:center;justify-content:center;width:44px;height:44px;line-height:1;-webkit-tap-highlight-color:transparent}
+.prod-menu-btn:active{background:var(--carte-2)}
+.bsheet-voile{position:fixed;inset:0;z-index:290;background:rgba(6,4,6,.72);display:none}
+.bsheet-voile.actif{display:block}
+.bsheet{position:fixed;bottom:0;left:0;right:0;z-index:291;background:var(--carte);border-top:1px solid var(--bordure);border-radius:22px 22px 0 0;padding-bottom:calc(60px + var(--sb));transform:translateY(100%);transition:transform .28s cubic-bezier(.32,1,.68,1);max-height:72vh;overflow-y:auto}
+.bsheet.actif{transform:translateY(0)}
+.bsheet-handle{width:36px;height:4px;background:var(--bordure);border-radius:2px;margin:12px auto 4px}
+.bsheet-titre{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--blanc);padding:8px 20px 14px;border-bottom:1px solid var(--bordure);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bsheet-btn{display:flex;align-items:center;gap:14px;padding:0 20px;border:none;border-bottom:1px solid rgba(240,111,167,.06);cursor:pointer;color:var(--texte-doux);background:none;width:100%;text-align:left;font-family:'Montserrat',sans-serif;font-size:13px;min-height:52px;transition:background .15s;-webkit-tap-highlight-color:transparent}
+.bsheet-btn:last-child{border-bottom:none}
+.bsheet-btn:active{background:var(--carte-2)}
+.bsheet-btn.danger{color:var(--alerte)}
+.bsheet-ico{font-size:18px;width:26px;text-align:center;flex:none}
 </style>
 </head>
 <body>
 <div class="fond"></div>
+<div class="bsheet-voile" id="bsheet-voile" onclick="bsheetFermer()"></div>
+<div class="bsheet" id="bsheet" role="dialog" aria-modal="true">
+  <div class="bsheet-handle"></div>
+  <div class="bsheet-titre" id="bsheet-titre"></div>
+  <div id="bsheet-corps"></div>
+</div>
 
 <!-- AUTH GATE -->
 <div id="auth-gate" class="auth-gate">
@@ -1506,7 +1527,38 @@ function prodLigne(p) {
     '<div class="prod-droite">' +
       '<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">'+archBadge+' '+stockH+' '+visH+'</div>' +
       '<div class="prod-actions">'+actions+'</div>' +
-    '</div></div>';
+    '</div>' +
+    '<button class="prod-menu-btn" data-id="'+id+'" data-nom="'+esc(p.name)+'" data-archive="'+(p.deleted_at?'true':'false')+'" onclick="bsheetOuvrir(this)" aria-label="Actions">⋯</button>' +
+    '</div>';
+}
+
+function bsheetOuvrir(btn) {
+  var id = btn.dataset.id;
+  var nom = btn.dataset.nom;
+  var estArchive = btn.dataset.archive === 'true';
+  document.getElementById('bsheet-titre').textContent = nom;
+  var corps = document.getElementById('bsheet-corps');
+  if (estArchive) {
+    corps.innerHTML =
+      '<button class="bsheet-btn" onclick="bsheetFermer();setTimeout(function(){restaurerProduit(\''+id+'\')},120)">' +
+      '<span class="bsheet-ico">↩</span>Restaurer</button>';
+  } else {
+    corps.innerHTML =
+      '<button class="bsheet-btn" onclick="bsheetFermer();setTimeout(function(){prodModifier(\''+id+'\')},120)">' +
+      '<span class="bsheet-ico">✏️</span>Modifier</button>' +
+      '<button class="bsheet-btn" onclick="bsheetFermer();setTimeout(function(){goImages(\''+id+'\')},120)">' +
+      '<span class="bsheet-ico">🖼️</span>Images</button>' +
+      '<button class="bsheet-btn" onclick="bsheetFermer();setTimeout(function(){prodDupliquer(\''+id+'\')},120)">' +
+      '<span class="bsheet-ico">⧉</span>Dupliquer</button>' +
+      '<button class="bsheet-btn danger" onclick="bsheetFermer();setTimeout(function(){prodSupprimer(\''+id+'\')},120)">' +
+      '<span class="bsheet-ico">🗑️</span>Supprimer / Archiver</button>';
+  }
+  document.getElementById('bsheet-voile').classList.add('actif');
+  document.getElementById('bsheet').classList.add('actif');
+}
+function bsheetFermer() {
+  document.getElementById('bsheet-voile').classList.remove('actif');
+  document.getElementById('bsheet').classList.remove('actif');
 }
 
 function prodFormHTML(p, collections, currentColIds) {
