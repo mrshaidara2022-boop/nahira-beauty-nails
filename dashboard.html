@@ -1676,7 +1676,7 @@ async function prodDupliquer(id) {
     shape:p.shape||null, finish:p.finish||null,
     length_mm:p.length_mm||null, nail_count:p.nail_count||null,
     description_short:p.description_short||null, description:p.description||null,
-    image_url:p.image_url||null, sort_order:p.sort_order||null,
+    image_url:p.image_url||null, sort_order:p.sort_order!=null?p.sort_order:0,
     is_visible:false, is_new:false, is_bestseller:false, is_lazy_pick:false, is_featured:false,
   };
   try {
