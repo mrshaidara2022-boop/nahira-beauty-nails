@@ -101,6 +101,7 @@ const NAHIRA = (() => {
       `)
       .eq("slug", slug)
       .eq("is_visible", true)
+      .is("deleted_at", null)
       .maybeSingle();
     if (!data) return null;
     // Normalise la galerie : product_images en priorité, fallback image_url V1
@@ -122,6 +123,7 @@ const NAHIRA = (() => {
         product_images ( url, position )
       `)
       .eq("is_visible", true)
+      .is("deleted_at", null)
       .order("sort_order", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: false })
       .limit(limit);
@@ -166,6 +168,7 @@ const NAHIRA = (() => {
     const { data } = await sb.from("products")
       .select("id, name, slug, price_cents, stock, image_url, product_images(url, position)")
       .eq("is_visible", true)
+      .is("deleted_at", null)
       .neq("id", productId)
       .or(orClause || "id.neq.00000000-0000-0000-0000-000000000000")
       .limit(limit);

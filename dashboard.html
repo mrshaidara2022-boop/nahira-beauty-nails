@@ -1416,7 +1416,7 @@ async function chargerProduits() {
   try {
     var r = await NAHIRA.sb.from('products').select(
       'id,name,slug,sku,tagline,price_cents,compare_at_cents,stock,low_stock_threshold,shape,finish,length_mm,nail_count,description_short,description,is_visible,is_new,is_bestseller,is_lazy_pick,is_featured,image_url,sort_order,product_images(id,url,position,alt_text)'
-    ).order('sort_order',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false});
+    ).is('deleted_at',null).order('sort_order',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false});
     if (r.error) throw r.error;
     S.prodsData = (r.data||[]).map(function(p) {
       var imgs = (p.product_images||[]).slice().sort(function(a,b){ return a.position-b.position; });
@@ -1687,23 +1687,47 @@ async function prodDupliquer(id) {
   } catch(e) { toast('Erreur duplication : '+(e.message||''),'err'); }
 }
 
-function prodSupprimer(id) {
+async function prodSupprimer(id) {
   var p = S.prodsData.find(function(x){ return x.id===id; });
   if (!p) return;
-  modalOuvrir('Confirmer la suppression',
-    '<p style="color:var(--texte-doux);font-size:17px;margin-bottom:12px">Supprimer définitivement <strong style="color:var(--blanc)">'+esc(p.name)+'</strong> ?</p>' +
-    '<p style="color:var(--alerte);font-family:Montserrat,sans-serif;font-size:10px;letter-spacing:1px">⚠️ Action irréversible. Les images Storage ne seront pas supprimées automatiquement.</p>',
+  var chk = await NAHIRA.sb.from('order_items').select('id').eq('product_id',id).limit(1);
+  var hasOrders = chk.data && chk.data.length > 0;
+  var infoMsg = hasOrders
+    ? '<p style="color:var(--alerte);font-family:Montserrat,sans-serif;font-size:11px;letter-spacing:.5px;margin-top:8px">Ce produit est lié à des commandes. Il sera <strong>archivé</strong> (retiré du catalogue, historique préservé).</p>'
+    : '<p style="color:var(--alerte);font-family:Montserrat,sans-serif;font-size:11px;letter-spacing:.5px;margin-top:8px">Aucune commande liée. Le produit sera <strong>supprimé définitivement</strong>.</p>';
+  modalOuvrir('Retirer du catalogue',
+    '<p style="color:var(--texte-doux);font-size:17px;margin-bottom:4px">Retirer <strong style="color:var(--blanc)">'+esc(p.name)+'</strong> ?</p>' + infoMsg,
     '<button class="btn btn-sec" onclick="modalFermer()">Annuler</button>' +
-    '<button class="btn btn-danger" onclick="confirmerSuppr(\''+esc(id)+'\')">Supprimer définitivement</button>');
+    '<button class="btn btn-danger" id="btn-suppr-prod" onclick="confirmerSuppr(\''+esc(id)+'\')">Confirmer</button>');
 }
 
 async function confirmerSuppr(id) {
+  var btn = document.getElementById('btn-suppr-prod');
+  if (btn) { btn.disabled = true; btn.textContent = 'Traitement…'; }
   try {
-    var r = await NAHIRA.sb.from('products').delete().eq('id',id);
-    if (r.error) throw r.error;
-    modalFermer(); toast('Produit supprimé.','ok');
+    var chk = await NAHIRA.sb.from('order_items').select('id').eq('product_id',id).limit(1);
+    var hasOrders = chk.data && chk.data.length > 0;
+    // Nettoyage des relations non-historiques
+    await NAHIRA.sb.from('product_collections').delete().eq('product_id',id);
+    await NAHIRA.sb.from('product_images').delete().eq('product_id',id);
+    if (hasOrders) {
+      // Suppression douce : archive le produit, préserve la FK order_items
+      var r = await NAHIRA.sb.from('products')
+        .update({ deleted_at: new Date().toISOString(), is_visible: false })
+        .eq('id',id);
+      if (r.error) throw r.error;
+      modalFermer(); toast('Produit archivé — historique commandes préservé.','ok');
+    } else {
+      // Suppression physique : aucune commande, aucun historique à préserver
+      var r = await NAHIRA.sb.from('products').delete().eq('id',id);
+      if (r.error) throw r.error;
+      modalFermer(); toast('Produit supprimé.','ok');
+    }
     chargerProduits();
-  } catch(e) { toast('Erreur : '+(e.message||''),'err'); }
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Confirmer'; }
+    toast('Erreur : '+(e.message||''),'err');
+  }
 }
 
 function goImages(productId) {
@@ -1715,7 +1739,7 @@ function goImages(productId) {
 async function chargerImages() {
   var sel = document.getElementById('sel-prod-images');
   if (sel.children.length <= 1) {
-    var r = await NAHIRA.sb.from('products').select('id,name,is_visible').order('name');
+    var r = await NAHIRA.sb.from('products').select('id,name,is_visible').is('deleted_at',null).order('name');
     var prods = r.data || [];
     sel.innerHTML = '<option value="">— Choisir un produit —</option>' +
       prods.map(function(p){ return '<option value="'+esc(p.id)+'">'+esc(p.name)+(p.is_visible?'':' (masqué)')+'</option>'; }).join('');
