@@ -25,10 +25,17 @@
   align-items: start;
   margin-top: 34px;
 }
-@media (max-width: 860px) { .fiche { grid-template-columns: 1fr; gap: 32px; } }
+@media (max-width: 860px) { .fiche { grid-template-columns: 1fr; gap: 24px; } }
+@media (max-width: 640px) {
+  .fiche { margin-top: 20px; gap: 20px; }
+  .galerie-main { border-radius: 16px; }
+  .galerie-thumb { width: 60px; height: 60px; border-radius: 8px; }
+  .prix-ligne { gap: 10px; margin: 14px 0 5px; }
+  .prix { font-size: 1.8rem; }
+}
 
 /* ── Galerie ─────────────────────────────────────────────────────────── */
-.galerie { display: flex; flex-direction: column; gap: 12px; }
+.galerie { display: flex; flex-direction: column; gap: 10px; }
 .galerie-main {
   position: relative;
   border-radius: 20px;
@@ -39,54 +46,64 @@
 }
 .galerie-main img {
   width: 100%; height: 100%;
-  object-fit: cover;
+  object-fit: cover; object-position: center;
   transition: opacity .25s;
+  display: block;
 }
 .galerie-thumbs {
   display: flex;
   gap: 8px;
   overflow-x: auto;
   scrollbar-width: none;
+  padding-bottom: 2px;
 }
 .galerie-thumbs::-webkit-scrollbar { display: none; }
 .galerie-thumb {
   flex-shrink: 0;
-  width: 64px; height: 64px;
+  width: 70px; height: 70px;
   border-radius: 10px;
   overflow: hidden;
-  border: 2px solid var(--ligne);
+  border: 2px solid rgba(232,194,122,.18);
   cursor: pointer;
-  transition: border-color .15s;
+  transition: border-color .2s, transform .15s;
 }
-.galerie-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.galerie-thumb:hover { transform: translateY(-1px); border-color: rgba(232,194,122,.4); }
+.galerie-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
 .galerie-thumb.active { border-color: var(--or); }
 
 /* ── Badges ─────────────────────────────────────────────────────────── */
 .badges-overlay {
   position: absolute;
-  top: 14px; left: 14px;
+  top: 16px; left: 16px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
+  max-width: calc(100% - 32px);
 }
 .badge {
   display: inline-block;
   font-family: 'Montserrat', sans-serif;
-  font-size: .62rem;
-  letter-spacing: .18em;
+  font-size: .58rem;
+  letter-spacing: .16em;
   text-transform: uppercase;
-  padding: 5px 12px;
+  padding: 4px 10px;
   border-radius: 99px;
+  white-space: nowrap;
 }
-.badge-nouveau   { background: rgba(6,4,6,.8); backdrop-filter: blur(6px); border: 1px solid var(--rose); color: var(--rose); }
-.badge-bestseller{ background: rgba(6,4,6,.8); backdrop-filter: blur(6px); border: 1px solid var(--or); color: var(--or-vif); }
-.badge-lazy      { background: rgba(6,4,6,.8); backdrop-filter: blur(6px); border: 1px solid #c9a0ff; color: #c9a0ff; }
-.badge-stock     { background: rgba(6,4,6,.85); backdrop-filter: blur(6px); border: 1px solid currentColor; }
+.badge-nouveau   { background: rgba(6,4,6,.82); backdrop-filter: blur(8px); border: 1px solid var(--rose); color: var(--rose); }
+.badge-bestseller{ background: rgba(6,4,6,.82); backdrop-filter: blur(8px); border: 1px solid var(--or); color: var(--or-vif); }
+.badge-lazy      { background: rgba(6,4,6,.82); backdrop-filter: blur(8px); border: 1px solid #c9a0ff; color: #c9a0ff; }
+.badge-stock     { background: rgba(6,4,6,.85); backdrop-filter: blur(8px); border: 1px solid currentColor; }
 
 /* ── Info produit ────────────────────────────────────────────────────── */
 .prix-ligne { display: flex; align-items: baseline; gap: 14px; margin: 20px 0 6px; flex-wrap: wrap; }
 .prix       { font-size: 2.1rem; color: var(--or-vif); font-weight: 300; }
 .prix-barre { text-decoration: line-through; color: var(--texte-faible); font-size: 1.15rem; }
+
+/* Descriptions et texte courant → Montserrat pour lisibilité */
+#p-desc { font-family: 'Montserrat', sans-serif; font-size: .88rem; line-height: 1.7; }
+.note-livraison { font-size: .76rem; line-height: 1.65; }
+details p, details ul { font-family: 'Montserrat', sans-serif; font-size: .9rem; }
 .promo-tag  {
   font-family: 'Montserrat', sans-serif;
   font-size: .62rem; letter-spacing: .18em; text-transform: uppercase;
@@ -485,7 +502,10 @@ details ul { margin-left: 18px; }
   if (produit.is_new)        overlay.innerHTML += '<span class="badge badge-nouveau">Nouveau</span>';
   if (produit.is_bestseller) overlay.innerHTML += '<span class="badge badge-bestseller">Bestseller</span>';
   if (produit.is_lazy_pick)  overlay.innerHTML += '<span class="badge badge-lazy">✦ Lazy Pick</span>';
-  overlay.innerHTML += '<span class="badge badge-stock" style="color:' + stockInfo.color + '; border-color:' + stockInfo.color + '">' + stockInfo.text + '</span>';
+  // Badge stock uniquement si état notable (pas "En stock")
+  if (stockInfo.cls !== 'stock-dispo') {
+    overlay.innerHTML += '<span class="badge badge-stock" style="color:' + stockInfo.color + '; border-color:' + stockInfo.color + '">' + stockInfo.text + '</span>';
+  }
 
   /* ── Nom, tagline, prix ─────────────────────────────────────── */
   document.getElementById("p-nom").textContent   = produit.name;

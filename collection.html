@@ -18,27 +18,27 @@
 <link rel="stylesheet" href="boutique.css">
 <style>
 /* ── En-tête ─────────────────────────────────────────────────── */
-.entete-col{text-align:center; padding:36px 0 32px}
-.entete-col h1{margin:8px 0 10px}
-.entete-col p.sous{color:var(--texte-doux); max-width:520px; margin:0 auto; font-size:1.05rem}
+.entete-col{text-align:center; padding:28px 0 24px}
+.entete-col h1{margin:6px 0 8px}
+.entete-col p.sous{color:var(--texte-doux); max-width:520px; margin:0 auto; font-size:1rem; font-family:'Montserrat',sans-serif; font-size:.88rem; line-height:1.6}
 
 /* ── Moods ───────────────────────────────────────────────────── */
-.moods-barre{display:flex; gap:10px; overflow-x:auto; padding:0 0 8px; margin-bottom:28px; scrollbar-width:none}
+.moods-barre{display:flex; gap:8px; overflow-x:auto; padding:0 0 6px; margin-bottom:20px; scrollbar-width:none}
 .moods-barre::-webkit-scrollbar{display:none}
 .mood-chip{
-  flex:0 0 auto; display:flex; align-items:center; gap:7px;
-  padding:9px 18px; border-radius:99px;
+  flex:0 0 auto; display:flex; align-items:center; gap:6px;
+  padding:7px 15px; border-radius:99px;
   border:1px solid var(--ligne); background:var(--carte);
-  font-family:'Montserrat',sans-serif; font-size:.72rem; letter-spacing:.1em; text-transform:uppercase;
+  font-family:'Montserrat',sans-serif; font-size:.70rem; letter-spacing:.1em; text-transform:uppercase;
   color:var(--texte-doux); cursor:pointer; transition:all .2s; white-space:nowrap;
 }
 .mood-chip:hover,.mood-chip.actif{border-color:var(--or); color:var(--or-vif); background:rgba(232,194,122,.07)}
-.mood-chip .emoji{font-size:1.1rem}
+.mood-chip .emoji{font-size:1rem}
 
 /* ── Barre filtres/recherche ─────────────────────────────────── */
 .barre-filtres{
-  display:flex; gap:10px; flex-wrap:wrap; align-items:center;
-  margin-bottom:20px;
+  display:flex; gap:8px; flex-wrap:wrap; align-items:center;
+  margin-bottom:14px;
 }
 .barre-filtres input[type=search]{
   flex:1; min-width:180px; max-width:320px;
@@ -66,9 +66,9 @@
 .filtres-chips{display:flex; gap:7px; flex-wrap:wrap; align-items:center; flex:1 1 100%}
 .filtre-chip{
   display:inline-flex; align-items:center; gap:5px;
-  padding:7px 13px; border-radius:99px;
+  padding:6px 12px; border-radius:99px;
   border:1px solid var(--ligne); background:var(--carte);
-  font-family:'Montserrat',sans-serif; font-size:.68rem; letter-spacing:.1em; text-transform:uppercase;
+  font-family:'Montserrat',sans-serif; font-size:.67rem; letter-spacing:.1em; text-transform:uppercase;
   color:var(--texte-doux); cursor:pointer; transition:all .2s;
 }
 .filtre-chip:hover,.filtre-chip.actif{border-color:var(--or); color:var(--or-vif); background:rgba(232,194,122,.07)}
@@ -97,6 +97,7 @@
 
 /* ── Grille produits ─────────────────────────────────────────── */
 .grille{display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:22px}
+@media(max-width:520px){.grille{gap:14px}}
 
 /* ── Carte produit ───────────────────────────────────────────── */
 .carte-produit{
@@ -138,22 +139,27 @@
 .badge-lazy{border:1px solid var(--rose); color:var(--rose)}
 .badge-epuise{border:1px solid rgba(240,163,163,.4); color:#f0a3a3}
 
-.carte-infos{padding:18px 18px 20px; display:flex; flex-direction:column; flex:1}
-.carte-nom{font-family:'Cormorant Garamond',serif; font-weight:400; font-size:1.45rem; color:var(--blanc); margin:0 0 3px}
-.carte-desc{font-size:.82rem; color:var(--texte-doux); margin:0 0 10px; line-height:1.45}
+.carte-infos{padding:16px 16px 18px; display:flex; flex-direction:column; flex:1; gap:0}
+.carte-nom{font-family:'Cormorant Garamond',serif; font-weight:400; font-size:1.35rem; color:var(--blanc); margin:0 0 5px; line-height:1.2}
+.carte-desc{font-family:'Montserrat',sans-serif; font-size:.78rem; color:var(--texte-doux); margin:0 0 10px; line-height:1.55}
 
-.carte-prix-ligne{display:flex; align-items:baseline; gap:9px; margin-bottom:10px}
-.carte-prix{color:var(--or-vif); font-size:1.3rem; font-family:'Cormorant Garamond',serif}
-.carte-barre{text-decoration:line-through; color:var(--texte-faible); font-size:.88rem}
+.carte-prix-ligne{display:flex; align-items:baseline; gap:9px; margin-bottom:8px}
+.carte-prix{color:var(--or-vif); font-size:1.25rem; font-family:'Cormorant Garamond',serif}
+.carte-barre{text-decoration:line-through; color:var(--texte-faible); font-size:.85rem}
 .carte-promo{
-  font-family:'Montserrat',sans-serif; font-size:.62rem; font-weight:600;
+  font-family:'Montserrat',sans-serif; font-size:.60rem; font-weight:600;
   letter-spacing:.08em; color:#8ac98a; background:rgba(138,201,138,.1);
   padding:3px 8px; border-radius:99px; border:1px solid rgba(138,201,138,.25);
 }
 
-.carte-meta{display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:10px}
-.carte-stock{font-family:'Montserrat',sans-serif; font-size:.68rem; letter-spacing:.08em}
-.carte-cta{font-family:'Montserrat',sans-serif; font-size:.66rem; letter-spacing:.18em; text-transform:uppercase; color:var(--or)}
+/* Stock warning — ne s'affiche que si état notable (low/épuisé) */
+.carte-stock-warn{
+  font-family:'Montserrat',sans-serif; font-size:.65rem; letter-spacing:.08em;
+  margin-bottom:8px; min-height:0;
+}
+
+.carte-meta{display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:10px; border-top:1px solid rgba(232,194,122,.08)}
+.carte-cta{font-family:'Montserrat',sans-serif; font-size:.65rem; letter-spacing:.18em; text-transform:uppercase; color:var(--or)}
 
 .carte-produit.epuise .carte-img-wrap img{filter:grayscale(.5) brightness(.7)}
 
@@ -175,13 +181,30 @@
 }
 .vide-msg a{color:var(--or); text-decoration:underline; text-underline-offset:3px}
 
+/* ── Fallback image (pas encore de photo) ────────────────────── */
+.carte-img-fallback{
+  width:100%; height:100%;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+  background:linear-gradient(160deg,#1a0e15,#120910);
+  border-bottom:1px solid var(--ligne);
+}
+.carte-img-fallback .fallback-icon{
+  width:40px; height:40px; opacity:.25;
+  background:radial-gradient(circle,var(--or) 0%,transparent 70%);
+  border-radius:50%;
+}
+.carte-img-fallback span{
+  font-family:'Montserrat',sans-serif; font-size:.60rem; letter-spacing:.14em;
+  text-transform:uppercase; color:rgba(232,194,122,.35);
+}
+
 /* ── Skeleton ────────────────────────────────────────────────── */
 @keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
 .card-skeleton{
   border-radius:20px; overflow:hidden;
   background:linear-gradient(90deg,var(--carte) 25%,rgba(255,255,255,.04) 50%,var(--carte) 75%);
   background-size:800px 100%; animation:shimmer 1.6s infinite linear;
-  aspect-ratio:.8; border:1px solid var(--ligne);
+  aspect-ratio:4/5; border:1px solid var(--ligne);
 }
 
 /* ── Panneau CTA bas de page ─────────────────────────────────── */
@@ -189,17 +212,30 @@
 
 /* ── Responsive ──────────────────────────────────────────────── */
 @media(max-width:640px){
-  .grille{grid-template-columns:1fr; gap:20px}
-  .carte-infos{padding:20px 20px 22px}
-  .carte-nom{font-size:1.5rem}
-  .carte-desc{font-size:.86rem}
-  .carte-prix{font-size:1.35rem}
-  .carte-badges-top{top:14px; left:14px; gap:6px}
-  .badge-carte{font-size:.6rem; padding:6px 13px}
-  .carte-fav{top:14px; right:14px; width:40px; height:40px}
-  .barre-filtres{gap:7px}
-  .meta-resultats{flex-direction:column; align-items:flex-start; gap:8px}
-  .entete-col{padding:24px 0 20px}
+  .grille{grid-template-columns:repeat(2,1fr); gap:12px}
+  .carte-produit{border-radius:16px}
+  .carte-infos{padding:11px 12px 13px; gap:0}
+  .carte-nom{font-size:1.05rem; margin-bottom:3px}
+  .carte-desc{font-size:.72rem; line-height:1.45;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden}
+  .carte-prix{font-size:1.1rem}
+  .carte-prix-ligne{margin-bottom:5px}
+  .carte-badges-top{top:10px; left:10px; gap:4px}
+  .badge-carte{font-size:.56rem; padding:4px 9px}
+  .carte-fav{top:10px; right:10px; width:34px; height:34px; font-size:.95rem}
+  .carte-meta{padding-top:8px}
+  .barre-filtres{gap:6px}
+  .meta-resultats{flex-direction:column; align-items:flex-start; gap:6px}
+  .entete-col{padding:18px 0 16px}
+  .filtre-select{padding:8px 30px 8px 13px; font-size:.70rem}
+  .moods-barre{gap:6px; margin-bottom:14px}
+  .mood-chip{padding:6px 12px; font-size:.65rem}
+}
+@media(max-width:400px){
+  .grille{gap:10px}
+  .carte-infos{padding:10px 10px 12px}
+  .carte-nom{font-size:.98rem}
+  .carte-desc{font-size:.70rem}
 }
 </style>
 </head>
@@ -566,9 +602,8 @@
     a.className = "carte-produit" + (dispo ? "" : " epuise");
     a.href = "produit.html?slug=" + encodeURIComponent(p.slug);
 
-    // Badges top
+    // Badges top — overlay uniquement pour identité produit (jamais état stock)
     let badgesTop = "";
-    if (!dispo)         badgesTop += `<span class="badge-carte badge-epuise">Épuisé</span>`;
     if (p.is_new)       badgesTop += `<span class="badge-carte badge-nouveau">Nouveau</span>`;
     if (p.is_bestseller)badgesTop += `<span class="badge-carte badge-bestseller">Bestseller</span>`;
     if (p.is_lazy_pick) badgesTop += `<span class="badge-carte badge-lazy">Lazy Pick</span>`;
@@ -580,9 +615,19 @@
       prixHtml += `<span class="carte-promo">-${promo}%</span>`;
     }
 
+    // Image ou fallback premium
+    const imgHtml = p.image_url
+      ? `<img loading="lazy" src="${p.image_url}" alt="${escHtml(p.name)}" width="400" height="500">`
+      : `<div class="carte-img-fallback"><div class="fallback-icon"></div><span>Photo bientôt disponible</span></div>`;
+
+    // Stock en info — uniquement quand état notable
+    const stockWarn = stock.cls !== 'stock-dispo'
+      ? `<p class="carte-stock-warn" style="color:${stock.color}">${stock.text}</p>`
+      : '';
+
     a.innerHTML = `
       <div class="carte-img-wrap">
-        <img loading="lazy" src="${p.image_url || ''}" alt="${escHtml(p.name)}" width="400" height="500">
+        ${imgHtml}
         ${badgesTop ? `<div class="carte-badges-top">${badgesTop}</div>` : ""}
         <button class="carte-fav${favCache[p.id] ? ' actif' : ''}" data-pid="${p.id}" aria-label="Ajouter aux favoris" title="Favoris">
           ${favCache[p.id] ? "♥" : "♡"}
@@ -592,8 +637,8 @@
         <h2 class="carte-nom">${escHtml(p.name)}</h2>
         ${p.description_short ? `<p class="carte-desc">${escHtml(p.description_short)}</p>` : ""}
         <div class="carte-prix-ligne">${prixHtml}</div>
+        ${stockWarn}
         <div class="carte-meta">
-          <span class="carte-stock" style="color:${stock.color}">${stock.text}</span>
           <span class="carte-cta">${dispo ? "Voir →" : "M'alerter →"}</span>
         </div>
       </div>

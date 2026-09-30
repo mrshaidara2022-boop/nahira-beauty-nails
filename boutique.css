@@ -4,10 +4,12 @@
   --rose:#F06FA7; --rose-vif:#FF7EB6; --rose-pale:#F8C6DC;
   --or:#E8C27A; --or-vif:#F5D89A;
   --blanc:#FFF7FA;
-  --texte:rgba(255,247,250,.92);
-  --texte-doux:rgba(255,247,250,.6);
-  --texte-faible:rgba(255,247,250,.38);
+  --texte:rgba(255,247,250,.93);
+  --texte-doux:rgba(255,247,250,.70);
+  --texte-faible:rgba(255,247,250,.40);
   --ligne:rgba(232,194,122,.16);
+  /* Espacement système */
+  --esp-xs:6px; --esp-sm:12px; --esp-md:20px; --esp-lg:32px; --esp-xl:52px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -15,6 +17,7 @@ body{
   background:var(--noir); color:var(--texte);
   font-family:'Cormorant Garamond',serif; font-size:18px; line-height:1.7;
   -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
 }
 img{max-width:100%;display:block}
 a{color:inherit}
@@ -49,6 +52,7 @@ a{color:inherit}
 
 /* ---------- STRUCTURE ---------- */
 .b-page{max-width:1100px; margin:0 auto; padding:40px 22px 90px}
+@media(max-width:640px){.b-page{padding:24px 16px 72px}}
 .b-eyebrow{
   font-family:'Montserrat',sans-serif; font-size:.68rem; letter-spacing:.3em;
   text-transform:uppercase; color:var(--or); margin-bottom:12px;
@@ -130,6 +134,9 @@ h1.b-titre{font-weight:400; font-size:clamp(2rem,5.5vw,3rem); line-height:1.1; c
 @media(max-width:680px){
   .b-links{gap:13px}
   .b-links a{font-size:.65rem; letter-spacing:.1em}
+  .b-nav-inner{padding:10px 16px; gap:12px}
+  .b-logo .l1{font-size:.95rem}
+  .b-logo .l2{font-size:.95rem}
 }
 
 /* ---- MENU MOBILE ---- */
