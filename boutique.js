@@ -77,12 +77,12 @@ const NAHIRA = (() => {
     return Math.max(0, Number(data));
   }
 
-  // Label + classe CSS selon le stock et le seuil low-stock
+  // Label + classe CSS selon le stock
+  // Règle : stock > 1 → silencieux ; stock = 1 → "Bientôt épuisé" ; stock = 0 → "Épuisé"
   function stockLabel(availableStock, lowStockThreshold = 3) {
-    if (availableStock <= 0)                  return { text: "Épuisé",          cls: "stock-epuise",  color: "#f0a3a3" };
-    if (availableStock === 1)                 return { text: "Dernier ✦",       cls: "stock-dernier", color: "#e8c97a" };
-    if (availableStock <= lowStockThreshold)  return { text: "Bientôt épuisé",  cls: "stock-low",     color: "#d4a76a" };
-    return                                           { text: "En stock",         cls: "stock-dispo",   color: "#8ac98a" };
+    if (availableStock <= 0) return { text: "Épuisé",         cls: "stock-epuise", color: "#f0a3a3" };
+    if (availableStock === 1) return { text: "Bientôt épuisé", cls: "stock-low",    color: "#e8c27a" };
+    return                           { text: "En stock",        cls: "stock-dispo",  color: "#8ac98a" };
   }
 
   /* ─── PRODUITS ───────────────────────────────────────────────────────────── */
