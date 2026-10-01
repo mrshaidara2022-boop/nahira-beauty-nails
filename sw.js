@@ -1,4 +1,4 @@
-const CACHE = 'nahira-v5';
+const CACHE = 'nahira-v6';
 const STATIC = [
   './',
   './index.html',
