@@ -413,6 +413,11 @@ document.getElementById("btn-auth").addEventListener("click", async () => {
   } else {
     const { error } = await sb.auth.signInWithPassword({ email, password: mdp });
     if (error) { msgA.className = "b-msg err"; msgA.textContent = traduireErreur(error.message); return; }
+    const returnTo = new URLSearchParams(location.search).get('returnTo');
+    if (returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//')) {
+      location.href = returnTo;
+      return;
+    }
     init();
   }
 });

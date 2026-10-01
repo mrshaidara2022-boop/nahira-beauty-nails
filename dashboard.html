@@ -393,7 +393,7 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
     <p id="auth-step" style="font-size:10px;letter-spacing:1px;color:var(--texte-faible,rgba(255,247,250,.4));margin-top:6px;font-family:monospace">Chargement…</p>
     <div id="auth-actions" style="display:none;flex-direction:column;gap:10px;width:100%">
       <button class="auth-btn" id="auth-btn-retry" onclick="authRetry()" style="cursor:pointer;border:none">Réessayer</button>
-      <a href="compte.html" class="auth-btn" id="auth-btn" style="background:var(--carte);color:var(--texte-doux);border:1px solid var(--bordure)">Se reconnecter</a>
+      <a href="compte.html?returnTo=/dashboard.html" class="auth-btn" id="auth-btn" style="background:var(--carte);color:var(--texte-doux);border:1px solid var(--bordure)">Se reconnecter</a>
     </div>
     <p style="font-size:9px;color:var(--texte-faible,rgba(255,247,250,.25));margin-top:18px;font-family:monospace;letter-spacing:.5px">BUILD 2026-10-01-AUTHFIX</p>
   </div>
@@ -1668,7 +1668,7 @@ function prodFormHTML(p, collections, currentColIds) {
     var nbPhotos = (p.product_images||[]).length;
     photoHtml = '<div class="champ form-plein" style="display:flex;align-items:center;gap:10px">' +
       '<label style="flex:none;margin-bottom:0">Photos</label>' +
-      '<button type="button" class="btn btn-sec btn-sm" onclick="modalFermer();setTimeout(function(){goImages(\''+esc(p.id)+'\')},120)">📷 Gérer les photos'+(nbPhotos?' ('+nbPhotos+')')+'</button>' +
+      '<button type="button" class="btn btn-sec btn-sm" onclick="modalFermer();setTimeout(function(){goImages(\''+esc(p.id)+'\')},120)">📷 Gérer les photos'+(nbPhotos?' ('+nbPhotos+')':'')+'</button>' +
       '</div>';
   } else {
     photoHtml = '<div class="champ form-plein" style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-doux)">' +
