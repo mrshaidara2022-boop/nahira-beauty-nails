@@ -390,7 +390,10 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
     <div class="auth-marque">Nahira</div>
     <div class="auth-sub">Atelier — Administration</div>
     <p class="auth-msg" id="auth-msg">Vérification des accès…</p>
-    <a href="compte.html" class="auth-btn" id="auth-btn" style="display:none">Se connecter</a>
+    <div id="auth-actions" style="display:none;flex-direction:column;gap:10px;width:100%">
+      <button class="auth-btn" id="auth-btn-retry" onclick="authRetry()" style="cursor:pointer;border:none">Réessayer</button>
+      <a href="compte.html" class="auth-btn" id="auth-btn" style="background:var(--carte);color:var(--texte-doux);border:1px solid var(--bordure)">Se reconnecter</a>
+    </div>
   </div>
 </div>
 
@@ -1216,13 +1219,75 @@ function modalFermer() {
 }
 
 /* ====== AUTH ====== */
+var _authRunning = false;
+
+function gateShow(msg, showActions) {
+  document.getElementById('auth-msg').textContent = msg;
+  document.getElementById('auth-actions').style.display = showActions ? 'flex' : 'none';
+}
+
+function authRetry() {
+  document.getElementById('auth-msg').textContent = 'Vérification des accès…';
+  document.getElementById('auth-actions').style.display = 'none';
+  _authRunning = false;
+  init();
+}
+
 async function init() {
+  if (_authRunning) return;
+  _authRunning = true;
+  console.log('[AUTH] ① init() démarré');
+
   try {
-    var r = await NAHIRA.sb.auth.getUser();
+    // Garde-fou CDN Supabase
+    if (typeof window.supabase === 'undefined') {
+      console.error('[AUTH] ✗ window.supabase non défini — CDN jsDelivr non chargé');
+      gateShow('Module de connexion non chargé. Vérifiez votre connexion internet puis réessayez.', true);
+      _authRunning = false;
+      return;
+    }
+    console.log('[AUTH] ② window.supabase OK');
+
+    // Garde-fou NAHIRA
+    if (typeof NAHIRA === 'undefined' || !NAHIRA.sb) {
+      console.error('[AUTH] ✗ NAHIRA.sb non défini');
+      gateShow('Erreur d\'initialisation du client. Rechargez la page.', true);
+      _authRunning = false;
+      return;
+    }
+    console.log('[AUTH] ③ NAHIRA.sb OK');
+
+    // getUser() avec timeout 10 secondes
+    console.log('[AUTH] ④ appel getUser()…');
+    var timeoutP = new Promise(function(_, rej) {
+      setTimeout(function() { rej(new Error('timeout')); }, 10000);
+    });
+    var r = await Promise.race([NAHIRA.sb.auth.getUser(), timeoutP]);
     var user = r.data && r.data.user;
-    if (!user) { gateShow('Connectez-vous pour accéder à l\'Atelier Nahira.', true); return; }
-    var ok = await NAHIRA.isAdmin();
-    if (!ok) { gateShow('Accès réservé aux administratrices Nahira.', true); return; }
+    console.log('[AUTH] ⑤ getUser() résolu —', user ? ('user: ' + user.email) : 'pas de session');
+
+    if (!user) {
+      gateShow('Connectez-vous pour accéder à l\'Atelier Nahira.', true);
+      _authRunning = false;
+      return;
+    }
+
+    // isAdmin() avec timeout 8 secondes
+    console.log('[AUTH] ⑥ vérification admin…');
+    var adminTimeoutP = new Promise(function(_, rej) {
+      setTimeout(function() { rej(new Error('timeout-admin')); }, 8000);
+    });
+    var ok = await Promise.race([NAHIRA.isAdmin(), adminTimeoutP]);
+    console.log('[AUTH] ⑦ isAdmin:', ok);
+
+    if (!ok) {
+      gateShow('Accès réservé aux administratrices Nahira.', true);
+      _authRunning = false;
+      return;
+    }
+
+    // Succès
+    console.log('[AUTH] ⑧ auth OK → ouverture Atelier');
     S.user = user;
     document.getElementById('auth-gate').style.display = 'none';
     document.getElementById('app').style.display = '';
@@ -1232,15 +1297,18 @@ async function init() {
       if (event === 'SIGNED_OUT') location.href = 'compte.html';
     });
     goTo('tableau');
-  } catch(e) {
-    console.error(e);
-    gateShow('Erreur de connexion. Réessayez.', true);
-  }
-}
 
-function gateShow(msg, btn) {
-  document.getElementById('auth-msg').textContent = msg;
-  document.getElementById('auth-btn').style.display = btn ? '' : 'none';
+  } catch(e) {
+    console.error('[AUTH] ✗ exception:', e.message, e);
+    if (e.message === 'timeout') {
+      gateShow('Le serveur met trop de temps à répondre (>10s). Vérifiez votre connexion et réessayez.', true);
+    } else if (e.message === 'timeout-admin') {
+      gateShow('Vérification des droits échouée (>8s). Réessayez.', true);
+    } else {
+      gateShow('Erreur : ' + (e.message || 'inconnue') + '. Réessayez.', true);
+    }
+    _authRunning = false;
+  }
 }
 
 async function seDeconnecter() {
