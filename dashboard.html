@@ -336,9 +336,8 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
 @media(min-width:600px){.grille-kpi{grid-template-columns:repeat(4,1fr)}}
 @media(max-width:520px){
   .form-grille{grid-template-columns:1fr}
-  .prod-droite{display:none}
+  .prod-actions{display:none}
   .stock-actions{width:100%}
-  .prod-menu-btn{display:flex}
 }
 
 /* ── Contenu : aperçu élève dans la section ───────────────────────── */
@@ -1528,10 +1527,10 @@ function prodLigne(p) {
     '</div>' +
     '</div>' +
     '<div class="prod-droite">' +
-      '<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">'+archBadge+' '+stockH+' '+visH+'</div>' +
+      '<div class="prod-droite-badges" style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">'+archBadge+' '+stockH+' '+visH+'</div>' +
       '<div class="prod-actions">'+actions+'</div>' +
+      '<button class="prod-menu-btn" data-id="'+id+'" data-nom="'+esc(p.name)+'" data-archive="'+(p.deleted_at?'true':'false')+'" onclick="event.stopPropagation();bsheetOuvrir(this)" aria-label="Actions">⋯</button>' +
     '</div>' +
-    '<button class="prod-menu-btn" data-id="'+id+'" data-nom="'+esc(p.name)+'" data-archive="'+(p.deleted_at?'true':'false')+'" onclick="bsheetOuvrir(this)" aria-label="Actions">⋯</button>' +
     '</div>';
 }
 
@@ -1547,6 +1546,8 @@ function bsheetOuvrir(btn) {
       '<span class="bsheet-ico">↩</span>Restaurer</button>';
   } else {
     corps.innerHTML =
+      '<button class="bsheet-btn" onclick="bsheetFermer();setTimeout(function(){prodModifier(\''+id+'\')},120)">' +
+      '<span class="bsheet-ico">✏️</span>Modifier</button>' +
       '<button class="bsheet-btn" onclick="bsheetFermer();setTimeout(function(){goImages(\''+id+'\')},120)">' +
       '<span class="bsheet-ico">🖼️</span>Gérer les images</button>' +
       '<button class="bsheet-btn" onclick="bsheetFermer();setTimeout(function(){prodDupliquer(\''+id+'\')},120)">' +
