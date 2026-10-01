@@ -390,10 +390,12 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
     <div class="auth-marque">Nahira</div>
     <div class="auth-sub">Atelier — Administration</div>
     <p class="auth-msg" id="auth-msg">Vérification des accès…</p>
+    <p id="auth-step" style="font-size:10px;letter-spacing:1px;color:var(--texte-faible,rgba(255,247,250,.4));margin-top:6px;font-family:monospace">Chargement…</p>
     <div id="auth-actions" style="display:none;flex-direction:column;gap:10px;width:100%">
       <button class="auth-btn" id="auth-btn-retry" onclick="authRetry()" style="cursor:pointer;border:none">Réessayer</button>
       <a href="compte.html" class="auth-btn" id="auth-btn" style="background:var(--carte);color:var(--texte-doux);border:1px solid var(--bordure)">Se reconnecter</a>
     </div>
+    <p style="font-size:9px;color:var(--texte-faible,rgba(255,247,250,.25));margin-top:18px;font-family:monospace;letter-spacing:.5px">BUILD 2026-10-01-AUTHFIX</p>
   </div>
 </div>
 
@@ -1191,6 +1193,8 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="boutique.js"></script>
 <script>
+window.__ATELIER_BUILD__ = '2026-10-01-AUTHFIX';
+console.log('[ATELIER] BUILD 2026-10-01-AUTHFIX — script principal chargé');
 /* ====== ÉTAT ====== */
 const S = { user: null, section: null, prodsData: [], stockData: [] };
 
@@ -1229,42 +1233,52 @@ function gateShow(msg, showActions) {
 function authRetry() {
   document.getElementById('auth-msg').textContent = 'Vérification des accès…';
   document.getElementById('auth-actions').style.display = 'none';
+  var el = document.getElementById('auth-step');
+  if (el) el.textContent = 'Nouvelle tentative…';
   _authRunning = false;
   init();
+}
+
+function authStep(n, total, txt) {
+  var el = document.getElementById('auth-step');
+  if (el) el.textContent = 'Étape ' + n + '/' + total + ' — ' + txt;
+  console.log('[AUTH] ' + n + '/' + total, txt);
 }
 
 async function init() {
   if (_authRunning) return;
   _authRunning = true;
-  console.log('[AUTH] ① init() démarré');
+  authStep(1, 8, 'init() démarré');
 
   try {
     // Garde-fou CDN Supabase
+    authStep(2, 8, 'vérification CDN Supabase…');
     if (typeof window.supabase === 'undefined') {
       console.error('[AUTH] ✗ window.supabase non défini — CDN jsDelivr non chargé');
-      gateShow('Module de connexion non chargé. Vérifiez votre connexion internet puis réessayez.', true);
+      gateShow('Module de connexion non chargé (CDN). Vérifiez votre connexion puis réessayez.', true);
+      authStep(2, 8, '✗ CDN Supabase absent');
       _authRunning = false;
       return;
     }
-    console.log('[AUTH] ② window.supabase OK');
+    authStep(3, 8, 'CDN OK — vérification NAHIRA…');
 
     // Garde-fou NAHIRA
     if (typeof NAHIRA === 'undefined' || !NAHIRA.sb) {
       console.error('[AUTH] ✗ NAHIRA.sb non défini');
-      gateShow('Erreur d\'initialisation du client. Rechargez la page.', true);
+      gateShow('Erreur initialisation client (boutique.js). Rechargez la page.', true);
+      authStep(3, 8, '✗ NAHIRA.sb absent');
       _authRunning = false;
       return;
     }
-    console.log('[AUTH] ③ NAHIRA.sb OK');
+    authStep(4, 8, 'NAHIRA OK — appel getUser()…');
 
     // getUser() avec timeout 10 secondes
-    console.log('[AUTH] ④ appel getUser()…');
     var timeoutP = new Promise(function(_, rej) {
       setTimeout(function() { rej(new Error('timeout')); }, 10000);
     });
     var r = await Promise.race([NAHIRA.sb.auth.getUser(), timeoutP]);
     var user = r.data && r.data.user;
-    console.log('[AUTH] ⑤ getUser() résolu —', user ? ('user: ' + user.email) : 'pas de session');
+    authStep(5, 8, 'getUser() résolu — ' + (user ? user.email : 'pas de session'));
 
     if (!user) {
       gateShow('Connectez-vous pour accéder à l\'Atelier Nahira.', true);
@@ -1273,12 +1287,12 @@ async function init() {
     }
 
     // isAdmin() avec timeout 8 secondes
-    console.log('[AUTH] ⑥ vérification admin…');
+    authStep(6, 8, 'session OK — vérification admin…');
     var adminTimeoutP = new Promise(function(_, rej) {
       setTimeout(function() { rej(new Error('timeout-admin')); }, 8000);
     });
     var ok = await Promise.race([NAHIRA.isAdmin(), adminTimeoutP]);
-    console.log('[AUTH] ⑦ isAdmin:', ok);
+    authStep(7, 8, 'isAdmin: ' + ok);
 
     if (!ok) {
       gateShow('Accès réservé aux administratrices Nahira.', true);
@@ -1287,7 +1301,7 @@ async function init() {
     }
 
     // Succès
-    console.log('[AUTH] ⑧ auth OK → ouverture Atelier');
+    authStep(8, 8, 'auth OK → ouverture Atelier');
     S.user = user;
     document.getElementById('auth-gate').style.display = 'none';
     document.getElementById('app').style.display = '';
@@ -1300,8 +1314,10 @@ async function init() {
 
   } catch(e) {
     console.error('[AUTH] ✗ exception:', e.message, e);
+    var el = document.getElementById('auth-step');
+    if (el) el.textContent = '✗ erreur : ' + (e.message || 'inconnue');
     if (e.message === 'timeout') {
-      gateShow('Le serveur met trop de temps à répondre (>10s). Vérifiez votre connexion et réessayez.', true);
+      gateShow('Supabase ne répond pas (>10s). Vérifiez votre connexion et réessayez.', true);
     } else if (e.message === 'timeout-admin') {
       gateShow('Vérification des droits échouée (>8s). Réessayez.', true);
     } else {
