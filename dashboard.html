@@ -465,7 +465,7 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
       <button class="auth-btn sec" onclick="authRefusDeconn()" style="margin-top:4px">Déconnexion</button>
     </div>
 
-    <p style="font-size:9px;color:var(--texte-faible,rgba(255,247,250,.18));margin-top:22px;font-family:monospace;letter-spacing:.5px">BUILD 2026-10-01-RESETPWD</p>
+    <p style="font-size:9px;color:var(--texte-faible,rgba(255,247,250,.18));margin-top:22px;font-family:monospace;letter-spacing:.5px">BUILD 2026-10-01-PKCE</p>
   </div>
 </div>
 
@@ -1263,8 +1263,8 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="boutique.js"></script>
 <script>
-window.__ATELIER_BUILD__ = '2026-10-01-RESETPWD';
-console.log('[ATELIER] BUILD 2026-10-01-RESETPWD — script principal chargé');
+window.__ATELIER_BUILD__ = '2026-10-01-PKCE';
+console.log('[ATELIER] BUILD 2026-10-01-PKCE — script principal chargé');
 /* ====== ÉTAT ====== */
 const S = { user: null, section: null, prodsData: [], stockData: [] };
 
@@ -1516,16 +1516,54 @@ async function init() {
     return;
   }
 
-  // Détecter un token de récupération de mot de passe dans le hash de l'URL
-  var hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-  if (hashParams.get('type') === 'recovery') {
-    // Supabase a déjà traité le token et établi une session de récupération
-    history.replaceState(null, '', window.location.pathname);
-    gateVue('reset-pwd');
-    document.getElementById('reset-err').style.display = 'none';
+  // Détecter un lien email Supabase :
+  //   - Flow PKCE (Supabase v2 par défaut)  : URL contient ?code=xxx
+  //   - Flow implicite legacy               : hash contient #type=recovery
+  var fromEmailLink = new URLSearchParams(window.location.search).has('code') ||
+                      new URLSearchParams(window.location.hash.replace(/^#/, '')).get('type') === 'recovery';
+
+  if (fromEmailLink) {
+    gateStep('Traitement du lien email…');
+    try {
+      // Enregistrer le listener AVANT getSession() pour ne pas rater l'événement
+      var authEvent = await new Promise(function(resolve, reject) {
+        var t = setTimeout(function() { reject(new Error('timeout-link')); }, 15000);
+        var sub = NAHIRA.sb.auth.onAuthStateChange(function(event) {
+          clearTimeout(t);
+          try { sub.data.subscription.unsubscribe(); } catch(e) {}
+          resolve(event);
+        });
+        // getSession() déclenche l'échange PKCE et émet onAuthStateChange
+        NAHIRA.sb.auth.getSession().catch(function() {});
+      });
+
+      // Nettoyer l'URL (supprimer ?code= et le hash)
+      history.replaceState(null, '', window.location.pathname);
+
+      if (authEvent === 'PASSWORD_RECOVERY') {
+        // Montrer obligatoirement le formulaire de nouveau mot de passe
+        document.getElementById('reset-pwd').value = '';
+        document.getElementById('reset-pwd2').value = '';
+        document.getElementById('reset-err').style.display = 'none';
+        var btn = document.getElementById('reset-btn');
+        if (btn) { btn.textContent = 'Valider le mot de passe'; btn.disabled = false; }
+        gateVue('reset-pwd');
+        return; // L'Atelier ne s'ouvre PAS — le mot de passe doit être modifié d'abord
+      }
+
+      // SIGNED_IN ou autre : ouvrir l'Atelier normalement
+      await ouvrirAtelier();
+    } catch(e) {
+      if (e.message === 'timeout-link') {
+        gateErreur('Lien invalide ou expiré. Demandez un nouveau lien de réinitialisation.', 'timeout échange PKCE >15s');
+      } else {
+        gateErreur('Erreur traitement du lien : ' + (e.message || 'inconnue'), '');
+      }
+    }
     return;
   }
 
+  // Parcours normal — vérification de la session existante (localStorage)
   gateStep('Vérification de la session locale…');
   var sessResp = await NAHIRA.sb.auth.getSession().catch(function(e) { return { error: e }; });
   if (sessResp.error) {
