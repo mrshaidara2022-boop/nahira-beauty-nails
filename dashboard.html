@@ -418,6 +418,38 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
       </div>
       <p class="auth-err" id="login-err" style="display:none"></p>
       <button class="auth-btn" id="login-btn" onclick="adminLogin()">Se connecter</button>
+      <button onclick="motDePasseOublie()" style="background:none;border:none;cursor:pointer;font-family:'Montserrat',sans-serif;font-size:11px;color:var(--texte-faible);margin-top:14px;letter-spacing:.5px;text-decoration:underline">Mot de passe oublié ?</button>
+    </div>
+
+    <!-- Vue : demande de réinitialisation par email -->
+    <div id="gate-reset-req" style="display:none">
+      <p class="auth-msg">Réinitialisation du mot de passe</p>
+      <p style="font-family:'Montserrat',sans-serif;font-size:11px;color:var(--texte-doux);margin-bottom:18px;line-height:1.6">Un lien de réinitialisation sera envoyé à l'adresse email de l'administrateur.</p>
+      <div class="auth-champ">
+        <input type="email" id="reset-req-email" class="auth-input" placeholder="Email administrateur"
+               autocomplete="email" inputmode="email" />
+      </div>
+      <p class="auth-err" id="reset-req-err" style="display:none"></p>
+      <p id="reset-req-ok" style="display:none;font-family:'Montserrat',sans-serif;font-size:11px;color:var(--ok);margin-bottom:14px;line-height:1.5">Email de réinitialisation envoyé. Vérifiez votre boîte et cliquez sur le lien.</p>
+      <button class="auth-btn" id="reset-req-btn" onclick="envoyerReset()">Envoyer le lien</button>
+      <button onclick="gateVue('form')" style="background:none;border:none;cursor:pointer;font-family:'Montserrat',sans-serif;font-size:11px;color:var(--texte-faible);margin-top:14px;letter-spacing:.5px;text-decoration:underline">Retour à la connexion</button>
+    </div>
+
+    <!-- Vue : définir un nouveau mot de passe (après clic sur le lien email) -->
+    <div id="gate-reset-pwd" style="display:none">
+      <p class="auth-msg">Nouveau mot de passe</p>
+      <p style="font-family:'Montserrat',sans-serif;font-size:11px;color:var(--texte-doux);margin-bottom:18px;line-height:1.6">Saisissez votre nouveau mot de passe Atelier (8 caractères minimum).</p>
+      <div class="auth-champ">
+        <input type="password" id="reset-pwd" class="auth-input" placeholder="Nouveau mot de passe"
+               autocomplete="new-password" />
+      </div>
+      <div class="auth-champ">
+        <input type="password" id="reset-pwd2" class="auth-input" placeholder="Confirmer le mot de passe"
+               autocomplete="new-password"
+               onkeydown="if(event.key==='Enter')validerNouveauMdp()" />
+      </div>
+      <p class="auth-err" id="reset-err" style="display:none"></p>
+      <button class="auth-btn" id="reset-btn" onclick="validerNouveauMdp()">Valider le mot de passe</button>
     </div>
 
     <!-- Vue : erreur réseau / technique -->
@@ -433,7 +465,7 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
       <button class="auth-btn sec" onclick="authRefusDeconn()" style="margin-top:4px">Déconnexion</button>
     </div>
 
-    <p style="font-size:9px;color:var(--texte-faible,rgba(255,247,250,.18));margin-top:22px;font-family:monospace;letter-spacing:.5px">BUILD 2026-10-01-ADMINLOGIN</p>
+    <p style="font-size:9px;color:var(--texte-faible,rgba(255,247,250,.18));margin-top:22px;font-family:monospace;letter-spacing:.5px">BUILD 2026-10-01-RESETPWD</p>
   </div>
 </div>
 
@@ -1231,8 +1263,8 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="boutique.js"></script>
 <script>
-window.__ATELIER_BUILD__ = '2026-10-01-ADMINLOGIN';
-console.log('[ATELIER] BUILD 2026-10-01-ADMINLOGIN — script principal chargé');
+window.__ATELIER_BUILD__ = '2026-10-01-RESETPWD';
+console.log('[ATELIER] BUILD 2026-10-01-RESETPWD — script principal chargé');
 /* ====== ÉTAT ====== */
 const S = { user: null, section: null, prodsData: [], stockData: [] };
 
@@ -1263,7 +1295,7 @@ function modalFermer() {
 /* ====== AUTH ADMIN ====== */
 
 function gateVue(v) {
-  ['checking','form','error','denied'].forEach(function(n) {
+  ['checking','form','error','denied','reset-req','reset-pwd'].forEach(function(n) {
     var el = document.getElementById('gate-' + n);
     if (el) el.style.display = (n === v) ? '' : 'none';
   });
@@ -1379,6 +1411,98 @@ async function adminLogin() {
   }
 }
 
+function motDePasseOublie() {
+  var emailSaisi = (document.getElementById('login-email').value || '').trim();
+  var resetEmail = document.getElementById('reset-req-email');
+  if (resetEmail && emailSaisi) resetEmail.value = emailSaisi;
+  document.getElementById('reset-req-err').style.display = 'none';
+  document.getElementById('reset-req-ok').style.display = 'none';
+  var btn = document.getElementById('reset-req-btn');
+  if (btn) { btn.style.display = 'block'; btn.disabled = false; btn.textContent = 'Envoyer le lien'; }
+  gateVue('reset-req');
+}
+
+async function envoyerReset() {
+  var email = (document.getElementById('reset-req-email').value || '').trim();
+  var errEl = document.getElementById('reset-req-err');
+  var okEl = document.getElementById('reset-req-ok');
+  var btn = document.getElementById('reset-req-btn');
+
+  errEl.style.display = 'none';
+  okEl.style.display = 'none';
+
+  if (!email) {
+    errEl.textContent = 'Saisissez votre email administrateur.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.textContent = 'Envoi…';
+  btn.disabled = true;
+
+  try {
+    var r = await NAHIRA.sb.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://nahirabeautynails.fr/dashboard.html'
+    });
+    if (r.error) {
+      errEl.textContent = 'Erreur : ' + r.error.message;
+      errEl.style.display = 'block';
+      btn.textContent = 'Envoyer le lien';
+      btn.disabled = false;
+      return;
+    }
+    okEl.style.display = 'block';
+    btn.style.display = 'none';
+  } catch(e) {
+    errEl.textContent = 'Erreur : ' + (e.message || 'inconnue');
+    errEl.style.display = 'block';
+    btn.textContent = 'Envoyer le lien';
+    btn.disabled = false;
+  }
+}
+
+async function validerNouveauMdp() {
+  var pwd = document.getElementById('reset-pwd').value || '';
+  var pwd2 = document.getElementById('reset-pwd2').value || '';
+  var errEl = document.getElementById('reset-err');
+  var btn = document.getElementById('reset-btn');
+
+  errEl.style.display = 'none';
+
+  if (pwd.length < 8) {
+    errEl.textContent = 'Le mot de passe doit contenir au moins 8 caractères.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (pwd !== pwd2) {
+    errEl.textContent = 'Les mots de passe ne correspondent pas.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.textContent = 'Enregistrement…';
+  btn.disabled = true;
+
+  try {
+    var r = await NAHIRA.sb.auth.updateUser({ password: pwd });
+    if (r.error) {
+      errEl.textContent = 'Erreur : ' + r.error.message;
+      errEl.style.display = 'block';
+      btn.textContent = 'Valider le mot de passe';
+      btn.disabled = false;
+      return;
+    }
+    gateVue('checking');
+    gateStep('Mot de passe modifié — vérification des droits admin…');
+    await ouvrirAtelier();
+  } catch(e) {
+    errEl.textContent = 'Erreur : ' + (e.message || 'inconnue');
+    errEl.style.display = 'block';
+    btn.textContent = 'Valider le mot de passe';
+    btn.disabled = false;
+  }
+}
+
 async function init() {
   gateVue('checking');
   gateStep('Initialisation…');
@@ -1389,6 +1513,16 @@ async function init() {
   }
   if (typeof NAHIRA === 'undefined' || !NAHIRA.sb) {
     gateErreur('Erreur initialisation (boutique.js). Rechargez la page.', 'NAHIRA.sb undefined');
+    return;
+  }
+
+  // Détecter un token de récupération de mot de passe dans le hash de l'URL
+  var hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  if (hashParams.get('type') === 'recovery') {
+    // Supabase a déjà traité le token et établi une session de récupération
+    history.replaceState(null, '', window.location.pathname);
+    gateVue('reset-pwd');
+    document.getElementById('reset-err').style.display = 'none';
     return;
   }
 
