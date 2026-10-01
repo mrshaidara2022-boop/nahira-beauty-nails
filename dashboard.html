@@ -465,7 +465,7 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
       <button class="auth-btn sec" onclick="authRefusDeconn()" style="margin-top:4px">Déconnexion</button>
     </div>
 
-    <p style="font-size:9px;color:var(--texte-faible,rgba(255,247,250,.18));margin-top:22px;font-family:monospace;letter-spacing:.5px">BUILD 2026-10-01-PKCE</p>
+    <p style="font-size:9px;color:var(--texte-faible,rgba(255,247,250,.18));margin-top:22px;font-family:monospace;letter-spacing:.5px">BUILD 2026-10-01-V2</p>
   </div>
 </div>
 
@@ -1263,10 +1263,26 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="boutique.js"></script>
 <script>
-window.__ATELIER_BUILD__ = '2026-10-01-PKCE';
-console.log('[ATELIER] BUILD 2026-10-01-PKCE — script principal chargé');
+window.__ATELIER_BUILD__ = '2026-10-01-V2';
+console.log('[ATELIER] BUILD 2026-10-01-V2 — script principal chargé');
 /* ====== ÉTAT ====== */
 const S = { user: null, section: null, prodsData: [], stockData: [] };
+
+/* ====== DÉTECTION RECOVERY (dès le chargement du script, avant DOMContentLoaded) ======
+ * Supabase v2 avec PKCE : le client démarre l'échange code↔session de façon async
+ * dès la création (boutique.js). L'événement PASSWORD_RECOVERY peut donc se déclencher
+ * AVANT ou PENDANT init(). On enregistre ici le listener au plus tôt pour ne pas le rater.
+ * init() consultera _recoveryMode après l'await getSession().
+ */
+var _recoveryMode = false;
+if (typeof NAHIRA !== 'undefined' && NAHIRA.sb) {
+  NAHIRA.sb.auth.onAuthStateChange(function(event) {
+    console.log('[AUTH-GLOBAL] event:', event);
+    if (event === 'PASSWORD_RECOVERY') {
+      _recoveryMode = true;
+    }
+  });
+}
 
 /* ====== TOAST ====== */
 let _toastT;
@@ -1517,48 +1533,38 @@ async function init() {
   }
 
   // Détecter un lien email Supabase :
-  //   - Flow PKCE (Supabase v2 par défaut)  : URL contient ?code=xxx
-  //   - Flow implicite legacy               : hash contient #type=recovery
+  //   - Flow PKCE (Supabase v2 par défaut)  : ?code= dans la query string
+  //   - Flow implicite legacy               : #type=recovery dans le hash
   var fromEmailLink = new URLSearchParams(window.location.search).has('code') ||
                       new URLSearchParams(window.location.hash.replace(/^#/, '')).get('type') === 'recovery';
 
   if (fromEmailLink) {
     gateStep('Traitement du lien email…');
     try {
-      // Enregistrer le listener AVANT getSession() pour ne pas rater l'événement
-      var authEvent = await new Promise(function(resolve, reject) {
-        var t = setTimeout(function() { reject(new Error('timeout-link')); }, 15000);
-        var sub = NAHIRA.sb.auth.onAuthStateChange(function(event) {
-          clearTimeout(t);
-          try { sub.data.subscription.unsubscribe(); } catch(e) {}
-          resolve(event);
-        });
-        // getSession() déclenche l'échange PKCE et émet onAuthStateChange
-        NAHIRA.sb.auth.getSession().catch(function() {});
-      });
+      // getSession() déclenche l'échange PKCE si pas encore fait
+      // L'événement PASSWORD_RECOVERY est capturé par le listener global (_recoveryMode)
+      await NAHIRA.sb.auth.getSession();
+      // flush : laisser les callbacks onAuthStateChange (setTimeout 0 interne) s'exécuter
+      await new Promise(function(r) { setTimeout(r, 80); });
 
       // Nettoyer l'URL (supprimer ?code= et le hash)
       history.replaceState(null, '', window.location.pathname);
 
-      if (authEvent === 'PASSWORD_RECOVERY') {
-        // Montrer obligatoirement le formulaire de nouveau mot de passe
+      if (_recoveryMode) {
+        // Afficher obligatoirement le formulaire de nouveau mot de passe
         document.getElementById('reset-pwd').value = '';
         document.getElementById('reset-pwd2').value = '';
         document.getElementById('reset-err').style.display = 'none';
-        var btn = document.getElementById('reset-btn');
-        if (btn) { btn.textContent = 'Valider le mot de passe'; btn.disabled = false; }
+        var resetBtn = document.getElementById('reset-btn');
+        if (resetBtn) { resetBtn.textContent = 'Valider le mot de passe'; resetBtn.disabled = false; }
         gateVue('reset-pwd');
-        return; // L'Atelier ne s'ouvre PAS — le mot de passe doit être modifié d'abord
+        return; // L'Atelier ne s'ouvre PAS — mot de passe à définir d'abord
       }
 
-      // SIGNED_IN ou autre : ouvrir l'Atelier normalement
+      // Autre événement (SIGNED_IN depuis un magic link ou confirmation email) → Atelier
       await ouvrirAtelier();
     } catch(e) {
-      if (e.message === 'timeout-link') {
-        gateErreur('Lien invalide ou expiré. Demandez un nouveau lien de réinitialisation.', 'timeout échange PKCE >15s');
-      } else {
-        gateErreur('Erreur traitement du lien : ' + (e.message || 'inconnue'), '');
-      }
+      gateErreur('Erreur traitement du lien : ' + (e.message || 'inconnue'), 'Lien invalide ou expiré ?');
     }
     return;
   }
@@ -1583,7 +1589,25 @@ async function init() {
 
 async function seDeconnecter() {
   if (!confirm('Se déconnecter de l\'Atelier ?')) return;
-  await NAHIRA.sb.auth.signOut().catch(function(){});
+
+  // scope:'global' révoque aussi le refresh token côté serveur
+  var signOutErr = null;
+  try {
+    var r = await NAHIRA.sb.auth.signOut({ scope: 'global' });
+    if (r.error) signOutErr = r.error.message;
+  } catch(e) {
+    signOutErr = e.message;
+  }
+  if (signOutErr) console.warn('[AUTH] signOut error:', signOutErr);
+
+  // Nettoyage de sécurité : supprimer la clé de session Supabase du localStorage
+  // même si signOut() a échoué (ex: perte réseau)
+  try {
+    localStorage.removeItem('sb-mxbmjtzrggahbwahxmkp-auth-token');
+    localStorage.removeItem('sb-mxbmjtzrggahbwahxmkp-auth-token-code-verifier');
+  } catch(e) {}
+
+  _recoveryMode = false;
   S.user = null;
   document.getElementById('auth-gate').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
