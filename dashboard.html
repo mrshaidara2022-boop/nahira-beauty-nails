@@ -32,8 +32,16 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
 .auth-carte{background:var(--carte);border:1px solid var(--bordure);border-radius:24px;padding:40px 32px;max-width:380px;width:100%;text-align:center}
 .auth-marque{font-family:'Parisienne',cursive;font-size:34px;color:var(--rose);margin-bottom:4px}
 .auth-sub{font-family:'Montserrat',sans-serif;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--texte-faible);margin-bottom:24px}
-.auth-msg{font-size:17px;color:var(--texte-doux);margin-bottom:28px;line-height:1.55}
-.auth-btn{display:inline-block;text-decoration:none;background:linear-gradient(120deg,var(--rose),var(--or));color:#1a0f14;font-family:'Montserrat',sans-serif;font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;padding:12px 26px;border-radius:12px}
+.auth-msg{font-size:17px;color:var(--texte-doux);margin-bottom:20px;line-height:1.55}
+.auth-btn{display:block;width:100%;text-align:center;text-decoration:none;background:linear-gradient(120deg,var(--rose),var(--or));color:#1a0f14;font-family:'Montserrat',sans-serif;font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;padding:13px 26px;border-radius:12px;border:none;cursor:pointer}
+.auth-btn:disabled{opacity:.5;cursor:default}
+.auth-btn.sec{background:var(--carte-2);color:var(--texte-doux);border:1px solid var(--bordure)}
+.auth-champ{margin-bottom:12px;text-align:left}
+.auth-input{width:100%;background:rgba(255,247,250,.06);border:1px solid var(--bordure);border-radius:11px;padding:12px 14px;font-family:'Montserrat',sans-serif;font-size:13px;color:var(--texte);outline:none;transition:border-color .18s}
+.auth-input:focus{border-color:rgba(240,111,167,.5)}
+.auth-input::placeholder{color:var(--texte-faible);font-size:12px}
+.auth-err{font-family:'Montserrat',sans-serif;font-size:11px;color:var(--alerte);margin-bottom:14px;text-align:center;line-height:1.45}
+.auth-step-txt{font-size:10px;letter-spacing:1px;color:var(--texte-faible);margin-top:8px;font-family:monospace;text-align:center}
 
 /* APP */
 #app{position:relative;z-index:1;display:flex;min-height:100dvh}
@@ -389,13 +397,43 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
   <div class="auth-carte">
     <div class="auth-marque">Nahira</div>
     <div class="auth-sub">Atelier — Administration</div>
-    <p class="auth-msg" id="auth-msg">Vérification des accès…</p>
-    <p id="auth-step" style="font-size:10px;letter-spacing:1px;color:var(--texte-faible,rgba(255,247,250,.4));margin-top:6px;font-family:monospace">Chargement…</p>
-    <div id="auth-actions" style="display:none;flex-direction:column;gap:10px;width:100%">
-      <button class="auth-btn" id="auth-btn-retry" onclick="authRetry()" style="cursor:pointer;border:none">Réessayer</button>
-      <a href="compte.html?returnTo=/dashboard.html" class="auth-btn" id="auth-btn" style="background:var(--carte);color:var(--texte-doux);border:1px solid var(--bordure)">Se reconnecter</a>
+
+    <!-- Vue : vérification en cours -->
+    <div id="gate-checking">
+      <p class="auth-msg">Vérification…</p>
+      <p class="auth-step-txt" id="auth-step">Chargement…</p>
     </div>
-    <p style="font-size:9px;color:var(--texte-faible,rgba(255,247,250,.25));margin-top:18px;font-family:monospace;letter-spacing:.5px">BUILD 2026-10-01-AUTHFIX</p>
+
+    <!-- Vue : formulaire de connexion admin -->
+    <div id="gate-form" style="display:none">
+      <p class="auth-msg">Connexion Atelier</p>
+      <div class="auth-champ">
+        <input type="email" id="login-email" class="auth-input" placeholder="Email administrateur"
+               autocomplete="username email" inputmode="email" />
+      </div>
+      <div class="auth-champ">
+        <input type="password" id="login-pwd" class="auth-input" placeholder="Mot de passe"
+               autocomplete="current-password"
+               onkeydown="if(event.key==='Enter')adminLogin()" />
+      </div>
+      <p class="auth-err" id="login-err" style="display:none"></p>
+      <button class="auth-btn" id="login-btn" onclick="adminLogin()">Se connecter</button>
+    </div>
+
+    <!-- Vue : erreur réseau / technique -->
+    <div id="gate-error" style="display:none">
+      <p class="auth-msg" id="gate-error-msg">Erreur de connexion.</p>
+      <p class="auth-step-txt" id="gate-error-step"></p>
+      <button class="auth-btn" onclick="authRetry()" style="margin-top:18px">Réessayer</button>
+    </div>
+
+    <!-- Vue : accès refusé (utilisateur Auth valide mais absent de admins) -->
+    <div id="gate-denied" style="display:none">
+      <p class="auth-msg">Ce compte n'est pas autorisé à accéder à l'Atelier Nahira.</p>
+      <button class="auth-btn sec" onclick="authRefusDeconn()" style="margin-top:4px">Déconnexion</button>
+    </div>
+
+    <p style="font-size:9px;color:var(--texte-faible,rgba(255,247,250,.18));margin-top:22px;font-family:monospace;letter-spacing:.5px">BUILD 2026-10-01-ADMINLOGIN</p>
   </div>
 </div>
 
@@ -1193,8 +1231,8 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="boutique.js"></script>
 <script>
-window.__ATELIER_BUILD__ = '2026-10-01-AUTHFIX';
-console.log('[ATELIER] BUILD 2026-10-01-AUTHFIX — script principal chargé');
+window.__ATELIER_BUILD__ = '2026-10-01-ADMINLOGIN';
+console.log('[ATELIER] BUILD 2026-10-01-ADMINLOGIN — script principal chargé');
 /* ====== ÉTAT ====== */
 const S = { user: null, section: null, prodsData: [], stockData: [] };
 
@@ -1222,115 +1260,162 @@ function modalFermer() {
   document.getElementById('modal').classList.remove('actif');
 }
 
-/* ====== AUTH ====== */
-var _authRunning = false;
+/* ====== AUTH ADMIN ====== */
 
-function gateShow(msg, showActions) {
-  document.getElementById('auth-msg').textContent = msg;
-  document.getElementById('auth-actions').style.display = showActions ? 'flex' : 'none';
+function gateVue(v) {
+  ['checking','form','error','denied'].forEach(function(n) {
+    var el = document.getElementById('gate-' + n);
+    if (el) el.style.display = (n === v) ? '' : 'none';
+  });
+}
+
+function gateErreur(msg, detail) {
+  var el = document.getElementById('gate-error-msg');
+  var st = document.getElementById('gate-error-step');
+  if (el) el.textContent = msg;
+  if (st) st.textContent = detail || '';
+  gateVue('error');
+}
+
+function gateStep(txt) {
+  var el = document.getElementById('auth-step');
+  if (el) el.textContent = txt;
+  console.log('[AUTH]', txt);
 }
 
 function authRetry() {
-  document.getElementById('auth-msg').textContent = 'Vérification des accès…';
-  document.getElementById('auth-actions').style.display = 'none';
-  var el = document.getElementById('auth-step');
-  if (el) el.textContent = 'Nouvelle tentative…';
-  _authRunning = false;
+  gateVue('checking');
+  gateStep('Nouvelle tentative…');
   init();
 }
 
-function authStep(n, total, txt) {
-  var el = document.getElementById('auth-step');
-  if (el) el.textContent = 'Étape ' + n + '/' + total + ' — ' + txt;
-  console.log('[AUTH] ' + n + '/' + total, txt);
+async function authRefusDeconn() {
+  await NAHIRA.sb.auth.signOut().catch(function(){});
+  gateVue('form');
 }
 
-async function init() {
-  if (_authRunning) return;
-  _authRunning = true;
-  authStep(1, 8, 'init() démarré');
-
+async function ouvrirAtelier() {
   try {
-    // Garde-fou CDN Supabase
-    authStep(2, 8, 'vérification CDN Supabase…');
-    if (typeof window.supabase === 'undefined') {
-      console.error('[AUTH] ✗ window.supabase non défini — CDN jsDelivr non chargé');
-      gateShow('Module de connexion non chargé (CDN). Vérifiez votre connexion puis réessayez.', true);
-      authStep(2, 8, '✗ CDN Supabase absent');
-      _authRunning = false;
-      return;
-    }
-    authStep(3, 8, 'CDN OK — vérification NAHIRA…');
-
-    // Garde-fou NAHIRA
-    if (typeof NAHIRA === 'undefined' || !NAHIRA.sb) {
-      console.error('[AUTH] ✗ NAHIRA.sb non défini');
-      gateShow('Erreur initialisation client (boutique.js). Rechargez la page.', true);
-      authStep(3, 8, '✗ NAHIRA.sb absent');
-      _authRunning = false;
-      return;
-    }
-    authStep(4, 8, 'NAHIRA OK — appel getUser()…');
-
-    // getUser() avec timeout 10 secondes
-    var timeoutP = new Promise(function(_, rej) {
-      setTimeout(function() { rej(new Error('timeout')); }, 10000);
-    });
-    var r = await Promise.race([NAHIRA.sb.auth.getUser(), timeoutP]);
-    var user = r.data && r.data.user;
-    authStep(5, 8, 'getUser() résolu — ' + (user ? user.email : 'pas de session'));
+    gateStep('Vérification de la session…');
+    var tp = new Promise(function(_, r) { setTimeout(function() { r(new Error('timeout')); }, 12000); });
+    var resp = await Promise.race([NAHIRA.sb.auth.getUser(), tp]);
+    var user = resp.data && resp.data.user;
 
     if (!user) {
-      gateShow('Connectez-vous pour accéder à l\'Atelier Nahira.', true);
-      _authRunning = false;
+      gateVue('form');
       return;
     }
 
-    // isAdmin() avec timeout 8 secondes
-    authStep(6, 8, 'session OK — vérification admin…');
-    var adminTimeoutP = new Promise(function(_, rej) {
-      setTimeout(function() { rej(new Error('timeout-admin')); }, 8000);
-    });
-    var ok = await Promise.race([NAHIRA.isAdmin(), adminTimeoutP]);
-    authStep(7, 8, 'isAdmin: ' + ok);
+    gateStep('Vérification des droits admin…');
+    var tap = new Promise(function(_, r) { setTimeout(function() { r(new Error('timeout-admin')); }, 8000); });
+    var ok = await Promise.race([NAHIRA.isAdmin(), tap]);
 
     if (!ok) {
-      gateShow('Accès réservé aux administratrices Nahira.', true);
-      _authRunning = false;
+      gateVue('denied');
       return;
     }
 
-    // Succès
-    authStep(8, 8, 'auth OK → ouverture Atelier');
+    // Succès : ouvrir l'Atelier
     S.user = user;
     document.getElementById('auth-gate').style.display = 'none';
     document.getElementById('app').style.display = '';
     document.getElementById('cote-email').textContent = user.email || '';
     document.getElementById('header-avatar').textContent = (user.email || 'A')[0].toUpperCase();
     NAHIRA.sb.auth.onAuthStateChange(function(event) {
-      if (event === 'SIGNED_OUT') location.href = 'compte.html';
+      if (event === 'SIGNED_OUT') {
+        S.user = null;
+        document.getElementById('auth-gate').style.display = 'flex';
+        document.getElementById('app').style.display = 'none';
+        gateVue('form');
+      }
     });
     goTo('tableau');
 
   } catch(e) {
-    console.error('[AUTH] ✗ exception:', e.message, e);
-    var el = document.getElementById('auth-step');
-    if (el) el.textContent = '✗ erreur : ' + (e.message || 'inconnue');
+    console.error('[AUTH] exception:', e.message, e);
     if (e.message === 'timeout') {
-      gateShow('Supabase ne répond pas (>10s). Vérifiez votre connexion et réessayez.', true);
+      gateErreur('Supabase ne répond pas. Vérifiez votre connexion.', 'timeout getUser() >12s');
     } else if (e.message === 'timeout-admin') {
-      gateShow('Vérification des droits échouée (>8s). Réessayez.', true);
+      gateErreur('Vérification des droits échouée. Réessayez.', 'timeout isAdmin() >8s');
     } else {
-      gateShow('Erreur : ' + (e.message || 'inconnue') + '. Réessayez.', true);
+      gateErreur('Erreur : ' + (e.message || 'inconnue'), 'Réessayez ou rechargez la page.');
     }
-    _authRunning = false;
   }
+}
+
+async function adminLogin() {
+  var email = (document.getElementById('login-email').value || '').trim();
+  var pwd = document.getElementById('login-pwd').value || '';
+  var errEl = document.getElementById('login-err');
+  var btn = document.getElementById('login-btn');
+
+  errEl.style.display = 'none';
+  if (!email || !pwd) {
+    errEl.textContent = 'Remplissez votre email et votre mot de passe.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.textContent = 'Connexion…';
+  btn.disabled = true;
+
+  try {
+    var r = await NAHIRA.sb.auth.signInWithPassword({ email: email, password: pwd });
+    if (r.error) {
+      errEl.textContent = 'Email ou mot de passe incorrect.';
+      errEl.style.display = 'block';
+      btn.textContent = 'Se connecter';
+      btn.disabled = false;
+      return;
+    }
+    gateVue('checking');
+    gateStep('Connexion réussie, vérification des droits…');
+    await ouvrirAtelier();
+  } catch(e) {
+    errEl.textContent = 'Erreur : ' + (e.message || 'inconnue');
+    errEl.style.display = 'block';
+    btn.textContent = 'Se connecter';
+    btn.disabled = false;
+  }
+}
+
+async function init() {
+  gateVue('checking');
+  gateStep('Initialisation…');
+
+  if (typeof window.supabase === 'undefined') {
+    gateErreur('Supabase non chargé (CDN indisponible). Vérifiez votre connexion.', 'window.supabase undefined');
+    return;
+  }
+  if (typeof NAHIRA === 'undefined' || !NAHIRA.sb) {
+    gateErreur('Erreur initialisation (boutique.js). Rechargez la page.', 'NAHIRA.sb undefined');
+    return;
+  }
+
+  gateStep('Vérification de la session locale…');
+  var sessResp = await NAHIRA.sb.auth.getSession().catch(function(e) { return { error: e }; });
+  if (sessResp.error) {
+    gateErreur('Erreur lecture session : ' + sessResp.error.message, 'getSession() exception');
+    return;
+  }
+  var session = sessResp.data && sessResp.data.session;
+
+  if (!session) {
+    gateVue('form');
+    return;
+  }
+
+  gateStep('Session trouvée, vérification des droits…');
+  await ouvrirAtelier();
 }
 
 async function seDeconnecter() {
   if (!confirm('Se déconnecter de l\'Atelier ?')) return;
-  await NAHIRA.sb.auth.signOut();
-  location.href = 'compte.html';
+  await NAHIRA.sb.auth.signOut().catch(function(){});
+  S.user = null;
+  document.getElementById('auth-gate').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  gateVue('form');
 }
 
 /* ====== NAVIGATION ====== */
