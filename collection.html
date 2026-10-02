@@ -223,6 +223,27 @@
   aspect-ratio:4/5; border:1px solid var(--ligne);
 }
 
+/* ── Bannière collection sélectionnée ────────────────────────── */
+.collection-banner{
+  text-align:center; padding:18px 0 22px;
+  border-top:1px solid rgba(232,194,122,.12);
+  border-bottom:1px solid rgba(232,194,122,.12);
+  margin-bottom:22px;
+}
+.collection-banner-nom{
+  font-family:'Montserrat',sans-serif; font-size:.68rem; letter-spacing:.22em;
+  text-transform:uppercase; color:var(--or); margin-bottom:7px;
+}
+.collection-banner-desc{
+  font-family:'Cormorant Garamond',serif; font-style:italic;
+  font-size:1.05rem; color:var(--texte-doux);
+  max-width:480px; margin:0 auto; line-height:1.65;
+}
+@media(max-width:640px){
+  .collection-banner{padding:14px 0 16px; margin-bottom:16px}
+  .collection-banner-desc{font-size:.96rem}
+}
+
 /* ── Panneau CTA bas de page ─────────────────────────────────── */
 .panneau-bas{margin-top:52px; text-align:center}
 
@@ -298,6 +319,12 @@
   <div class="filtres-section" id="section-styles" style="display:none">
     <div class="filtres-section-label">Style</div>
     <div class="chips-barre" id="barre-styles" role="list" aria-label="Filtrer par style"></div>
+  </div>
+
+  <!-- Bannière collection (visible uniquement quand une collection est sélectionnée) -->
+  <div class="collection-banner" id="collection-banner" style="display:none">
+    <p class="collection-banner-nom" id="collection-banner-nom"></p>
+    <p class="collection-banner-desc" id="collection-banner-desc"></p>
   </div>
 
   <!-- Barre filtres + recherche -->
@@ -377,6 +404,7 @@
   let favCache         = {};
 
   // Maps product_id → membership (built at init from join tables)
+  let collectionsData   = [];        // données complètes collections (incl. description)
   let collectionPidSets = new Map(); // collection_slug → Set<product_id>
   let moodPidSets       = new Map(); // mood_id → Set<product_id>
 
@@ -496,9 +524,27 @@
     return btn;
   }
 
+  /* ── Bannière collection ─────────────────────────────────────────────── */
+  function afficherBanniereCollection(slug) {
+    const banner = document.getElementById("collection-banner");
+    if (!slug) { banner.style.display = "none"; return; }
+    const col = collectionsData.find(c => c.slug === slug);
+    if (!col) { banner.style.display = "none"; return; }
+    document.getElementById("collection-banner-nom").textContent = col.name + " ✦";
+    const $desc = document.getElementById("collection-banner-desc");
+    if (col.description) {
+      $desc.textContent = col.description;
+      $desc.style.display = "";
+    } else {
+      $desc.style.display = "none";
+    }
+    banner.style.display = "";
+  }
+
   function selectionnerCollection(slug) {
     etat.collection = slug || null;
     syncChips("collection");
+    afficherBanniereCollection(etat.collection);
     majBoutonEffacer();
     appliquerEtAfficher();
   }
@@ -526,15 +572,19 @@
     majBoutonEffacer();
   }
 
-  /* ── Chips fonctionnelles (En stock, Nouveautés, Bestsellers, Lazy) ─── */
+  /* ── Chips fonctionnelles ────────────────────────────────────────────
+     Chaque chip n'est ajoutée que si au moins 1 produit visible correspond.
+     Autonome : à chaque chargement la présence reflète les vraies données.
+  ─────────────────────────────────────────────────────────────────────── */
   function creerChipsStatiques() {
     const defs = [
-      { key: "dispo",      label: "En stock"    },
-      { key: "nouveau",    label: "Nouveautés"  },
-      { key: "bestseller", label: "Bestsellers" },
-      { key: "lazy",       label: "Lazy Pick ✦" },
+      { key: "dispo",      label: "En stock",    pred: p => p.stock > 0       },
+      { key: "nouveau",    label: "Nouveautés",  pred: p => p.is_new          },
+      { key: "bestseller", label: "Bestsellers", pred: p => p.is_bestseller   },
+      { key: "lazy",       label: "Lazy Pick ✦", pred: p => p.is_lazy_pick    },
     ];
-    defs.forEach(({ key, label }) => {
+    defs.forEach(({ key, label, pred }) => {
+      if (!allProduits.some(pred)) return; // masqué si aucun produit ne correspond
       const btn = document.createElement("button");
       btn.className = "filtre-chip";
       btn.dataset.key = key;
@@ -591,6 +641,7 @@
     $recherche.value = "";
     $tri.value = "nouveautes";
     document.querySelectorAll('.filtre-select:not(#tri)').forEach(s => { s.value = ""; });
+    afficherBanniereCollection(null);
     syncUI();
     appliquerEtAfficher();
   }
@@ -744,7 +795,8 @@
     NAHIRA.getCollections(),
     NAHIRA.getMoods(),
   ]);
-  allProduits = prods;
+  allProduits     = prods;
+  collectionsData = cols;
 
   // 2. Construire les maps d'appartenance (product_id → collection / mood)
   if (prods.length) {
@@ -779,6 +831,7 @@
 
   // 5. Synchroniser l'UI avec l'état initial (paramètres d'URL)
   syncUI();
+  afficherBanniereCollection(etat.collection);
 
   // 6. Premier affichage
   appliquerEtAfficher();
