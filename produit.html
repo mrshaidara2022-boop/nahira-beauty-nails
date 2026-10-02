@@ -265,15 +265,6 @@ details ul { margin-left: 18px; }
       <li><a href="compte.html">Compte</a></li>
       <li><a href="panier.html">Panier<span class="cart-badge"></span></a></li>
     </ul>
-    <button class="b-burger" id="b-burger" aria-label="Menu" aria-expanded="false">☰</button>
-  </div>
-  <div class="b-menu-mobile" id="b-menu-mobile">
-    <a href="collection.html">Collection</a>
-    <a href="index.html#comment-ca-marche">La pose</a>
-    <a href="entretien.html">Entretien</a>
-    <a href="academy.html">Academy</a>
-    <a href="compte.html">Compte</a>
-    <a href="panier.html">Panier</a>
   </div>
 </nav>
 
@@ -782,15 +773,6 @@ details ul { margin-left: 18px; }
       m.className = "b-msg err"; m.textContent = e.message;
     }
     btn.disabled = false; btn.textContent = "Envoyer mon avis";
-  });
-
-  /* ── Burger menu mobile ──────────────────────────────────────── */
-  const burger = document.getElementById("b-burger");
-  const menuM  = document.getElementById("b-menu-mobile");
-  burger?.addEventListener("click", () => {
-    const open = menuM.classList.toggle("ouvert");
-    burger.setAttribute("aria-expanded", open);
-    burger.textContent = open ? "✕" : "☰";
   });
 
   /* ── Recommandations ─────────────────────────────────────────── */
