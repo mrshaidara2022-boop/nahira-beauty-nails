@@ -70,6 +70,20 @@
 .galerie-thumb:hover { transform: translateY(-1px); border-color: rgba(232,194,122,.4); }
 .galerie-thumb img { width: 100%; height: 100%; object-fit: cover; object-position: center; }
 .galerie-thumb.active { border-color: var(--or); }
+.galerie-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  background: rgba(6,4,6,.65); border: 1px solid rgba(232,194,122,.28);
+  color: var(--or); border-radius: 50%; width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 1.3rem; line-height: 1;
+  transition: background .2s, border-color .2s; z-index: 2;
+  user-select: none; -webkit-tap-highlight-color: transparent;
+  padding: 0;
+}
+.galerie-arrow:hover { background: rgba(6,4,6,.9); border-color: var(--or); }
+.galerie-arrow-prev { left: 10px; }
+.galerie-arrow-next { right: 10px; }
+.galerie[data-count="1"] .galerie-arrow { display: none; }
 
 /* ── Badges ─────────────────────────────────────────────────────────── */
 .badges-overlay {
@@ -272,10 +286,12 @@ details ul { margin-left: 18px; }
     <div class="fiche">
 
       <!-- Galerie -->
-      <div class="galerie">
+      <div class="galerie" id="galerie">
         <div class="galerie-main">
+          <button class="galerie-arrow galerie-arrow-prev" id="galerie-prev" aria-label="Image précédente">&#8249;</button>
           <img id="img-principale" src="" alt="">
           <div class="badges-overlay" id="badges-overlay"></div>
+          <button class="galerie-arrow galerie-arrow-next" id="galerie-next" aria-label="Image suivante">&#8250;</button>
         </div>
         <div class="galerie-thumbs" id="galerie-thumbs"></div>
       </div>
@@ -482,29 +498,51 @@ details ul { margin-left: 18px; }
   document.title                                       = titre;
 
   /* ── Galerie multi-images ───────────────────────────────────── */
-  const imgPrin  = document.getElementById("img-principale");
-  const thumbs   = document.getElementById("galerie-thumbs");
-  imgPrin.src    = imgPrincipale;
-  imgPrin.alt    = produit.name;
+  const imgPrin   = document.getElementById("img-principale");
+  const thumbsCnt = document.getElementById("galerie-thumbs");
+  const galerieEl = document.getElementById("galerie");
+  const imgs      = produit.images;
+  let curIdx      = 0;
 
-  if (produit.images.length > 1) {
-    produit.images.forEach((img, i) => {
-      const t = document.createElement("div");
-      t.className = "galerie-thumb" + (i === 0 ? " active" : "");
-      t.innerHTML = '<img src="' + img.url + '" alt="' + (img.alt_text || produit.name) + '">';
-      t.addEventListener("click", () => {
-        imgPrin.style.opacity = "0";
-        setTimeout(() => {
-          imgPrin.src = img.url;
-          imgPrin.alt = img.alt_text || produit.name;
-          imgPrin.style.opacity = "1";
-        }, 150);
-        document.querySelectorAll(".galerie-thumb").forEach(x => x.classList.remove("active"));
-        t.classList.add("active");
-      });
-      thumbs.appendChild(t);
+  galerieEl.dataset.count = imgs.length;
+  imgPrin.src = imgPrincipale;
+  imgPrin.alt = produit.name;
+
+  function goTo(idx) {
+    curIdx = (idx + imgs.length) % imgs.length;
+    imgPrin.style.opacity = "0";
+    setTimeout(() => {
+      imgPrin.src = imgs[curIdx].url;
+      imgPrin.alt = imgs[curIdx].alt_text || produit.name;
+      imgPrin.style.opacity = "1";
+    }, 150);
+    document.querySelectorAll(".galerie-thumb").forEach((x, i) => {
+      x.classList.toggle("active", i === curIdx);
     });
+    const active = thumbsCnt.children[curIdx];
+    if (active) active.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
   }
+
+  imgs.forEach((img, i) => {
+    const t = document.createElement("div");
+    t.className = "galerie-thumb" + (i === 0 ? " active" : "");
+    t.innerHTML = '<img src="' + img.url + '" alt="' + (img.alt_text || produit.name) + '" loading="lazy">';
+    t.addEventListener("click", () => goTo(i));
+    thumbsCnt.appendChild(t);
+  });
+
+  document.getElementById("galerie-prev").addEventListener("click", () => goTo(curIdx - 1));
+  document.getElementById("galerie-next").addEventListener("click", () => goTo(curIdx + 1));
+
+  /* Swipe mobile */
+  let swipeX = null;
+  imgPrin.parentElement.addEventListener("touchstart", e => { swipeX = e.touches[0].clientX; }, { passive: true });
+  imgPrin.parentElement.addEventListener("touchend", e => {
+    if (swipeX === null) return;
+    const dx = e.changedTouches[0].clientX - swipeX;
+    if (Math.abs(dx) > 40) goTo(dx < 0 ? curIdx + 1 : curIdx - 1);
+    swipeX = null;
+  }, { passive: true });
 
   /* ── Badges ─────────────────────────────────────────────────── */
   const overlay = document.getElementById("badges-overlay");
