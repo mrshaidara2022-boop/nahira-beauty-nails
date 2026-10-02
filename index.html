@@ -117,7 +117,12 @@ header,nav,main,footer,.announce-bar{position:relative;z-index:1}
   .hp-links{display:none}
   .hp-nav-inner{display:flex; position:relative}
   .hp-logo{position:absolute; left:50%; transform:translateX(-50%)}
+  .hp-logo .l1{font-size:18px; letter-spacing:3px}
+  .hp-logo .l2{letter-spacing:5px}
   .hp-burger{display:block; margin-left:auto}
+}
+@media(max-width:380px){
+  .hp-logo .l1{font-size:16px; letter-spacing:2px}
 }
 
 /* ─── Typo commune ──────────────────────────────────────────────────── */
@@ -400,7 +405,7 @@ footer{border-top:1px solid rgba(240,111,167,.15);padding:64px 0 36px;background
     <a href="#comment-ca-marche" class="btn btn-ghost">Comment ça marche</a>
   </div>
   <div class="hero-stats" aria-label="Statistiques">
-    <div class="hero-stat"><div class="hero-stat-n" id="stat-refs">100+</div><div class="hero-stat-l">Designs</div></div>
+    <div class="hero-stat" id="hero-stat-designs" style="display:none"><div class="hero-stat-n" id="stat-refs"></div><div class="hero-stat-l">Designs</div></div>
     <div class="hero-stat"><div class="hero-stat-n">48h</div><div class="hero-stat-l">Livraison</div></div>
     <div class="hero-stat"><div class="hero-stat-n">10 min</div><div class="hero-stat-l">Pose</div></div>
     <div class="hero-stat"><div class="hero-stat-n">∞</div><div class="hero-stat-l">Réutilisable</div></div>
@@ -723,6 +728,8 @@ footer{border-top:1px solid rgba(240,111,167,.15);padding:64px 0 36px;background
   if (allProduits.length > 0) {
     const n = allProduits.length;
     document.getElementById("stat-refs").textContent = n + "+";
+    const statBlock = document.getElementById("hero-stat-designs");
+    if (statBlock) statBlock.style.display = "";
     const ctaEyebrow = document.getElementById("cta-eyebrow");
     if (ctaEyebrow) ctaEyebrow.textContent = n + " designs t'attendent";
   }
