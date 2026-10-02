@@ -157,7 +157,7 @@ h1.b-titre{font-weight:400; font-size:clamp(2rem,5.5vw,3rem); line-height:1.1; c
 .b-menu-mobile a:hover{color:var(--rose); background:rgba(240,111,167,.04)}
 .b-menu-mobile.ouvert{display:flex}
 @media(max-width:680px){
-  .b-burger{display:block}
+  .b-burger{display:block; margin-left:auto}
   .b-links{display:none !important}
   .b-nav-inner{position:relative}
   .b-logo{position:absolute; left:50%; transform:translateX(-50%)}
