@@ -12,7 +12,7 @@
   --esp-xs:6px; --esp-sm:12px; --esp-md:20px; --esp-lg:32px; --esp-xl:52px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth;overflow-x:hidden;max-width:100%}
 body{
   background:var(--noir); color:var(--texte);
   font-family:'Cormorant Garamond',serif; font-size:18px; line-height:1.7;

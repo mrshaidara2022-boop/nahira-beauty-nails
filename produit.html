@@ -46,7 +46,7 @@
 }
 .galerie-main img {
   width: 100%; height: 100%;
-  object-fit: cover; object-position: center;
+  object-fit: contain;
   transition: opacity .25s;
   display: block;
 }
@@ -353,6 +353,12 @@ details ul { margin-left: 18px; }
       </div>
     </div><!-- /fiche -->
 
+    <!-- ── Description longue ────────────────────────────────────────── -->
+    <div id="bloc-desc-long" style="display:none; margin-top:32px">
+      <p class="section-titre" style="margin-bottom:12px">Description</p>
+      <p id="p-desc-long" style="font-family:'Montserrat',sans-serif; font-size:.9rem; line-height:1.85; color:var(--texte-doux); max-width:680px"></p>
+    </div>
+
     <!-- ── Caractéristiques détaillées ──────────────────────────────── -->
     <div class="panneau" id="bloc-caracteristiques" style="margin-top:50px; display:none">
       <p class="section-titre" style="margin-top:0">Caractéristiques</p>
@@ -562,6 +568,12 @@ details ul { margin-left: 18px; }
   /* ── Description courte ─────────────────────────────────────── */
   const descEl = document.getElementById("p-desc");
   if (produit.description_short) { descEl.textContent = produit.description_short; } else { descEl.style.display = "none"; }
+
+  /* ── Description longue ─────────────────────────────────────── */
+  if (produit.description) {
+    document.getElementById("p-desc-long").textContent = produit.description;
+    document.getElementById("bloc-desc-long").style.display = "";
+  }
 
   /* ── Caractéristiques kit (chips rapides) ───────────────────── */
   const chips    = document.getElementById("kit-chips");

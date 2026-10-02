@@ -10,7 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth;overflow-x:hidden;max-width:100%}
 :root{
   --n-noir:#060406; --n-ligne:rgba(232,194,122,.18);
   --n-texte-doux:rgba(255,247,250,.65); --n-rose:#F06FA7; --n-or:#E8C27A;
@@ -253,7 +253,7 @@ a{color:inherit;text-decoration:none}
   <div id="loadingState" style="padding:60px 22px;max-width:1100px;margin:0 auto">
     <div class="skel-block s"></div>
     <div class="skel-block m" style="margin-bottom:24px"></div>
-    <div style="display:grid;grid-template-columns:1fr 340px;gap:48px">
+    <div class="fm-hero-inner" style="margin-bottom:0">
       <div><div class="skel-block" style="height:300px;border-radius:16px;margin-bottom:0"></div></div>
       <div><div class="skel-block tall" style="border-radius:16px;margin-bottom:0"></div></div>
     </div>
