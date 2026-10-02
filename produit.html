@@ -35,7 +35,9 @@
 }
 
 /* ── Galerie ─────────────────────────────────────────────────────────── */
-.galerie { display: flex; flex-direction: column; gap: 10px; }
+.galerie { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.fiche > div { min-width: 0; }
+.galerie-thumbs { max-width: 100%; }
 .galerie-main {
   position: relative;
   border-radius: 20px;
@@ -517,7 +519,17 @@ details ul { margin-left: 18px; }
       x.classList.toggle("active", i === curIdx);
     });
     const active = thumbsCnt.children[curIdx];
-    if (active) active.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+    if (active) {
+      const tLeft  = active.offsetLeft;
+      const tRight = tLeft + active.offsetWidth;
+      const cLeft  = thumbsCnt.scrollLeft;
+      const cRight = cLeft + thumbsCnt.clientWidth;
+      if (tLeft < cLeft) {
+        thumbsCnt.scrollLeft = tLeft - 8;
+      } else if (tRight > cRight) {
+        thumbsCnt.scrollLeft = tRight - thumbsCnt.clientWidth + 8;
+      }
+    }
   }
 
   imgs.forEach((img, i) => {
