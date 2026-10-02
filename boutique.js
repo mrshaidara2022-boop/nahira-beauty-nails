@@ -203,6 +203,28 @@ const NAHIRA = (() => {
     return data || [];
   }
 
+  // Liens produit → collections (pour filtrage client-side)
+  async function getProductCollectionLinks(productIds) {
+    if (!productIds?.length) return [];
+    const { data } = await sb.from("product_collections")
+      .select("product_id, collection_id, collections(slug)")
+      .in("product_id", productIds);
+    return (data || []).map(r => ({
+      product_id: r.product_id,
+      collection_id: r.collection_id,
+      collection_slug: r.collections?.slug || null,
+    }));
+  }
+
+  // Liens produit → moods (pour filtrage client-side)
+  async function getProductMoodLinks(productIds) {
+    if (!productIds?.length) return [];
+    const { data } = await sb.from("product_moods")
+      .select("product_id, mood_id")
+      .in("product_id", productIds);
+    return data || [];
+  }
+
   /* ─── FAVORIS ─────────────────────────────────────────────────────────────
      Requiert auth. Si non connecté → retourne { needsAuth: true }.
   ──────────────────────────────────────────────────────────────────────────── */
@@ -430,7 +452,7 @@ const NAHIRA = (() => {
     getAvailableStock, stockLabel,
     // Produits
     getProduct, getProducts, getRecommendations, getProductImages,
-    getCollections, getMoods,
+    getCollections, getMoods, getProductCollectionLinks, getProductMoodLinks,
     // Favoris
     isFavorite, toggleFavorite,
     // Alertes réassort

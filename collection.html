@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>La Collection — Nahira Beauty Nails</title>
-<meta name="description" content="Press-on nails soignés, posés en 10 minutes. Découvrez toutes nos créations : formes amande, coffin, stiletto, finitions velours, glossy, nude et plus.">
+<title>Les Collections — Nahira Beauty Nails</title>
+<meta name="description" content="Press-on nails soignés, posés en 10 minutes. Découvrez toutes nos collections : Coquette Club, After Dark, Gilded Glam et plus.">
 <meta property="og:site_name" content="Nahira Beauty Nails">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://nahirabeautynails.fr/collection.html">
-<meta property="og:title" content="La Collection — Nahira Beauty Nails">
-<meta property="og:description" content="Press-on nails soignés, posés en 10 minutes. Toutes nos créations disponibles maintenant.">
+<meta property="og:title" content="Les Collections — Nahira Beauty Nails">
+<meta property="og:description" content="Press-on nails soignés, posés en 10 minutes. Toutes nos collections disponibles maintenant.">
 <meta property="og:image" content="https://nahirabeautynails.fr/og.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://nahirabeautynails.fr/og.jpg">
@@ -22,9 +22,23 @@
 .entete-col h1{margin:6px 0 8px}
 .entete-col p.sous{color:var(--texte-doux); max-width:520px; margin:0 auto; font-size:1rem; font-family:'Montserrat',sans-serif; font-size:.88rem; line-height:1.6}
 
-/* ── Moods ───────────────────────────────────────────────────── */
-.moods-barre{display:flex; gap:8px; overflow-x:auto; padding:0 0 6px; margin-bottom:20px; scrollbar-width:none}
-.moods-barre::-webkit-scrollbar{display:none}
+/* ── Sections de filtres (Collections / Style) ───────────────── */
+.filtres-section{margin-bottom:18px}
+.filtres-section-label{
+  font-family:'Montserrat',sans-serif; font-size:.60rem; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--texte-faible); margin-bottom:8px; padding-left:2px;
+}
+
+/* ── Rangée de chips (scroll interne, jamais débordement viewport) */
+.chips-barre{
+  display:flex; gap:8px; overflow-x:auto; padding:0 0 6px;
+  scrollbar-width:none; -webkit-overflow-scrolling:touch;
+  /* Empêche le scroll de déborder du conteneur plutôt que du viewport */
+  max-width:100%;
+}
+.chips-barre::-webkit-scrollbar{display:none}
+
+/* ── Chip générique ──────────────────────────────────────────── */
 .mood-chip{
   flex:0 0 auto; display:flex; align-items:center; gap:6px;
   padding:7px 15px; border-radius:99px;
@@ -34,6 +48,9 @@
 }
 .mood-chip:hover,.mood-chip.actif{border-color:var(--or); color:var(--or-vif); background:rgba(232,194,122,.07)}
 .mood-chip .emoji{font-size:1rem}
+
+/* ── Séparateur entre filtres ────────────────────────────────── */
+.filtres-sep{height:1px; background:var(--ligne); margin:4px 0 16px; opacity:.5}
 
 /* ── Barre filtres/recherche ─────────────────────────────────── */
 .barre-filtres{
@@ -152,7 +169,6 @@
   padding:3px 8px; border-radius:99px; border:1px solid rgba(138,201,138,.25);
 }
 
-/* Stock warning — ne s'affiche que si état notable (low/épuisé) */
 .carte-stock-warn{
   font-family:'Montserrat',sans-serif; font-size:.65rem; letter-spacing:.08em;
   margin-bottom:8px; min-height:0;
@@ -181,7 +197,7 @@
 }
 .vide-msg a{color:var(--or); text-decoration:underline; text-underline-offset:3px}
 
-/* ── Fallback image (pas encore de photo) ────────────────────── */
+/* ── Fallback image ──────────────────────────────────────────── */
 .carte-img-fallback{
   width:100%; height:100%;
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
@@ -231,7 +247,7 @@
   .meta-resultats{flex-direction:column; align-items:flex-start; gap:6px}
   .entete-col{padding:18px 0 16px}
   .filtre-select{padding:8px 30px 8px 13px; font-size:.70rem}
-  .moods-barre{gap:6px; margin-bottom:14px}
+  .filtres-section{margin-bottom:14px}
   .mood-chip{padding:6px 12px; font-size:.65rem}
 }
 @media(max-width:400px){
@@ -260,15 +276,6 @@
       <li><a href="compte.html">Compte</a></li>
       <li><a href="panier.html">Panier<span class="cart-badge"></span></a></li>
     </ul>
-    <button class="b-burger" id="b-burger" aria-label="Menu" aria-expanded="false">☰</button>
-  </div>
-  <div class="b-menu-mobile" id="b-menu-mobile">
-    <a href="collection.html">Collection</a>
-    <a href="index.html#comment-ca-marche">La pose</a>
-    <a href="entretien.html">Entretien</a>
-    <a href="academy.html">Academy</a>
-    <a href="compte.html">Compte</a>
-    <a href="panier.html">Panier</a>
   </div>
 </nav>
 
@@ -277,12 +284,21 @@
   <!-- En-tête -->
   <div class="entete-col">
     <p class="b-eyebrow">Lazy Girl Nails ✦</p>
-    <h1 class="b-titre">La Collection <span class="b-script">Nahira</span></h1>
+    <h1 class="b-titre">Les Collections <span class="b-script">Nahira</span></h1>
     <p class="sous">Manucure soignée, posée en 10 minutes — sans rendez-vous, sans salon.</p>
   </div>
 
-  <!-- Moods dynamiques -->
-  <div class="moods-barre" id="moods-barre" role="list" aria-label="Filtrer par ambiance"></div>
+  <!-- Section COLLECTIONS (visible uniquement si au moins une collection a des produits) -->
+  <div class="filtres-section" id="section-collections" style="display:none">
+    <div class="filtres-section-label">Collections</div>
+    <div class="chips-barre" id="barre-collections" role="list" aria-label="Filtrer par collection"></div>
+  </div>
+
+  <!-- Section STYLE (visible uniquement si au moins un style a des produits) -->
+  <div class="filtres-section" id="section-styles" style="display:none">
+    <div class="filtres-section-label">Style</div>
+    <div class="chips-barre" id="barre-styles" role="list" aria-label="Filtrer par style"></div>
+  </div>
 
   <!-- Barre filtres + recherche -->
   <div class="barre-filtres" id="barre-filtres">
@@ -294,7 +310,7 @@
       <option value="prix-desc">Prix décroissant</option>
     </select>
     <div class="filtres-chips" id="filtres-chips">
-      <!-- chips dynamiques injectées par JS -->
+      <!-- chips fonctionnelles injectées par JS -->
     </div>
     <button class="btn-effacer" id="btn-effacer" hidden>Effacer les filtres</button>
   </div>
@@ -351,41 +367,51 @@
 <script src="boutique.js"></script>
 <script>
 (async function () {
+
   /* ── État ──────────────────────────────────────────────────────────────── */
-  const PAGE_SIZE   = 24;
-  let allProduits   = [];   // tous les produits chargés (après filtres serveur)
-  let filtered      = [];   // après filtres client
-  let affichesCount = 0;    // combien de cartes dans le DOM
-  let favCache      = {};   // product_id → bool
+  const PAGE_SIZE = 24;
+
+  let allProduits      = [];
+  let filtered         = [];
+  let affichesCount    = 0;
+  let favCache         = {};
+
+  // Maps product_id → membership (built at init from join tables)
+  let collectionPidSets = new Map(); // collection_slug → Set<product_id>
+  let moodPidSets       = new Map(); // mood_id → Set<product_id>
 
   const etat = {
-    mood:    null,           // id du mood actif
-    shape:   null,
-    finish:  null,
-    dispo:   false,          // only in stock
-    nouveau: false,
+    collection: null,  // slug
+    mood:       null,  // id
+    shape:      null,
+    finish:     null,
+    dispo:      false,
+    nouveau:    false,
     bestseller: false,
-    lazy:    false,
-    texte:   "",
-    tri:     "nouveautes",
+    lazy:       false,
+    texte:      "",
+    tri:        "nouveautes",
   };
 
   /* ── DOM ────────────────────────────────────────────────────────────────── */
-  const $grilleSkel  = document.getElementById("grille-skeleton");
-  const $grille      = document.getElementById("grille");
-  const $vide        = document.getElementById("vide-msg");
-  const $compte      = document.getElementById("compte-resultats");
-  const $btnPlus     = document.getElementById("btn-charger-plus");
-  const $btnEffacer  = document.getElementById("btn-effacer");
-  const $lienEff     = document.getElementById("lien-effacer");
-  const $recherche   = document.getElementById("recherche");
-  const $tri         = document.getElementById("tri");
-  const $moodsBarre  = document.getElementById("moods-barre");
-  const $chipsWrap   = document.getElementById("filtres-chips");
+  const $grilleSkel    = document.getElementById("grille-skeleton");
+  const $grille        = document.getElementById("grille");
+  const $vide          = document.getElementById("vide-msg");
+  const $compte        = document.getElementById("compte-resultats");
+  const $btnPlus       = document.getElementById("btn-charger-plus");
+  const $btnEffacer    = document.getElementById("btn-effacer");
+  const $lienEff       = document.getElementById("lien-effacer");
+  const $recherche     = document.getElementById("recherche");
+  const $tri           = document.getElementById("tri");
+  const $chipsWrap     = document.getElementById("filtres-chips");
+  const $secCols       = document.getElementById("section-collections");
+  const $secStyles     = document.getElementById("section-styles");
+  const $barreCols     = document.getElementById("barre-collections");
+  const $barreStyles   = document.getElementById("barre-styles");
 
   /* ── Utilitaires ─────────────────────────────────────────────────────── */
   function aucunFiltre() {
-    return !etat.mood && !etat.shape && !etat.finish
+    return !etat.collection && !etat.mood && !etat.shape && !etat.finish
       && !etat.dispo && !etat.nouveau && !etat.bestseller && !etat.lazy
       && !etat.texte;
   }
@@ -398,11 +424,20 @@
     return a;
   }
 
+  /* ── Filtrage 100 % client-side ──────────────────────────────────────── */
   function applyFiltersClient(produits) {
     let r = produits;
-    if (etat.mood)       { /* déjà filtré côté serveur via getProducts */ }
-    if (etat.shape)      { /* déjà filtré côté serveur */ }
-    if (etat.finish)     { /* déjà filtré côté serveur */ }
+
+    if (etat.collection) {
+      const ids = collectionPidSets.get(etat.collection) || new Set();
+      r = r.filter(p => ids.has(p.id));
+    }
+    if (etat.mood) {
+      const ids = moodPidSets.get(etat.mood) || new Set();
+      r = r.filter(p => ids.has(p.id));
+    }
+    if (etat.shape)      r = r.filter(p => p.shape  === etat.shape);
+    if (etat.finish)     r = r.filter(p => p.finish === etat.finish);
     if (etat.dispo)      r = r.filter(p => p.stock > 0);
     if (etat.nouveau)    r = r.filter(p => p.is_new);
     if (etat.bestseller) r = r.filter(p => p.is_bestseller);
@@ -417,76 +452,113 @@
     return applySort(r);
   }
 
-  /* ── Moods ──────────────────────────────────────────────────────────────── */
-  async function chargerMoods() {
-    const moods = await NAHIRA.getMoods();
-    if (!moods.length) { $moodsBarre.style.display = "none"; return; }
+  /* ── Construction des sections COLLECTIONS et STYLE ─────────────────── */
+  function construireCollections(collectionsData) {
+    const actives = collectionsData.filter(c =>
+      (collectionPidSets.get(c.slug)?.size || 0) > 0
+    );
+    if (actives.length === 0) return; // section reste display:none
 
-    // "Tout" chip
-    const tout = creerMoodChip({ id: null, name: "Tout", emoji: "✨" }, true);
-    $moodsBarre.appendChild(tout);
-
-    moods.forEach(m => $moodsBarre.appendChild(creerMoodChip(m, false)));
+    // "Tout"
+    $barreCols.appendChild(creerChipNav(null, "Tout", "collection"));
+    actives.forEach(c => $barreCols.appendChild(creerChipNav(c.slug, c.name, "collection")));
+    $secCols.style.display = "";
   }
 
-  function creerMoodChip(m, actif) {
+  function construireStyles(moodsData) {
+    const actifs = moodsData.filter(m =>
+      (moodPidSets.get(m.id)?.size || 0) > 0
+    );
+    if (actifs.length === 0) return; // section reste display:none
+
+    $barreStyles.appendChild(creerChipNav(null, "Tout", "mood"));
+    actifs.forEach(m => {
+      const chip = creerChipNav(m.id, m.name, "mood");
+      if (m.emoji) {
+        chip.innerHTML = `<span class="emoji">${m.emoji}</span><span>${escHtml(m.name)}</span>`;
+      }
+      $barreStyles.appendChild(chip);
+    });
+    $secStyles.style.display = "";
+  }
+
+  function creerChipNav(value, label, type) {
     const btn = document.createElement("button");
-    btn.className = "mood-chip" + (actif ? " actif" : "");
+    btn.className = "mood-chip";
     btn.setAttribute("role", "listitem");
-    btn.dataset.moodId = m.id || "";
-    if (m.color) btn.style.setProperty("--mood-color", m.color);
-    btn.innerHTML = (m.emoji ? `<span class="emoji">${m.emoji}</span>` : "") + `<span>${m.name}</span>`;
-    btn.addEventListener("click", () => selectionnerMood(m.id));
+    btn.dataset.type = type;
+    btn.dataset.val  = value || "";
+    btn.textContent  = label;
+    btn.addEventListener("click", () => {
+      if (type === "collection") selectionnerCollection(value || null);
+      else                       selectionnerMood(value || null);
+    });
     return btn;
   }
 
-  async function selectionnerMood(moodId) {
-    etat.mood = moodId || null;
-    document.querySelectorAll(".mood-chip").forEach(c => {
-      c.classList.toggle("actif", (c.dataset.moodId || null) === (moodId || null));
-    });
-    await rechargerProduits();
+  function selectionnerCollection(slug) {
+    etat.collection = slug || null;
+    syncChips("collection");
+    majBoutonEffacer();
+    appliquerEtAfficher();
   }
 
-  /* ── Chips filtres ──────────────────────────────────────────────────────── */
+  function selectionnerMood(moodId) {
+    etat.mood = moodId || null;
+    syncChips("mood");
+    majBoutonEffacer();
+    appliquerEtAfficher();
+  }
+
+  function syncChips(type) {
+    const val = type === "collection" ? (etat.collection || null) : (etat.mood || null);
+    document.querySelectorAll(`.mood-chip[data-type="${type}"]`).forEach(c => {
+      c.classList.toggle("actif", (c.dataset.val || null) === val);
+    });
+  }
+
+  function syncUI() {
+    syncChips("collection");
+    syncChips("mood");
+    ["dispo","nouveau","bestseller","lazy"].forEach(k => {
+      document.querySelector(`.filtre-chip[data-key="${k}"]`)?.classList.toggle("actif", etat[k]);
+    });
+    majBoutonEffacer();
+  }
+
+  /* ── Chips fonctionnelles (En stock, Nouveautés, Bestsellers, Lazy) ─── */
   function creerChipsStatiques() {
     const defs = [
-      { key: "dispo",      label: "En stock"   },
-      { key: "nouveau",    label: "Nouveautés" },
-      { key: "bestseller", label: "Bestsellers"},
-      { key: "lazy",       label: "Lazy Pick ✦"},
+      { key: "dispo",      label: "En stock"    },
+      { key: "nouveau",    label: "Nouveautés"  },
+      { key: "bestseller", label: "Bestsellers" },
+      { key: "lazy",       label: "Lazy Pick ✦" },
     ];
     defs.forEach(({ key, label }) => {
       const btn = document.createElement("button");
       btn.className = "filtre-chip";
       btn.dataset.key = key;
       btn.innerHTML = label + `<span class="chip-x">×</span>`;
-      btn.addEventListener("click", () => toggleChip(key));
+      btn.addEventListener("click", () => {
+        etat[key] = !etat[key];
+        btn.classList.toggle("actif", etat[key]);
+        majBoutonEffacer();
+        appliquerEtAfficher();
+      });
       $chipsWrap.appendChild(btn);
     });
   }
 
-  function toggleChip(key) {
-    etat[key] = !etat[key];
-    document.querySelector(`.filtre-chip[data-key="${key}"]`)
-      ?.classList.toggle("actif", etat[key]);
-    majBoutonEffacer();
-    appliquerEtAfficher();
-  }
-
-  /* ── Sélects shape / finish ─────────────────────────────────────────────── */
+  /* ── Sélects shape / finish (si renseignés dans les produits) ───────── */
   function construireSelectsFiltres(produits) {
     const shapes  = [...new Set(produits.map(p => p.shape).filter(Boolean))].sort();
     const finishs = [...new Set(produits.map(p => p.finish).filter(Boolean))].sort();
 
-    // Insérer avant les chips statiques
     if (shapes.length > 1) {
-      const sel = creerSelect("shape", "Forme", shapes);
-      $chipsWrap.insertBefore(sel, $chipsWrap.firstChild);
+      $chipsWrap.insertBefore(creerSelect("shape", "Forme", shapes), $chipsWrap.firstChild);
     }
     if (finishs.length > 1) {
-      const sel = creerSelect("finish", "Finition", finishs);
-      $chipsWrap.insertBefore(sel, $chipsWrap.firstChild);
+      $chipsWrap.insertBefore(creerSelect("finish", "Finition", finishs), $chipsWrap.firstChild);
     }
   }
 
@@ -496,39 +568,37 @@
     sel.className = "filtre-select";
     sel.setAttribute("aria-label", label);
     sel.innerHTML = `<option value="">— ${label} —</option>` +
-      options.map(o => `<option value="${o}">${o}</option>`).join("");
-    sel.addEventListener("change", async () => {
+      options.map(o => `<option value="${escHtml(o)}">${escHtml(o)}</option>`).join("");
+    sel.addEventListener("change", () => {
       etat[key] = sel.value || null;
       majBoutonEffacer();
-      await rechargerProduits();
+      appliquerEtAfficher();
     });
     wrap.appendChild(sel);
     return wrap;
   }
 
-  /* ── Bouton effacer ─────────────────────────────────────────────────────── */
+  /* ── Bouton effacer ─────────────────────────────────────────────────── */
   function majBoutonEffacer() {
     $btnEffacer.hidden = aucunFiltre();
   }
 
-  async function effacerFiltres() {
-    etat.mood = etat.shape = etat.finish = null;
+  function effacerFiltres() {
+    etat.collection = etat.mood = etat.shape = etat.finish = null;
     etat.dispo = etat.nouveau = etat.bestseller = etat.lazy = false;
     etat.texte = "";
     etat.tri   = "nouveautes";
     $recherche.value = "";
     $tri.value = "nouveautes";
-    document.querySelectorAll(".filtre-chip.actif").forEach(c => c.classList.remove("actif"));
-    document.querySelectorAll(".mood-chip").forEach(c => c.classList.toggle("actif", !c.dataset.moodId));
-    document.querySelectorAll(".filtre-select").forEach(s => { if (s !== $tri) s.value = ""; });
-    majBoutonEffacer();
-    await rechargerProduits();
+    document.querySelectorAll('.filtre-select:not(#tri)').forEach(s => { s.value = ""; });
+    syncUI();
+    appliquerEtAfficher();
   }
 
   $btnEffacer.addEventListener("click", effacerFiltres);
   $lienEff.addEventListener("click", e => { e.preventDefault(); effacerFiltres(); });
 
-  /* ── Recherche ──────────────────────────────────────────────────────────── */
+  /* ── Recherche ──────────────────────────────────────────────────────── */
   let rechercheTimer;
   $recherche.addEventListener("input", () => {
     clearTimeout(rechercheTimer);
@@ -539,36 +609,13 @@
     }, 250);
   });
 
-  /* ── Tri ────────────────────────────────────────────────────────────────── */
+  /* ── Tri ────────────────────────────────────────────────────────────── */
   $tri.addEventListener("change", () => {
     etat.tri = $tri.value;
     appliquerEtAfficher();
   });
 
-  /* ── Chargement produits ──────────────────────────────────────────────────
-     Rappelé lors d'un changement de filtre serveur (shape, finish, mood).
-  ─────────────────────────────────────────────────────────────────────────── */
-  async function rechargerProduits() {
-    $grille.style.display = "none";
-    $grilleSkel.style.display = "grid";
-    $vide.hidden = true;
-    $btnPlus.hidden = true;
-    $compte.textContent = "";
-
-    allProduits = await NAHIRA.getProducts({
-      moodId:       etat.mood   || undefined,
-      shape:        etat.shape  || undefined,
-      finish:       etat.finish || undefined,
-      limit:        500,
-    });
-
-    $grilleSkel.style.display = "none";
-    $grille.style.display = "grid";
-
-    appliquerEtAfficher();
-  }
-
-  /* ── Affichage / pagination ─────────────────────────────────────────────── */
+  /* ── Affichage / pagination ─────────────────────────────────────────── */
   function appliquerEtAfficher() {
     filtered = applyFiltersClient(allProduits);
     affichesCount = 0;
@@ -595,18 +642,17 @@
       $btnPlus.textContent = `Voir ${Math.min(restants, PAGE_SIZE)} sets de plus ✦`;
     }
 
-    // Charger les favoris en arrière-plan pour la nouvelle tranche
     chargerFavoris(tranche.map(p => p.id));
   }
 
   $btnPlus.addEventListener("click", afficherPage);
 
-  /* ── Carte produit ──────────────────────────────────────────────────────── */
+  /* ── Carte produit ──────────────────────────────────────────────────── */
   function creerCarte(p) {
-    const dispo      = p.stock > 0;
-    const threshold  = p.low_stock_threshold ?? 3;
-    const stock      = NAHIRA.stockLabel(p.stock, threshold);
-    const promo      = p.compare_at_cents && p.compare_at_cents > p.price_cents
+    const dispo     = p.stock > 0;
+    const threshold = p.low_stock_threshold ?? 3;
+    const stock     = NAHIRA.stockLabel(p.stock, threshold);
+    const promo     = p.compare_at_cents && p.compare_at_cents > p.price_cents
       ? Math.round((1 - p.price_cents / p.compare_at_cents) * 100)
       : 0;
 
@@ -614,34 +660,30 @@
     a.className = "carte-produit" + (dispo ? "" : " epuise");
     a.href = "produit.html?slug=" + encodeURIComponent(p.slug);
 
-    // Badges top — overlay uniquement pour identité produit (jamais état stock)
     let badgesTop = "";
-    if (p.is_new)       badgesTop += `<span class="badge-carte badge-nouveau">Nouveau</span>`;
-    if (p.is_bestseller)badgesTop += `<span class="badge-carte badge-bestseller">Bestseller</span>`;
-    if (p.is_lazy_pick) badgesTop += `<span class="badge-carte badge-lazy">Lazy Pick</span>`;
+    if (p.is_new)        badgesTop += `<span class="badge-carte badge-nouveau">Nouveau</span>`;
+    if (p.is_bestseller) badgesTop += `<span class="badge-carte badge-bestseller">Bestseller</span>`;
+    if (p.is_lazy_pick)  badgesTop += `<span class="badge-carte badge-lazy">Lazy Pick</span>`;
 
-    // Prix
     let prixHtml = `<span class="carte-prix">${NAHIRA.eur(p.price_cents)}</span>`;
     if (promo > 0) {
       prixHtml += `<span class="carte-barre">${NAHIRA.eur(p.compare_at_cents)}</span>`;
       prixHtml += `<span class="carte-promo">-${promo}%</span>`;
     }
 
-    // Image ou fallback premium
     const imgHtml = p.image_url
       ? `<img loading="lazy" src="${p.image_url}" alt="${escHtml(p.name)}" width="400" height="500">`
       : `<div class="carte-img-fallback"><div class="fallback-icon"></div><span>Photo bientôt disponible</span></div>`;
 
-    // Stock en info — uniquement quand état notable
-    const stockWarn = stock.cls !== 'stock-dispo'
+    const stockWarn = stock.cls !== "stock-dispo"
       ? `<p class="carte-stock-warn" style="color:${stock.color}">${stock.text}</p>`
-      : '';
+      : "";
 
     a.innerHTML = `
       <div class="carte-img-wrap">
         ${imgHtml}
         ${badgesTop ? `<div class="carte-badges-top">${badgesTop}</div>` : ""}
-        <button class="carte-fav${favCache[p.id] ? ' actif' : ''}" data-pid="${p.id}" aria-label="Ajouter aux favoris" title="Favoris">
+        <button class="carte-fav${favCache[p.id] ? " actif" : ""}" data-pid="${p.id}" aria-label="Ajouter aux favoris" title="Favoris">
           ${favCache[p.id] ? "♥" : "♡"}
         </button>
       </div>
@@ -656,7 +698,6 @@
       </div>
     `;
 
-    // Favori — interception du clic sur le bouton sans naviguer vers le produit
     const btnFav = a.querySelector(".carte-fav");
     btnFav.addEventListener("click", async (e) => {
       e.preventDefault();
@@ -678,12 +719,11 @@
     return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
   }
 
-  /* ── Favoris (chargés par lot) ──────────────────────────────────────────── */
+  /* ── Favoris ────────────────────────────────────────────────────────── */
   async function chargerFavoris(ids) {
     await Promise.all(ids.map(async id => {
       if (id in favCache) return;
       favCache[id] = await NAHIRA.isFavorite(id);
-      // Mettre à jour le bouton s'il est déjà dans le DOM
       const btn = document.querySelector(`.carte-fav[data-pid="${id}"]`);
       if (btn) {
         btn.classList.toggle("actif", favCache[id]);
@@ -692,41 +732,59 @@
     }));
   }
 
-  /* ── Initialisation ─────────────────────────────────────────────────────── */
-  // Lire les paramètres d'URL (ex: ?mood=xxx&shape=yyy)
+  /* ── Initialisation ─────────────────────────────────────────────────── */
+  // Lire les paramètres d'URL
   const params = new URLSearchParams(location.search);
-  if (params.get("mood"))   etat.mood   = params.get("mood");
-  if (params.get("shape"))  etat.shape  = params.get("shape");
-  if (params.get("finish")) etat.finish = params.get("finish");
+  if (params.get("collection")) etat.collection = params.get("collection");
+  if (params.get("mood"))       etat.mood       = params.get("mood");
 
-  // Lancer en parallèle : moods + premier chargement produits
-  await Promise.all([
-    chargerMoods(),
-    rechargerProduits(),
+  // 1. Chargement parallèle de tout
+  const [prods, cols, moods] = await Promise.all([
+    NAHIRA.getProducts({ limit: 500 }),
+    NAHIRA.getCollections(),
+    NAHIRA.getMoods(),
   ]);
+  allProduits = prods;
 
-  // Construire les filtres shape/finish à partir des produits déjà chargés
-  creerChipsStatiques();
-  construireSelectsFiltres(allProduits);
+  // 2. Construire les maps d'appartenance (product_id → collection / mood)
+  if (prods.length) {
+    const pids = prods.map(p => p.id);
+    const [pcLinks, pmLinks] = await Promise.all([
+      NAHIRA.getProductCollectionLinks(pids),
+      NAHIRA.getProductMoodLinks(pids),
+    ]);
 
-  // Si un mood est pré-sélectionné via URL, mettre à jour l'UI
-  if (etat.mood) {
-    document.querySelectorAll(".mood-chip").forEach(c => {
-      c.classList.toggle("actif", c.dataset.moodId === etat.mood);
+    pcLinks.forEach(r => {
+      if (!r.collection_slug) return;
+      if (!collectionPidSets.has(r.collection_slug))
+        collectionPidSets.set(r.collection_slug, new Set());
+      collectionPidSets.get(r.collection_slug).add(r.product_id);
+    });
+
+    pmLinks.forEach(r => {
+      if (!moodPidSets.has(r.mood_id)) moodPidSets.set(r.mood_id, new Set());
+      moodPidSets.get(r.mood_id).add(r.product_id);
     });
   }
 
+  // 3. Construire l'UI des filtres
+  construireCollections(cols);
+  construireStyles(moods);
+  creerChipsStatiques();
+  construireSelectsFiltres(allProduits);
+
+  // 4. Masquer les skeletons, afficher la grille
+  $grilleSkel.style.display = "none";
+  $grille.style.display = "grid";
+
+  // 5. Synchroniser l'UI avec l'état initial (paramètres d'URL)
+  syncUI();
+
+  // 6. Premier affichage
+  appliquerEtAfficher();
+
   // Badge panier
   NAHIRA.updateBadge();
-
-  // Burger menu mobile
-  const burger = document.getElementById("b-burger");
-  const menuM  = document.getElementById("b-menu-mobile");
-  burger?.addEventListener("click", () => {
-    const open = menuM.classList.toggle("ouvert");
-    burger.setAttribute("aria-expanded", open);
-    burger.textContent = open ? "✕" : "☰";
-  });
 
 })();
 </script>
