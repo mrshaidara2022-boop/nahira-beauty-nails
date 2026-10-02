@@ -835,7 +835,7 @@ footer{border-top:1px solid rgba(240,111,167,.15);padding:64px 0 36px;background
       const badgesHtml = [
         p.is_new       ? `<span class="hp-badge hp-badge-new">Nouveauté</span>` : "",
         p.is_bestseller? `<span class="hp-badge hp-badge-best">Bestseller</span>` : "",
-        stock <= 0     ? `<span class="hp-badge hp-badge-epuise">Épuisé</span>` : (stock <= seuil && stock > 0 ? `<span class="hp-badge hp-badge-low">Bientôt épuisé</span>` : ""),
+        stock <= 0     ? `<span class="hp-badge hp-badge-epuise">Épuisé</span>` : (stock <= seuil && stock > 0 ? `<span class="hp-badge hp-badge-low">Stock limité</span>` : ""),
       ].filter(Boolean).join("");
 
       return `

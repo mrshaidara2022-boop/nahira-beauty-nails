@@ -343,7 +343,7 @@
     if (epuise) {
       alerteHtml = `<span class="article-alerte alerte-epuise">Produit épuisé — retirez-le pour continuer</span>`;
     } else if (stockAjuste.has(it.product_id) && max > 0) {
-      alerteHtml = `<span class="article-alerte alerte-stock">Stock limité — quantité ajustée à ${qty}</span>`;
+      alerteHtml = `<span class="article-alerte alerte-stock">Stock limité — quantité ajustée au maximum disponible</span>`;
     }
 
     const btnMinusDisabled = qty <= 1         ? "disabled" : "";

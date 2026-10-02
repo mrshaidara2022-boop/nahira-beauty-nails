@@ -640,9 +640,7 @@ details ul { margin-left: 18px; }
     qtyVal.value = qty;
     qtyM.disabled = qty <= 1;
     qtyP.disabled = qty >= stockDispo;
-    sInfo.textContent = stockDispo > 0
-      ? stockDispo + " disponible" + (stockDispo > 1 ? "s" : "") + (stockDispo <= 3 ? " — plus que quelques-unes !" : "")
-      : "";
+    sInfo.textContent = stockDispo > 0 ? "Stock limité" : "";
     sInfo.style.color = stockInfo.color;
   }
 
