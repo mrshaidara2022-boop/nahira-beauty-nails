@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nahira Beauty Nails — Press On Nails Lazy Girl ✦ Pose en 10 min</title>
-<meta name="description" content="Des press on nails haut de gamme posés en 10 minutes. Sans rendez-vous, réutilisables, résultat salon. 100+ designs disponibles — livraison 48h.">
+<meta name="description" content="Des press on nails haut de gamme posés en 10 minutes. Sans rendez-vous, réutilisables, résultat salon. Livraison 48h.">
 <meta property="og:site_name" content="Nahira Beauty Nails">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://nahirabeautynails.fr/">
@@ -115,14 +115,16 @@ header,nav,main,footer,.announce-bar{position:relative;z-index:1}
 .hp-menu-mobile.ouvert{display:flex}
 @media(max-width:760px){
   .hp-links{display:none}
-  .hp-nav-inner{grid-template-columns:1fr auto}
-  .hp-burger{display:block}
+  .hp-nav-inner{display:flex; position:relative}
+  .hp-logo{position:absolute; left:50%; transform:translateX(-50%)}
+  .hp-burger{display:block; margin-left:auto}
 }
 
 /* ─── Typo commune ──────────────────────────────────────────────────── */
 .eyebrow{
   font-family:'Montserrat',sans-serif; font-size:9px; letter-spacing:5px;
   text-transform:uppercase; color:var(--rose); font-weight:500; margin-bottom:16px;
+  padding-left:5px;
 }
 .titre-s{
   font-family:'Cormorant Garamond',serif; font-size:clamp(32px,5vw,52px);
@@ -320,19 +322,8 @@ header,nav,main,footer,.announce-bar{position:relative;z-index:1}
 .concept-visuel::before{content:'✦';font-size:22px;color:var(--or);opacity:.6}
 .concept-texte p{font-size:18px;color:var(--texte);line-height:1.82;margin-bottom:18px}
 .concept-texte p strong{color:var(--blanc);font-weight:400}
-.concept-sign{font-family:'Parisienne',cursive;font-size:28px;margin-top:16px;background:linear-gradient(120deg,var(--or-vif),var(--rose-vif));-webkit-background-clip:text;background-clip:text;color:transparent;padding-bottom:.12em;display:block}
+.concept-sign{font-family:'Parisienne',cursive;font-size:28px;margin-top:16px;background:linear-gradient(120deg,var(--or-vif),var(--rose-vif));-webkit-background-clip:text;background-clip:text;color:transparent;padding-bottom:.12em;display:block;text-align:center}
 
-/* ─── Avis clientes ─────────────────────────────────────────────────── */
-.avis-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;margin-top:50px}
-.avis-card{
-  background:linear-gradient(160deg,var(--carte),#0F0A0D);
-  border:1px solid var(--ligne);border-radius:16px;padding:26px 22px;
-  display:flex;flex-direction:column;gap:12px;
-}
-.avis-etoiles{color:var(--or);font-size:14px;letter-spacing:3px}
-.avis-texte{font-size:17px;color:var(--texte);line-height:1.72;font-style:italic}
-.avis-auteur{font-family:'Montserrat',sans-serif;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--texte-faible)}
-.avis-produit{font-family:'Montserrat',sans-serif;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--or);opacity:.7}
 
 /* ─── CTA final ─────────────────────────────────────────────────────── */
 .cta-final{padding:100px 0;text-align:center}
@@ -440,15 +431,15 @@ footer{border-top:1px solid rgba(240,111,167,.15);padding:64px 0 36px;background
 
 <main>
 
-<!-- ═══ BESTSELLERS ═══════════════════════════════════════════════════ -->
-<section class="section" id="bestsellers" aria-labelledby="h-bestsellers">
+<!-- ═══ SÉLECTION ══════════════════════════════════════════════════════ -->
+<section class="section" id="selection" aria-labelledby="h-selection">
   <div class="container">
     <div class="section-head">
-      <div class="eyebrow">Les favorites</div>
-      <h2 class="titre-s" id="h-bestsellers">Bestsellers <span class="script">✦</span></h2>
+      <div class="eyebrow">La sélection Nahira</div>
+      <h2 class="titre-s" id="h-selection">À découvrir <span class="script">✦</span></h2>
       <div class="ornement c"></div>
     </div>
-    <div class="hp-grille" id="grille-bestsellers">
+    <div class="hp-grille" id="grille-selection">
       <!-- squelettes -->
       <div class="skel-card"><div class="skel-img"></div><div class="skel-line"></div><div class="skel-line w60"></div></div>
       <div class="skel-card"><div class="skel-img"></div><div class="skel-line"></div><div class="skel-line w60"></div></div>
@@ -525,8 +516,8 @@ footer{border-top:1px solid rgba(240,111,167,.15);padding:64px 0 36px;background
   </div>
 </section>
 
-<!-- ═══ SHOP BY MOOD ══════════════════════════════════════════════════ -->
-<section class="section section-alt" id="shop-by-mood" aria-labelledby="h-mood">
+<!-- ═══ SHOP BY MOOD — masqué tant que les associations produits ne sont pas renseignées ══ -->
+<section class="section section-alt" id="shop-by-mood" aria-labelledby="h-mood" style="display:none">
   <div class="container">
     <div class="section-head">
       <div class="eyebrow">Explore par univers</div>
@@ -569,8 +560,8 @@ footer{border-top:1px solid rgba(240,111,167,.15);padding:64px 0 36px;background
 <!-- ═══ CONCEPT LAZY GIRL ═════════════════════════════════════════════ -->
 <section class="section section-alt" id="concept" aria-labelledby="h-concept">
   <div class="container">
-    <div class="concept-grid">
-      <div class="concept-visuel" aria-label="Photo ou vidéo du concept Lazy Girl Nails">
+    <div class="concept-grid" style="grid-template-columns:1fr">
+      <div class="concept-visuel" aria-label="Photo ou vidéo du concept Lazy Girl Nails" style="display:none">
         Photo / vidéo<br>Lazy Girl Nails
       </div>
       <div class="concept-texte">
@@ -601,40 +592,11 @@ footer{border-top:1px solid rgba(240,111,167,.15);padding:64px 0 36px;background
   </div>
 </section>
 
-<!-- ═══ AVIS CLIENTES ════════════════════════════════════════════════ -->
-<section class="section" id="avis" aria-labelledby="h-avis">
-  <div class="container">
-    <div class="section-head">
-      <div class="eyebrow">Retours clientes</div>
-      <h2 class="titre-s" id="h-avis">Ce qu'elles <span class="script">en disent</span></h2>
-      <div class="ornement c"></div>
-    </div>
-    <div class="avis-grille" id="avis-grille">
-      <!-- Avis statiques en attendant la base de données -->
-      <div class="avis-card">
-        <div class="avis-etoiles" aria-label="5 étoiles">★★★★★</div>
-        <p class="avis-texte">« Franchement je pensais que ce serait comme les press-on classiques… pas du tout. La pose tient depuis 8 jours et ils sont toujours aussi beaux. Je les recommande les yeux fermés. »</p>
-        <div class="avis-auteur">Léa M. — vérifiée ✓</div>
-      </div>
-      <div class="avis-card">
-        <div class="avis-etoiles" aria-label="5 étoiles">★★★★★</div>
-        <p class="avis-texte">« J'ai posé mes ongles en 10 minutes avant une soirée. Le résultat était dingue, tout le monde me demandait si je sortais de l'Institut. »</p>
-        <div class="avis-auteur">Inès K. — vérifiée ✓</div>
-      </div>
-      <div class="avis-card">
-        <div class="avis-etoiles" aria-label="5 étoiles">★★★★★</div>
-        <p class="avis-texte">« Je les retire et repose depuis 3 mois, toujours impeccables. Le concept réutilisable c'est la meilleure chose qui soit arrivée à mes ongles. »</p>
-        <div class="avis-auteur">Sofia D. — vérifiée ✓</div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- ═══ CTA FINAL ═════════════════════════════════════════════════════ -->
 <section class="cta-final" id="catalogue" aria-labelledby="h-cta">
   <div class="container">
     <div class="cta-box">
-      <div class="eyebrow" style="margin-bottom:8px">100+ designs t'attendent</div>
+      <div class="eyebrow" id="cta-eyebrow" style="margin-bottom:8px">designs t'attendent</div>
       <h2 class="titre-s" id="h-cta" style="font-size:clamp(26px,4vw,38px)">Toute la collection<br><span class="script">✦ t'attend ✦</span></h2>
       <p>De la discrétion au statement nail — filtre par forme, finition, mood. Trouve LE set qui te correspond.</p>
       <a href="collection.html" class="btn btn-rose">Parcourir la collection</a>
@@ -661,7 +623,7 @@ footer{border-top:1px solid rgba(240,111,167,.15);padding:64px 0 36px;background
         <a href="#comment-ca-marche">La pose</a>
         <a href="entretien.html">Guide entretien</a>
         <a href="#avantages">Avantages</a>
-        <a href="#avis">Avis clientes</a>
+
       </div>
       <div>
         <div class="footer-col-titre">Contact</div>
@@ -751,20 +713,22 @@ footer{border-top:1px solid rgba(240,111,167,.15);padding:64px 0 36px;background
     allProduits = await NAHIRA.getProducts({ limit: 120 });
   } catch (_) {}
 
-  const bestsellers = allProduits.filter(p => p.is_bestseller);
   const nouveautes  = allProduits.filter(p => p.is_new);
 
-  // Fallback : si aucun bestseller, prendre les 4 premiers produits
-  const produitsBS = bestsellers.length > 0 ? bestsellers.slice(0, 6) : allProduits.slice(0, 4);
+  // Sélection : produits mis en avant (is_new en priorité, sinon les 4 premiers)
+  const produitsSelection = nouveautes.length > 0 ? nouveautes.slice(0, 4) : allProduits.slice(0, 4);
   const produitsNV = nouveautes.length  > 0 ? nouveautes.slice(0, 4)  : allProduits.slice(4, 8);
 
-  // Mise à jour compteur hero
+  // Mise à jour compteurs (hero + CTA)
   if (allProduits.length > 0) {
-    document.getElementById("stat-refs").textContent = allProduits.length + "+";
+    const n = allProduits.length;
+    document.getElementById("stat-refs").textContent = n + "+";
+    const ctaEyebrow = document.getElementById("cta-eyebrow");
+    if (ctaEyebrow) ctaEyebrow.textContent = n + " designs t'attendent";
   }
 
-  // Rendu grille bestsellers
-  afficherProduits("grille-bestsellers", produitsBS,
+  // Rendu grille sélection
+  afficherProduits("grille-selection", produitsSelection,
     allProduits.length === 0 ? "Aucun produit trouvé." : null);
 
   // Rendu grille nouveautés
@@ -789,26 +753,6 @@ footer{border-top:1px solid rgba(240,111,167,.15);padding:64px 0 36px;background
     document.getElementById("moods-chips").innerHTML =
       '<a href="collection.html" class="mood-chip">✦ Explorer la collection</a>';
   }
-
-  /* ── Avis dynamiques ─────────────────────────────────────────────── */
-  try {
-    const { data: avis } = await NAHIRA.sb.from("reviews")
-      .select("author_name, rating, comment, created_at")
-      .eq("status", "approved")
-      .order("created_at", { ascending: false })
-      .limit(6);
-
-    if (avis && avis.length >= 3) {
-      document.getElementById("avis-grille").innerHTML = avis.map(a => `
-        <div class="avis-card">
-          <div class="avis-etoiles" aria-label="${a.rating} étoiles">${"★".repeat(a.rating)}${"☆".repeat(5 - a.rating)}</div>
-          <p class="avis-texte">« ${escH(a.comment)} »</p>
-          <div class="avis-auteur">${escH(a.author_name)} — vérifiée ✓</div>
-        </div>
-      `).join("");
-    }
-    // Si moins de 3 avis approuvés, on garde les avis statiques par défaut
-  } catch (_) {}
 
   /* ── Fonction de rendu produits ──────────────────────────────────── */
   function afficherProduits(grilleid, produits, message) {
