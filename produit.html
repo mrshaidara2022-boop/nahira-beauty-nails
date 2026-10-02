@@ -95,6 +95,8 @@
   flex-direction: column;
   gap: 5px;
   max-width: calc(100% - 32px);
+  z-index: 3;
+  pointer-events: none;
 }
 .badge {
   display: inline-block;
@@ -514,6 +516,11 @@ details ul { margin-left: 18px; }
       imgPrin.src = imgs[curIdx].url;
       imgPrin.alt = imgs[curIdx].alt_text || produit.name;
       imgPrin.style.opacity = "1";
+      if (imgPrin.complete && imgPrin.naturalWidth) {
+        repositionnerBadges();
+      } else {
+        imgPrin.addEventListener('load', repositionnerBadges, { once: true });
+      }
     }, 150);
     document.querySelectorAll(".galerie-thumb").forEach((x, i) => {
       x.classList.toggle("active", i === curIdx);
@@ -562,6 +569,32 @@ details ul { margin-left: 18px; }
   if (stockInfo.cls !== 'stock-dispo') {
     overlay.innerHTML += '<span class="badge badge-stock" style="color:' + stockInfo.color + '; border-color:' + stockInfo.color + '">' + stockInfo.text + '</span>';
   }
+
+  /* Repositionne l'overlay sur l'image réelle (object-fit:contain peut letterboxer) */
+  function repositionnerBadges() {
+    if (!overlay.children.length) return;
+    const cW = imgPrin.clientWidth;
+    const cH = imgPrin.clientHeight;
+    if (!cW || !cH || !imgPrin.naturalWidth) return;
+    const imgR = imgPrin.naturalWidth / imgPrin.naturalHeight;
+    const boxR = cW / cH;
+    let offTop = 0, offLeft = 0;
+    if (imgR > boxR) {
+      // barres haut/bas (letterboxing)
+      offTop = (cH - cW / imgR) / 2;
+    } else {
+      // barres gauche/droite (pillarboxing)
+      offLeft = (cW - cH * imgR) / 2;
+    }
+    overlay.style.top  = Math.round(offTop  + 16) + 'px';
+    overlay.style.left = Math.round(offLeft + 16) + 'px';
+  }
+  if (imgPrin.complete && imgPrin.naturalWidth) {
+    repositionnerBadges();
+  } else {
+    imgPrin.addEventListener('load', repositionnerBadges, { once: true });
+  }
+  window.addEventListener('resize', repositionnerBadges);
 
   /* ── Nom, tagline, prix ─────────────────────────────────────── */
   document.getElementById("p-nom").textContent   = produit.name;
