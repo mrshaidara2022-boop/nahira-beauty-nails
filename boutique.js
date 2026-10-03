@@ -35,18 +35,26 @@ const NAHIRA = (() => {
     return 'desktop';
   }
 
-  // Anti-doublon événements : clé sessionStorage "ne_<type>_<productId|''>".
-  // Resets à chaque nouvel onglet ; product_view reset aussi à chaque navigation.
-  function _eventKey(type, productId) {
-    return 'ne_' + type + '_' + (productId || '');
-  }
+  // Anti-doublon technique : Map in-memory { 'type_productId' → lastFiredMs }.
+  // Bloque les déclenchements dans la fenêtre de debounce (double clic, double render,
+  // double exécution JS). Hors de cette fenêtre, chaque action réelle est enregistrée.
+  // product_view : mécanisme séparé via sessionStorage (une vue par produit par onglet).
+  const _DEBOUNCE = {
+    add_to_cart:          2000,
+    remove_from_cart:     2000,
+    begin_checkout:       5000,
+    add_to_wishlist:      2000,
+    remove_from_wishlist: 2000,
+  };
+  const _recentEvents = new Map();
 
-  function _eventFired(type, productId) {
-    try { return !!sessionStorage.getItem(_eventKey(type, productId)); } catch { return false; }
-  }
-
-  function _markEvent(type, productId) {
-    try { sessionStorage.setItem(_eventKey(type, productId), '1'); } catch {}
+  function _debounced(type, productId) {
+    const key  = type + '_' + (productId || '');
+    const last = _recentEvents.get(key) || 0;
+    const ms   = _DEBOUNCE[type] || 2000;
+    if (Date.now() - last < ms) return true; // trop récent → doublon technique
+    _recentEvents.set(key, Date.now());
+    return false;
   }
 
   async function _trackEvent(type, productId, extra) {
@@ -88,9 +96,9 @@ const NAHIRA = (() => {
       c.push({ product_id, slug, name, price_cents, image_url, quantity });
     }
     saveCart(c);
-    // Événement add_to_cart — pas de doublon si même produit ajouté plusieurs fois dans la session
-    if (!_eventFired('add_to_cart', product_id)) {
-      _markEvent('add_to_cart', product_id);
+    // add_to_cart : debounce 2s — bloque double-clic/double-render,
+    // autorise une véritable re-action après la fenêtre
+    if (!_debounced('add_to_cart', product_id)) {
       _trackEvent('add_to_cart', product_id, { slug, name, price_cents, quantity });
     }
   }
@@ -105,10 +113,10 @@ const NAHIRA = (() => {
 
   function removeFromCart(productId) {
     saveCart(getCart().filter(it => it.product_id !== productId));
-    // On autorise plusieurs remove_from_cart (ex. re-ajout puis re-suppression)
-    _trackEvent('remove_from_cart', productId, {});
-    // Réinitialise le marqueur add_to_cart pour ce produit (re-ajout possible)
-    try { sessionStorage.removeItem(_eventKey('add_to_cart', productId)); } catch {}
+    // remove_from_cart : debounce 2s — empêche double-déclenchement technique
+    if (!_debounced('remove_from_cart', productId)) {
+      _trackEvent('remove_from_cart', productId, {});
+    }
   }
 
   function clearCart() { saveCart([]); }
@@ -308,13 +316,15 @@ const NAHIRA = (() => {
       .select("id").eq("user_id", user.id).eq("product_id", productId).maybeSingle();
     if (existing) {
       await sb.from("favorites").delete().eq("id", existing.id);
-      _trackEvent('remove_from_wishlist', productId, {});
-      try { sessionStorage.removeItem(_eventKey('add_to_wishlist', productId)); } catch {}
+      // remove_from_wishlist : debounce 2s — le toggle est l'action, pas le re-render
+      if (!_debounced('remove_from_wishlist', productId)) {
+        _trackEvent('remove_from_wishlist', productId, {});
+      }
       return { liked: false };
     }
     await sb.from("favorites").insert({ user_id: user.id, product_id: productId });
-    if (!_eventFired('add_to_wishlist', productId)) {
-      _markEvent('add_to_wishlist', productId);
+    // add_to_wishlist : debounce 2s
+    if (!_debounced('add_to_wishlist', productId)) {
       _trackEvent('add_to_wishlist', productId, {});
     }
     return { liked: true };
@@ -391,9 +401,9 @@ const NAHIRA = (() => {
       success_url: location.origin + "/merci.html",
       cancel_url:  location.origin + "/panier.html",
     };
-    // begin_checkout — une seule fois par session de panier (anti-doublon)
-    if (!_eventFired('begin_checkout', '')) {
-      _markEvent('begin_checkout', '');
+    // begin_checkout : debounce 5s — empêche double-clic sur le bouton Payer,
+    // autorise un véritable nouvel essai après échec ou retour au panier
+    if (!_debounced('begin_checkout', '')) {
       await _trackEvent('begin_checkout', null, {
         item_count: validItems.reduce((s, i) => s + i.quantity, 0),
         item_ids:   validItems.map(i => i.product_id),
