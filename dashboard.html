@@ -1759,9 +1759,15 @@ function badgeStock(stock, seuil) {
   return '<span class="badge badge-dispo">' + stock + ' en stock</span>';
 }
 
+// Commande comptabilisée dans le CA — règle commune à tous les KPI de l'Atelier.
+// pending / cancelled / refunded sont exclus ; toute autre valeur confirmée compte.
+var STATUTS_VENTE = ['paid','confirmed','preparing','shipped','delivered'];
+function isVente(o) { return STATUTS_VENTE.indexOf(o.status) !== -1; }
+
 function badgeStatut(st) {
-  var m = {pending:['En attente','st-pending'],confirmed:['Confirmée','st-confirmed'],
-    shipped:['Expédiée','st-shipped'],delivered:['Livrée','st-delivered'],cancelled:['Annulée','st-cancelled']};
+  var m = {pending:['En attente','st-pending'],paid:['Payée','st-confirmed'],confirmed:['Confirmée','st-confirmed'],
+    preparing:['En préparation','st-confirmed'],shipped:['Expédiée','st-shipped'],
+    delivered:['Livrée','st-delivered'],cancelled:['Annulée','st-cancelled'],refunded:['Remboursée','st-cancelled']};
   var x = m[st] || [st,'st-pending'];
   return '<span class="statut ' + x[1] + '">' + x[0] + '</span>';
 }
@@ -1790,7 +1796,7 @@ async function chargerTableau() {
 
     var now = new Date();
     var debut = new Date(now.getFullYear(), now.getMonth(), 1);
-    var ceMois = orders.filter(function(o){ return o.status !== 'cancelled' && new Date(o.created_at) >= debut; });
+    var ceMois = orders.filter(function(o){ return isVente(o) && new Date(o.created_at) >= debut; });
     var ca = ceMois.reduce(function(s,o){ return s + (o.total_cents||0); }, 0);
     var nb = ceMois.length;
     var panier = nb ? Math.round(ca/nb) : 0;
@@ -1833,7 +1839,7 @@ function renderChart(orders) {
   var data = days.map(function(d) {
     var s=new Date(d); s.setHours(0,0,0,0);
     var f=new Date(d); f.setHours(23,59,59,999);
-    var ca = orders.filter(function(o){ return o.status!=='cancelled'&&new Date(o.created_at)>=s&&new Date(o.created_at)<=f; })
+    var ca = orders.filter(function(o){ return isVente(o)&&new Date(o.created_at)>=s&&new Date(o.created_at)<=f; })
       .reduce(function(sum,o){ return sum+(o.total_cents||0); },0);
     return { label: d.toLocaleDateString('fr-FR',{weekday:'short'}), ca: ca };
   });
@@ -6646,7 +6652,7 @@ async function ouvrirFicheClient(userId) {
   document.getElementById('cl-fiche-titre').textContent = nom;
 
   // KPI
-  var validOrders = orders.filter(function(o){ return o.status !== 'pending' && o.status !== 'cancelled' && o.status !== 'refunded'; });
+  var validOrders = orders.filter(isVente);
   var caTotal = validOrders.reduce(function(s, o){ return s + (o.total_cents || 0); }, 0);
   var panier  = validOrders.length > 0 ? Math.round(caTotal / validOrders.length) : 0;
   var derniere = orders.length > 0 ? fmtD(orders[0].created_at) : '—';
