@@ -469,38 +469,17 @@ details ul { margin-left: 18px; }
   const slug   = params.get("slug") || params.get("d");
   const charge = document.getElementById("chargement");
 
-  /* ── DIAGNOSTIC TEMPORAIRE — à retirer après résolution du bug ── */
-  function _diag(msg) {
-    try { charge.innerHTML = '<small style="color:#c00;font-size:12px;line-height:1.5">' + msg + '</small>'; } catch(e) {}
-    console.error('[DIAG produit]', msg);
-  }
-  const _diagTimer = setTimeout(() => {
-    _diag('⏱ Timeout 12s<br>'
-      + 'supabase-js: ' + (typeof window.supabase !== 'undefined' ? 'OK' : 'ABSENT') + '<br>'
-      + 'NAHIRA: ' + (typeof window.NAHIRA !== 'undefined' ? 'OK' : 'ABSENT') + '<br>'
-      + 'slug: ' + (slug || 'ABSENT') + '<br>'
-      + 'SW cache: ' + (navigator.serviceWorker?.controller?.scriptURL || 'aucun') + '<br>'
-      + 'Étape: voir console');
-  }, 12000);
-  /* ── FIN DIAGNOSTIC TEMPORAIRE ───────────────────────────────── */
-
   if (!slug) {
-    clearTimeout(_diagTimer);
     charge.textContent = "Modèle introuvable — retournez à la collection.";
     return;
   }
 
-  try {
-    if (typeof NAHIRA === 'undefined') throw new Error('NAHIRA_UNDEFINED');
-
-    /* ── Chargement parallèle : produit + stock disponible ─────── */
-    const produit = await NAHIRA.getProduct(slug);
-    if (!produit) {
-      clearTimeout(_diagTimer);
-      charge.textContent = "Modèle introuvable — retournez à la collection.";
-      return;
-    }
-    clearTimeout(_diagTimer);
+  /* ── Chargement parallèle : produit + stock disponible ─────── */
+  const produit = await NAHIRA.getProduct(slug);
+  if (!produit) {
+    charge.textContent = "Modèle introuvable — retournez à la collection.";
+    return;
+  }
 
   const stockDispo = await NAHIRA.getAvailableStock(produit.id);
   const stockInfo  = NAHIRA.stockLabel(stockDispo, produit.low_stock_threshold ?? 3);
@@ -876,14 +855,6 @@ details ul { margin-left: 18px; }
       grid.appendChild(a);
     });
   })();
-
-  } catch(e) {
-    clearTimeout(_diagTimer);
-    _diag('Erreur JS: ' + e.message + '<br>'
-      + 'NAHIRA: ' + (typeof window.NAHIRA !== 'undefined' ? 'OK' : 'ABSENT') + '<br>'
-      + 'supabase: ' + (typeof window.supabase !== 'undefined' ? 'OK' : 'ABSENT'));
-    console.error('[DIAG produit] catch:', e);
-  }
 
 })();
 </script>
