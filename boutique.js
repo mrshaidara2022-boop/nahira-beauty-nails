@@ -7,8 +7,6 @@ const NAHIRA = (() => {
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14Ym1qdHpyZ2dhaGJ3YWh4bWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyMzc5NDQsImV4cCI6MjA5NjgxMzk0NH0.iTibkVCaTZYoMzQO4TQvddlKeZY40vNcfJ-kEgIHXpE";
   const CHECKOUT_URL    = SUPABASE_URL + "/functions/v1/create-checkout";
   const CART_KEY        = "nahira_cart";
-  const CART_ID_KEY     = "nahira_cart_id";
-  const CART_OWNER_KEY  = "nahira_cart_owner"; // user.id de l'authifiée ayant rattaché ce cart_id
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -79,9 +77,6 @@ const NAHIRA = (() => {
   /* ─── PANIER ──────────────────────────────────────────────────────────────
      Format V2 : [{ product_id, slug, name, price_cents, image_url, quantity }]
      Rétrocompatible V1 : si un item a `size`/`custom`, il reste lisible.
-     Phase 4 : cart_id UUID stable (localStorage nahira_cart_id).
-               Sync Supabase non-bloquante — debounce 3s.
-               Vidage (clearCart / remove dernier article) → sync immédiate cleared_at.
   ──────────────────────────────────────────────────────────────────────────── */
   function getCart() {
     try { return JSON.parse(localStorage.getItem(CART_KEY) || "[]"); }
@@ -92,71 +87,7 @@ const NAHIRA = (() => {
     updateBadge();
   }
 
-  function _newCartId() {
-    try { return crypto.randomUUID(); }
-    catch { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-      const r = Math.random() * 16 | 0;
-      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-    }); }
-  }
-  function getCartId() {
-    let id = localStorage.getItem(CART_ID_KEY);
-    if (!id) { id = _newCartId(); localStorage.setItem(CART_ID_KEY, id); }
-    return id;
-  }
-
-  // Debounce timer for cart sync (3s)
-  let _syncTimer = null;
-  function _debouncedSyncCart() {
-    clearTimeout(_syncTimer);
-    _syncTimer = setTimeout(() => _syncCart(), 3000);
-  }
-
-  async function _syncCart() {
-    try {
-      const cart   = getCart();
-      const cartId = localStorage.getItem(CART_ID_KEY);
-      if (!cartId) return;
-      const sid     = getSessionId();
-      const device  = getDevice();
-      const country = sessionStorage.getItem('nah_country') || null;
-      const subtotal = cartSubtotal();
-      const count   = cartCount();
-      await sb.rpc('sync_cart', {
-        p_cart_id:        cartId,
-        p_session_id:     sid,
-        p_items:          cart,
-        p_item_count:     count,
-        p_subtotal_cents: subtotal,
-        p_device:         device,
-        p_country:        country,
-        p_cleared:        false,
-      });
-    } catch (e) {}
-  }
-
-  async function _syncCartCleared(cartId) {
-    if (!cartId) return;
-    try {
-      const sid     = getSessionId();
-      const device  = getDevice();
-      const country = sessionStorage.getItem('nah_country') || null;
-      await sb.rpc('sync_cart', {
-        p_cart_id:        cartId,
-        p_session_id:     sid,
-        p_items:          [],
-        p_item_count:     0,
-        p_subtotal_cents: 0,
-        p_device:         device,
-        p_country:        country,
-        p_cleared:        true,
-      });
-    } catch (e) {}
-  }
-
   function addToCart({ product_id, slug, name, price_cents, image_url, quantity = 1 }) {
-    // Ensure cart_id exists before first item
-    getCartId();
     const c = getCart();
     const existing = c.find(it => it.product_id === product_id);
     if (existing) {
@@ -165,7 +96,6 @@ const NAHIRA = (() => {
       c.push({ product_id, slug, name, price_cents, image_url, quantity });
     }
     saveCart(c);
-    _debouncedSyncCart();
     // add_to_cart : debounce 2s — bloque double-clic/double-render,
     // autorise une véritable re-action après la fenêtre
     if (!_debounced('add_to_cart', product_id)) {
@@ -179,37 +109,17 @@ const NAHIRA = (() => {
     if (idx < 0) return;
     if (qty <= 0) { c.splice(idx, 1); } else { c[idx].quantity = qty; }
     saveCart(c);
-    if (getCart().length === 0) {
-      const oldId = localStorage.getItem(CART_ID_KEY);
-      localStorage.removeItem(CART_ID_KEY);
-      _syncCartCleared(oldId);
-    } else {
-      _debouncedSyncCart();
-    }
   }
 
   function removeFromCart(productId) {
-    const after = getCart().filter(it => it.product_id !== productId);
-    saveCart(after);
-    if (after.length === 0) {
-      const oldId = localStorage.getItem(CART_ID_KEY);
-      localStorage.removeItem(CART_ID_KEY);
-      _syncCartCleared(oldId);
-    } else {
-      _debouncedSyncCart();
-    }
+    saveCart(getCart().filter(it => it.product_id !== productId));
     // remove_from_cart : debounce 2s — empêche double-déclenchement technique
     if (!_debounced('remove_from_cart', productId)) {
       _trackEvent('remove_from_cart', productId, {});
     }
   }
 
-  function clearCart() {
-    const oldId = localStorage.getItem(CART_ID_KEY);
-    saveCart([]);
-    localStorage.removeItem(CART_ID_KEY);
-    _syncCartCleared(oldId);
-  }
+  function clearCart() { saveCart([]); }
 
   // Nombre total d'articles (somme des quantités)
   function cartCount() {
@@ -484,17 +394,10 @@ const NAHIRA = (() => {
         quantity:   Math.max(1, Math.floor(Number(it.quantity) || 1)),
       }));
     if (validItems.length === 0) throw new Error("Votre panier est vide.");
-
-    // Sync cart immediately before checkout (bypass the 3s debounce)
-    clearTimeout(_syncTimer);
-    await _syncCart();
-
-    const cartId = localStorage.getItem(CART_ID_KEY) || null;
     const payload = {
       items: validItems,
       email:       user?.email || null,
       user_id:     user?.id   || null,
-      cart_id:     cartId,
       success_url: location.origin + "/merci.html",
       cancel_url:  location.origin + "/panier.html",
     };
@@ -560,11 +463,7 @@ const NAHIRA = (() => {
       setTimeout(() => insert(null), 2500);
       fetch("https://ipapi.co/country_name/").then(r => r.ok ? r.text() : null).then(c => {
         const v = c && c.trim();
-        const safe = v && v.length < 60 && !v.includes("{") && !v.includes("<") ? v : null;
-        if (safe) {
-          try { sessionStorage.setItem('nah_country', safe); } catch (e) {}
-        }
-        insert(safe);
+        insert(v && v.length < 60 && !v.includes("{") && !v.includes("<") ? v : null);
       }).catch(() => insert(null));
     } catch (e) {}
   }
@@ -580,53 +479,12 @@ const NAHIRA = (() => {
     _trackEvent('product_view', productId, extra || {});
   }
 
-  /* ─── CHANGEMENT DE COMPTE ───────────────────────────────────────────────────
-     CART_OWNER_KEY = user.id (UUID, pas de donnée personnelle) de l'utilisatrice
-     qui a rattaché ce cart_id. Permet de détecter un changement d'identité.
-
-     Règles :
-       anon → compte A  : même cart_id, rattachement à A
-       A → déco → A     : même cart_id conservé
-       A → déco → B     : ancien cart_id abandonné, nouveau cart_id pour B
-                          (les articles restent dans le localStorage de B)
-       SIGNED_OUT        : on ne touche à rien — la décision se prend au prochain
-                          SIGNED_IN pour ne pas effacer le panier d'une A qui
-                          se reconnecte immédiatement
-
-     cart_owner stocke uniquement un UUID Supabase — aucune donnée personnelle.
-  ──────────────────────────────────────────────────────────────────────────── */
-  function _handleAuthChange(event, session) {
-    try {
-      if (event === 'SIGNED_IN' && session?.user) {
-        const uid   = session.user.id;
-        const owner = localStorage.getItem(CART_OWNER_KEY);
-        if (owner && owner !== uid) {
-          // Compte différent détecté : invalider le cart_id hérité de l'ancien compte
-          localStorage.removeItem(CART_ID_KEY);
-          // Créer immédiatement un nouveau cart_id si des articles sont présents
-          if (getCart().length > 0) {
-            getCartId();
-          }
-        }
-        localStorage.setItem(CART_OWNER_KEY, uid);
-        if (getCart().length > 0) {
-          _debouncedSyncCart();
-        }
-      }
-      // SIGNED_OUT : ne rien faire — garder cart_id et cart_owner pour
-      // permettre à la même utilisatrice de retrouver son panier à la reconnexion.
-    } catch (e) {}
-  }
-
   /* ─── HELPERS ─────────────────────────────────────────────────────────────── */
   const eur = c => (c / 100).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
   const etoiles = n => "★".repeat(n) + "☆".repeat(5 - n);
 
   /* ─── INIT DOM ─────────────────────────────────────────────────────────────── */
   document.addEventListener("DOMContentLoaded", () => {
-    // NOTE Phase 4b: onAuthStateChange désactivé temporairement (régression produit.html).
-    // _handleAuthChange reste défini mais n'est pas enregistré automatiquement.
-
     updateBadge();
     trackView();
 
@@ -699,7 +557,7 @@ const NAHIRA = (() => {
     sb,
     // Panier
     getCart, saveCart, addToCart, updateCartQuantity, removeFromCart, clearCart,
-    cartCount, cartSubtotal, updateBadge, getCartId,
+    cartCount, cartSubtotal, updateBadge,
     // Stock
     getAvailableStock, stockLabel,
     // Produits
