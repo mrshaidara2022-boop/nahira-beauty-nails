@@ -597,7 +597,7 @@ const NAHIRA = (() => {
   ──────────────────────────────────────────────────────────────────────────── */
   function _handleAuthChange(event, session) {
     try {
-      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+      if (event === 'SIGNED_IN' && session?.user) {
         const uid   = session.user.id;
         const owner = localStorage.getItem(CART_OWNER_KEY);
         if (owner && owner !== uid) {
@@ -624,9 +624,16 @@ const NAHIRA = (() => {
 
   /* ─── INIT DOM ─────────────────────────────────────────────────────────────── */
   document.addEventListener("DOMContentLoaded", () => {
-    sb.auth.onAuthStateChange((event, session) => {
-      _handleAuthChange(event, session);
-    });
+    // Defer auth listener to avoid lock contention with page-critical Supabase calls
+    // (e.g. produit.html's inline IIFE calls getProduct before DOMContentLoaded fires,
+    // but onAuthStateChange triggers _emitInitialSession which holds the auth lock)
+    setTimeout(() => {
+      try {
+        sb.auth.onAuthStateChange((event, session) => {
+          _handleAuthChange(event, session);
+        });
+      } catch (e) {}
+    }, 0);
 
     updateBadge();
     trackView();
