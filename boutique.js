@@ -624,16 +624,8 @@ const NAHIRA = (() => {
 
   /* ─── INIT DOM ─────────────────────────────────────────────────────────────── */
   document.addEventListener("DOMContentLoaded", () => {
-    // Defer auth listener to avoid lock contention with page-critical Supabase calls
-    // (e.g. produit.html's inline IIFE calls getProduct before DOMContentLoaded fires,
-    // but onAuthStateChange triggers _emitInitialSession which holds the auth lock)
-    setTimeout(() => {
-      try {
-        sb.auth.onAuthStateChange((event, session) => {
-          _handleAuthChange(event, session);
-        });
-      } catch (e) {}
-    }, 0);
+    // NOTE Phase 4b: onAuthStateChange désactivé temporairement (régression produit.html).
+    // _handleAuthChange reste défini mais n'est pas enregistré automatiquement.
 
     updateBadge();
     trackView();
