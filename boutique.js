@@ -10,6 +10,62 @@ const NAHIRA = (() => {
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+  /* ─── ANALYTICS FOUNDATIONS ──────────────────────────────────────────────
+     session_id : UUID stable pour la durée de l'onglet (sessionStorage).
+     device     : mobile <768 / tablet <1024 / desktop ≥1024.
+     ADMIN_PATHS: jamais trackés — exclusion à la source.
+  ──────────────────────────────────────────────────────────────────────────── */
+  const ADMIN_PATHS = ['/admin.html', '/dashboard.html'];
+
+  function getSessionId() {
+    try {
+      let sid = sessionStorage.getItem('nah_sid');
+      if (!sid) {
+        sid = 'sid_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 9);
+        sessionStorage.setItem('nah_sid', sid);
+      }
+      return sid;
+    } catch { return null; }
+  }
+
+  function getDevice() {
+    const w = window.innerWidth || document.documentElement.clientWidth || 0;
+    if (w < 768)  return 'mobile';
+    if (w < 1024) return 'tablet';
+    return 'desktop';
+  }
+
+  // Anti-doublon événements : clé sessionStorage "ne_<type>_<productId|''>".
+  // Resets à chaque nouvel onglet ; product_view reset aussi à chaque navigation.
+  function _eventKey(type, productId) {
+    return 'ne_' + type + '_' + (productId || '');
+  }
+
+  function _eventFired(type, productId) {
+    try { return !!sessionStorage.getItem(_eventKey(type, productId)); } catch { return false; }
+  }
+
+  function _markEvent(type, productId) {
+    try { sessionStorage.setItem(_eventKey(type, productId), '1'); } catch {}
+  }
+
+  async function _trackEvent(type, productId, extra) {
+    try {
+      const sid    = getSessionId();
+      const device = getDevice();
+      const { data: { user } } = await sb.auth.getUser();
+      const payload = {
+        event_type: type,
+        session_id: sid,
+        product_id: productId || null,
+        user_id:    user?.id || null,
+        device,
+        properties: extra || {},
+      };
+      await sb.from('analytics_events').insert(payload);
+    } catch {}
+  }
+
   /* ─── PANIER ──────────────────────────────────────────────────────────────
      Format V2 : [{ product_id, slug, name, price_cents, image_url, quantity }]
      Rétrocompatible V1 : si un item a `size`/`custom`, il reste lisible.
@@ -32,6 +88,11 @@ const NAHIRA = (() => {
       c.push({ product_id, slug, name, price_cents, image_url, quantity });
     }
     saveCart(c);
+    // Événement add_to_cart — pas de doublon si même produit ajouté plusieurs fois dans la session
+    if (!_eventFired('add_to_cart', product_id)) {
+      _markEvent('add_to_cart', product_id);
+      _trackEvent('add_to_cart', product_id, { slug, name, price_cents, quantity });
+    }
   }
 
   function updateCartQuantity(productId, qty) {
@@ -44,6 +105,10 @@ const NAHIRA = (() => {
 
   function removeFromCart(productId) {
     saveCart(getCart().filter(it => it.product_id !== productId));
+    // On autorise plusieurs remove_from_cart (ex. re-ajout puis re-suppression)
+    _trackEvent('remove_from_cart', productId, {});
+    // Réinitialise le marqueur add_to_cart pour ce produit (re-ajout possible)
+    try { sessionStorage.removeItem(_eventKey('add_to_cart', productId)); } catch {}
   }
 
   function clearCart() { saveCart([]); }
@@ -243,9 +308,15 @@ const NAHIRA = (() => {
       .select("id").eq("user_id", user.id).eq("product_id", productId).maybeSingle();
     if (existing) {
       await sb.from("favorites").delete().eq("id", existing.id);
+      _trackEvent('remove_from_wishlist', productId, {});
+      try { sessionStorage.removeItem(_eventKey('add_to_wishlist', productId)); } catch {}
       return { liked: false };
     }
     await sb.from("favorites").insert({ user_id: user.id, product_id: productId });
+    if (!_eventFired('add_to_wishlist', productId)) {
+      _markEvent('add_to_wishlist', productId);
+      _trackEvent('add_to_wishlist', productId, {});
+    }
     return { liked: true };
   }
 
@@ -320,6 +391,14 @@ const NAHIRA = (() => {
       success_url: location.origin + "/merci.html",
       cancel_url:  location.origin + "/panier.html",
     };
+    // begin_checkout — une seule fois par session de panier (anti-doublon)
+    if (!_eventFired('begin_checkout', '')) {
+      _markEvent('begin_checkout', '');
+      await _trackEvent('begin_checkout', null, {
+        item_count: validItems.reduce((s, i) => s + i.quantity, 0),
+        item_ids:   validItems.map(i => i.product_id),
+      });
+    }
     const res = await fetch(CHECKOUT_URL, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
@@ -353,13 +432,23 @@ const NAHIRA = (() => {
   function trackView() {
     try {
       const path = location.pathname + location.search;
+      // Exclusion à la source : pages admin/back-office jamais trackées
+      if (ADMIN_PATHS.some(p => location.pathname === p || location.pathname.endsWith(p))) return;
       const key  = "nv_" + path;
       if (sessionStorage.getItem(key)) return;
       sessionStorage.setItem(key, "1");
+      const sid    = getSessionId();
+      const device = getDevice();
       let done = false;
       const insert = (country) => {
         if (done) return; done = true;
-        sb.from("page_views").insert({ path, ref: document.referrer || null, country: country || null }).then(() => {});
+        sb.from("page_views").insert({
+          path,
+          ref:        document.referrer || null,
+          country:    country || null,
+          session_id: sid,
+          device,
+        }).then(() => {});
       };
       setTimeout(() => insert(null), 2500);
       fetch("https://ipapi.co/country_name/").then(r => r.ok ? r.text() : null).then(c => {
@@ -367,6 +456,17 @@ const NAHIRA = (() => {
         insert(v && v.length < 60 && !v.includes("{") && !v.includes("<") ? v : null);
       }).catch(() => insert(null));
     } catch (e) {}
+  }
+
+  /* ─── PRODUCT VIEW ─────────────────────────────────────────────────────────
+     Appelé depuis produit.html une fois le produit chargé.
+     Anti-doublon : un seul product_view par produit par onglet.
+  ──────────────────────────────────────────────────────────────────────────── */
+  function trackProductView(productId, extra) {
+    if (!productId) return;
+    if (_eventFired('product_view', productId)) return;
+    _markEvent('product_view', productId);
+    _trackEvent('product_view', productId, extra || {});
   }
 
   /* ─── HELPERS ─────────────────────────────────────────────────────────────── */
@@ -465,6 +565,8 @@ const NAHIRA = (() => {
     getSettings,
     // Admin / Auth
     isAdmin,
+    // Analytics
+    trackProductView,
     // Helpers
     eur, etoiles,
     // Rétrocompat V1

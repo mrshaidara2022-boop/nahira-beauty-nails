@@ -484,6 +484,9 @@ details ul { margin-left: 18px; }
   const stockDispo = await NAHIRA.getAvailableStock(produit.id);
   const stockInfo  = NAHIRA.stockLabel(stockDispo, produit.low_stock_threshold ?? 3);
 
+  // product_view — anti-doublon géré dans trackProductView (une fois par onglet)
+  NAHIRA.trackProductView(produit.id, { slug: produit.slug, name: produit.name, price_cents: produit.price_cents });
+
   /* ── Meta ───────────────────────────────────────────────────── */
   const titre = produit.name + " — Nahira Beauty Nails";
   const desc  = produit.description_short || "Press-on nails prêts en 10 minutes. Pose sans rendez-vous, tenue jusqu'à 10 jours.";
