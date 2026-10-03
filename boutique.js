@@ -8,6 +8,7 @@ const NAHIRA = (() => {
   const CHECKOUT_URL    = SUPABASE_URL + "/functions/v1/create-checkout";
   const CART_KEY        = "nahira_cart";
   const CART_ID_KEY     = "nahira_cart_id";
+  const CART_OWNER_KEY  = "nahira_cart_owner"; // user.id de l'authifiée ayant rattaché ce cart_id
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -579,12 +580,54 @@ const NAHIRA = (() => {
     _trackEvent('product_view', productId, extra || {});
   }
 
+  /* ─── CHANGEMENT DE COMPTE ───────────────────────────────────────────────────
+     CART_OWNER_KEY = user.id (UUID, pas de donnée personnelle) de l'utilisatrice
+     qui a rattaché ce cart_id. Permet de détecter un changement d'identité.
+
+     Règles :
+       anon → compte A  : même cart_id, rattachement à A
+       A → déco → A     : même cart_id conservé
+       A → déco → B     : ancien cart_id abandonné, nouveau cart_id pour B
+                          (les articles restent dans le localStorage de B)
+       SIGNED_OUT        : on ne touche à rien — la décision se prend au prochain
+                          SIGNED_IN pour ne pas effacer le panier d'une A qui
+                          se reconnecte immédiatement
+
+     cart_owner stocke uniquement un UUID Supabase — aucune donnée personnelle.
+  ──────────────────────────────────────────────────────────────────────────── */
+  function _handleAuthChange(event, session) {
+    try {
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+        const uid   = session.user.id;
+        const owner = localStorage.getItem(CART_OWNER_KEY);
+        if (owner && owner !== uid) {
+          // Compte différent détecté : invalider le cart_id hérité de l'ancien compte
+          localStorage.removeItem(CART_ID_KEY);
+          // Créer immédiatement un nouveau cart_id si des articles sont présents
+          if (getCart().length > 0) {
+            getCartId();
+          }
+        }
+        localStorage.setItem(CART_OWNER_KEY, uid);
+        if (getCart().length > 0) {
+          _debouncedSyncCart();
+        }
+      }
+      // SIGNED_OUT : ne rien faire — garder cart_id et cart_owner pour
+      // permettre à la même utilisatrice de retrouver son panier à la reconnexion.
+    } catch (e) {}
+  }
+
   /* ─── HELPERS ─────────────────────────────────────────────────────────────── */
   const eur = c => (c / 100).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
   const etoiles = n => "★".repeat(n) + "☆".repeat(5 - n);
 
   /* ─── INIT DOM ─────────────────────────────────────────────────────────────── */
   document.addEventListener("DOMContentLoaded", () => {
+    sb.auth.onAuthStateChange((event, session) => {
+      _handleAuthChange(event, session);
+    });
+
     updateBadge();
     trackView();
 
