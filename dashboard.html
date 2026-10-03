@@ -667,12 +667,6 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
             <option value="delivered">Livrée</option>
             <option value="cancelled">Annulée</option>
           </select>
-          <select class="filtre-input" id="cmd-paiement" onchange="renderCommandes()" style="min-width:130px">
-            <option value="">Tout paiement</option>
-            <option value="paid">Payée</option>
-            <option value="pending">En attente</option>
-            <option value="failed">Échouée</option>
-          </select>
         </div>
         <div class="chargement" id="cmd-loading">Chargement…</div>
         <div id="cmd-liste" class="cmd-liste" style="display:none"></div>
@@ -695,25 +689,15 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
             </div>
             <!-- Édition statut + suivi + notes -->
             <div style="margin-top:16px;border-top:1px solid var(--bordure);padding-top:14px">
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-bottom:10px">
-                <div>
-                  <label class="prod-label">Statut préparation</label>
-                  <select class="prod-input" id="edit-statut">
-                    <option value="pending">En attente</option>
-                    <option value="confirmed">Confirmée</option>
-                    <option value="shipped">Expédiée</option>
-                    <option value="delivered">Livrée</option>
-                    <option value="cancelled">Annulée</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="prod-label">Statut paiement</label>
-                  <select class="prod-input" id="edit-paiement">
-                    <option value="pending">En attente</option>
-                    <option value="paid">Payée</option>
-                    <option value="failed">Échouée</option>
-                  </select>
-                </div>
+              <div style="margin-bottom:10px">
+                <label class="prod-label">Statut</label>
+                <select class="prod-input" id="edit-statut">
+                  <option value="pending">En attente</option>
+                  <option value="confirmed">Confirmée</option>
+                  <option value="shipped">Expédiée</option>
+                  <option value="delivered">Livrée</option>
+                  <option value="cancelled">Annulée</option>
+                </select>
               </div>
               <div style="margin-bottom:10px">
                 <label class="prod-label">Numéro de suivi</label>
@@ -792,12 +776,10 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
           <div class="carte">
             <h3 id="mood-form-titre" style="margin-bottom:14px;font-family:'Cormorant Garamond',serif;font-size:20px">Nouveau mood</h3>
             <div class="form-grille" style="margin-bottom:10px">
-              <div><label class="prod-label">Nom <span style="color:var(--rose)">*</span></label><input class="prod-input" id="mood-nom" type="text" placeholder="Ex: Minimaliste chic" oninput="autoSlugMood()"></div>
-              <div><label class="prod-label">Slug</label><input class="prod-input" id="mood-slug" type="text" placeholder="minimaliste-chic"></div>
+              <div><label class="prod-label">Nom <span style="color:var(--rose)">*</span></label><input class="prod-input" id="mood-nom" type="text" placeholder="Ex: Minimaliste chic"></div>
+              <div><label class="prod-label">Emoji</label><input class="prod-input" id="mood-emoji" type="text" placeholder="Ex: 🌸" maxlength="4"></div>
             </div>
-            <div style="margin-bottom:10px"><label class="prod-label">Description</label><textarea class="prod-input" id="mood-desc" rows="3" style="resize:vertical" placeholder="Ambiance, esthétique…"></textarea></div>
-            <div style="margin-bottom:10px"><label class="prod-label">URL image de couverture</label><input class="prod-input" id="mood-img" type="url" placeholder="https://…"></div>
-            <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px"><input type="checkbox" id="mood-visible" checked style="accent-color:var(--rose);width:16px;height:16px"><label for="mood-visible" style="font-size:14px;color:var(--texte-doux);cursor:pointer">Visible sur le site</label></div>
+            <div style="margin-bottom:14px"><label class="prod-label">Couleur</label><input class="prod-input" id="mood-color" type="text" placeholder="Ex: #F06FA7" style="max-width:200px"></div>
             <div style="display:flex;gap:8px">
               <button class="btn btn-rose" onclick="sauvegarderMood()">Enregistrer</button>
               <button class="btn btn-sec" onclick="fermerFormulaireMood()">Annuler</button>
@@ -2529,7 +2511,7 @@ async function chargerCommandes() {
   document.getElementById('cmd-detail').style.display = 'none';
   try {
     var r = await NAHIRA.sb.from('orders')
-      .select('id,status,payment_status,total_cents,shipping_cents,customer_email,shipping_name,shipping_address,shipping_city,shipping_zip,shipping_country,tracking_number,admin_notes,created_at')
+      .select('id,status,total_cents,shipping_cents,email,shipping_name,shipping_address,shipping_city,shipping_postal_code,shipping_country,tracking_number,notes,created_at')
       .order('created_at', {ascending: false})
       .limit(200);
     if (r.error) throw r.error;
@@ -2549,13 +2531,11 @@ function cmdRef(id) {
 function renderCommandes() {
   var q = (document.getElementById('cmd-search').value||'').toLowerCase().trim();
   var fs = document.getElementById('cmd-statut').value;
-  var fp = document.getElementById('cmd-paiement').value;
   var liste = S_CMDS.data.filter(function(c) {
     if (fs && c.status !== fs) return false;
-    if (fp && c.payment_status !== fp) return false;
     if (q) {
       var ref = cmdRef(c.id).toLowerCase();
-      var email = (c.customer_email||'').toLowerCase();
+      var email = (c.email||'').toLowerCase();
       var nom = (c.shipping_name||'').toLowerCase();
       if (!ref.includes(q) && !email.includes(q) && !nom.includes(q)) return false;
     }
@@ -2576,10 +2556,9 @@ function cmdLigne(c) {
     '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
       '<span style="font-family:\'Cormorant Garamond\',serif;font-size:16px;font-weight:600;color:var(--blanc)">' + esc(ref) + '</span>' +
       badgeStatut(c.status) +
-      (c.payment_status === 'paid' ? '<span class="badge badge-dispo">Payée</span>' : c.payment_status === 'failed' ? '<span class="badge badge-epuise">Échouée</span>' : '<span class="badge badge-low">Paiement en attente</span>') +
     '</div>' +
     '<div style="display:flex;align-items:center;gap:12px;justify-content:space-between;margin-top:6px;flex-wrap:wrap">' +
-      '<span style="font-size:13px;color:var(--texte-doux)">' + esc(c.customer_email||'—') + '</span>' +
+      '<span style="font-size:13px;color:var(--texte-doux)">' + esc(c.email||'—') + '</span>' +
       '<span style="font-family:\'Cormorant Garamond\',serif;font-size:18px;font-weight:600;color:var(--or)">' + total + '</span>' +
     '</div>' +
     '<div style="font-size:11px;color:var(--texte-faible);margin-top:4px">' + fmtDH(c.created_at) + '</div>' +
@@ -2599,19 +2578,18 @@ async function voirCommande(id) {
   document.getElementById('cmd-total-shipping').textContent = shipping;
 
   var info = [
-    {l:'Cliente', v: esc(c.customer_email||'—')},
+    {l:'Cliente', v: esc(c.email||'—')},
     {l:'Date', v: fmtDH(c.created_at)},
     {l:'Destinataire', v: esc(c.shipping_name||'—')},
-    {l:'Adresse', v: esc([c.shipping_address,c.shipping_zip,c.shipping_city,c.shipping_country].filter(Boolean).join(', ')||'—')},
+    {l:'Adresse', v: esc([c.shipping_address,c.shipping_postal_code,c.shipping_city,c.shipping_country].filter(Boolean).join(', ')||'—')},
   ];
   document.getElementById('cmd-detail-info').innerHTML = info.map(function(x){
     return '<div class="cmd-info-item"><span class="lbl">'+x.l+'</span><span class="val">'+x.v+'</span></div>';
   }).join('');
 
   document.getElementById('edit-statut').value = c.status || 'pending';
-  document.getElementById('edit-paiement').value = c.payment_status || 'pending';
   document.getElementById('edit-tracking').value = c.tracking_number || '';
-  document.getElementById('edit-notes').value = c.admin_notes || '';
+  document.getElementById('edit-notes').value = c.notes || '';
   document.getElementById('cmd-save-msg').style.display = 'none';
 
   var itemsEl = document.getElementById('cmd-detail-items');
@@ -2656,9 +2634,8 @@ async function enregistrerCommande() {
   msg.style.display = 'none';
   var updates = {
     status: document.getElementById('edit-statut').value,
-    payment_status: document.getElementById('edit-paiement').value,
     tracking_number: document.getElementById('edit-tracking').value || null,
-    admin_notes: document.getElementById('edit-notes').value || null,
+    notes: document.getElementById('edit-notes').value || null,
   };
   try {
     var r = await NAHIRA.sb.from('orders').update(updates).eq('id', id);
@@ -2685,15 +2662,15 @@ function fermerDetail() {
 function exportCmdCSV() {
   var data = S_CMDS.data;
   if (!data.length) { alert('Aucune commande à exporter.'); return; }
-  var entetes = ['Référence','Date','Email','Nom','Adresse','Ville','CP','Pays','Statut','Paiement','Suivi','Total €','Livraison €','Notes'];
+  var entetes = ['Référence','Date','Email','Nom','Adresse','Ville','CP','Pays','Statut','Suivi','Total €','Livraison €','Notes'];
   var lignes = data.map(function(c) {
     return [
       cmdRef(c.id), fmtD(c.created_at),
-      c.customer_email||'', c.shipping_name||'',
-      c.shipping_address||'', c.shipping_city||'', c.shipping_zip||'', c.shipping_country||'',
-      c.status||'', c.payment_status||'', c.tracking_number||'',
+      c.email||'', c.shipping_name||'',
+      c.shipping_address||'', c.shipping_city||'', c.shipping_postal_code||'', c.shipping_country||'',
+      c.status||'', c.tracking_number||'',
       ((c.total_cents||0)/100).toFixed(2), ((c.shipping_cents||0)/100).toFixed(2),
-      (c.admin_notes||'').replace(/"/g,'""')
+      (c.notes||'').replace(/"/g,'""')
     ].map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join(',');
   });
   var csv = '﻿' + [entetes.join(',')].concat(lignes).join('\n');
@@ -2831,7 +2808,7 @@ async function chargerCollections() {
   fermerFormulaireCollection();
   try {
     var r = await NAHIRA.sb.from('collections')
-      .select('id,name,slug,description,cover_image_url,is_visible,sort_order,created_at')
+      .select('id,name,slug,description,cover_url,is_active,sort_order,created_at')
       .order('sort_order',{ascending:true});
     if (r.error) throw r.error;
     S_COLL.data = r.data || [];
@@ -2849,14 +2826,14 @@ function renderCollections() {
   if (!S_COLL.data.length) { vide.style.display = ''; el.style.display = 'none'; return; }
   vide.style.display = 'none';
   el.innerHTML = S_COLL.data.map(function(c) {
-    var imgHtml = c.cover_image_url
-      ? '<img src="'+esc(c.cover_image_url)+'" alt="">'
+    var imgHtml = c.cover_url
+      ? '<img src="'+esc(c.cover_url)+'" alt="">'
       : '<span style="font-size:32px">▦</span>';
     return '<div class="coll-carte">' +
       '<div class="coll-cover">'+imgHtml+'</div>' +
       '<div class="coll-corps">' +
         '<div class="coll-nom">'+esc(c.name)+'</div>' +
-        '<div class="coll-meta">'+(c.is_visible?'<span style="color:var(--ok)">● Visible</span>':'<span style="color:var(--texte-faible)">● Masquée</span>')+
+        '<div class="coll-meta">'+(c.is_active?'<span style="color:var(--ok)">● Visible</span>':'<span style="color:var(--texte-faible)">● Masquée</span>')+
           (c.description?' · '+esc(c.description).slice(0,40):'')+'</div>' +
         '<div class="coll-actions">' +
           '<button class="btn btn-sm btn-sec" onclick="editerCollection(\''+esc(c.id)+'\')">Modifier</button>' +
@@ -2879,8 +2856,8 @@ function ouvrirFormulaireCollection(id) {
     document.getElementById('coll-nom').value = c.name||'';
     document.getElementById('coll-slug').value = c.slug||'';
     document.getElementById('coll-desc').value = c.description||'';
-    document.getElementById('coll-img').value = c.cover_image_url||'';
-    document.getElementById('coll-visible').checked = !!c.is_visible;
+    document.getElementById('coll-img').value = c.cover_url||'';
+    document.getElementById('coll-visible').checked = !!c.is_active;
   } else {
     S_COLL.editing = null;
     document.getElementById('coll-form-titre').textContent = 'Nouvelle collection';
@@ -2913,8 +2890,8 @@ async function sauvegarderCollection() {
     name: nom,
     slug: document.getElementById('coll-slug').value || slugify(nom),
     description: document.getElementById('coll-desc').value.trim()||null,
-    cover_image_url: document.getElementById('coll-img').value.trim()||null,
-    is_visible: document.getElementById('coll-visible').checked,
+    cover_url: document.getElementById('coll-img').value.trim()||null,
+    is_active: document.getElementById('coll-visible').checked,
   };
   try {
     var r;
@@ -2958,7 +2935,7 @@ async function chargerMoods() {
   fermerFormulaireMood();
   try {
     var r = await NAHIRA.sb.from('moods')
-      .select('id,name,slug,description,cover_image_url,is_visible,sort_order,created_at')
+      .select('id,name,emoji,color,sort_order,created_at')
       .order('sort_order',{ascending:true});
     if (r.error) throw r.error;
     S_MOOD.data = r.data || [];
@@ -2976,15 +2953,17 @@ function renderMoods() {
   if (!S_MOOD.data.length) { vide.style.display = ''; el.style.display = 'none'; return; }
   vide.style.display = 'none';
   el.innerHTML = S_MOOD.data.map(function(m) {
-    var imgHtml = m.cover_image_url
-      ? '<img src="'+esc(m.cover_image_url)+'" alt="">'
+    var emojiHtml = m.emoji
+      ? '<span style="font-size:32px">'+esc(m.emoji)+'</span>'
       : '<span style="font-size:32px">✦</span>';
+    var colorDot = m.color
+      ? '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+esc(m.color)+';margin-right:5px;vertical-align:middle;flex:none"></span>'
+      : '';
     return '<div class="coll-carte">' +
-      '<div class="coll-cover">'+imgHtml+'</div>' +
+      '<div class="coll-cover" style="display:flex;align-items:center;justify-content:center;background:var(--carte-2)">'+emojiHtml+'</div>' +
       '<div class="coll-corps">' +
         '<div class="coll-nom">'+esc(m.name)+'</div>' +
-        '<div class="coll-meta">'+(m.is_visible?'<span style="color:var(--ok)">● Visible</span>':'<span style="color:var(--texte-faible)">● Masqué</span>')+
-          (m.description?' · '+esc(m.description).slice(0,40):'')+'</div>' +
+        '<div class="coll-meta" style="display:flex;align-items:center">'+colorDot+(m.color||'—')+'</div>' +
         '<div class="coll-actions">' +
           '<button class="btn btn-sm btn-sec" onclick="editerMood(\''+esc(m.id)+'\')">Modifier</button>' +
           '<button class="btn btn-sm btn-danger" onclick="supprimerMood(\''+esc(m.id)+'\',\''+esc(m.name)+'\')">Supprimer</button>' +
@@ -3004,18 +2983,14 @@ function ouvrirFormulaireMood(id) {
     S_MOOD.editing = id;
     document.getElementById('mood-form-titre').textContent = 'Modifier le mood';
     document.getElementById('mood-nom').value = m.name||'';
-    document.getElementById('mood-slug').value = m.slug||'';
-    document.getElementById('mood-desc').value = m.description||'';
-    document.getElementById('mood-img').value = m.cover_image_url||'';
-    document.getElementById('mood-visible').checked = !!m.is_visible;
+    document.getElementById('mood-emoji').value = m.emoji||'';
+    document.getElementById('mood-color').value = m.color||'';
   } else {
     S_MOOD.editing = null;
     document.getElementById('mood-form-titre').textContent = 'Nouveau mood';
     document.getElementById('mood-nom').value = '';
-    document.getElementById('mood-slug').value = '';
-    document.getElementById('mood-desc').value = '';
-    document.getElementById('mood-img').value = '';
-    document.getElementById('mood-visible').checked = true;
+    document.getElementById('mood-emoji').value = '';
+    document.getElementById('mood-color').value = '';
   }
   wrap.style.display = '';
   wrap.scrollIntoView({behavior:'smooth',block:'start'});
@@ -3028,20 +3003,15 @@ function fermerFormulaireMood() {
 
 function editerMood(id) { ouvrirFormulaireMood(id); }
 
-function autoSlugMood() {
-  var slug = document.getElementById('mood-slug');
-  if (!slug.dataset.manual) slug.value = slugify(document.getElementById('mood-nom').value);
-}
+function autoSlugMood() {}
 
 async function sauvegarderMood() {
   var nom = (document.getElementById('mood-nom').value||'').trim();
   if (!nom) { afficherMsgMood('Le nom est requis.','err'); return; }
   var data = {
     name: nom,
-    slug: document.getElementById('mood-slug').value || slugify(nom),
-    description: document.getElementById('mood-desc').value.trim()||null,
-    cover_image_url: document.getElementById('mood-img').value.trim()||null,
-    is_visible: document.getElementById('mood-visible').checked,
+    emoji: document.getElementById('mood-emoji').value.trim()||null,
+    color: document.getElementById('mood-color').value.trim()||null,
   };
   try {
     var r;
@@ -3261,7 +3231,7 @@ async function chargerAvis() {
   document.getElementById('avis-vide').style.display = 'none';
   try {
     var r = await NAHIRA.sb.from('reviews')
-      .select('id,author_name,email,rating,content,is_approved,reply,created_at,product_id,products(name)')
+      .select('id,author_name,email,rating,comment,status,created_at,product_id,products(name)')
       .order('created_at',{ascending:false})
       .limit(100);
     if (r.error) throw r.error;
@@ -3277,8 +3247,8 @@ async function chargerAvis() {
 function renderAvis() {
   var filtre = document.getElementById('avis-filtre').value;
   var liste = S_AVIS.data.filter(function(a) {
-    if (filtre==='pending') return !a.is_approved;
-    if (filtre==='approved') return a.is_approved;
+    if (filtre==='pending') return a.status !== 'approved';
+    if (filtre==='approved') return a.status === 'approved';
     return true;
   });
   var el = document.getElementById('avis-liste');
@@ -3294,23 +3264,14 @@ function renderAvis() {
           '<div class="avis-auteur">'+esc(a.author_name||'Anonyme')+'</div>' +
           '<div class="avis-etoiles">'+etoiles+'</div>' +
         '</div>' +
-        '<div style="text-align:right;font-size:12px;color:var(--texte-faible)">'+fmtD(a.created_at)+'<br>'+(a.is_approved?'<span style="color:var(--ok)">Approuvé</span>':'<span style="color:var(--attente)">En attente</span>')+'</div>' +
+        '<div style="text-align:right;font-size:12px;color:var(--texte-faible)">'+fmtD(a.created_at)+'<br>'+(a.status==='approved'?'<span style="color:var(--ok)">Approuvé</span>':'<span style="color:var(--attente)">En attente</span>')+'</div>' +
       '</div>' +
       '<div class="avis-produit">'+esc(prodNom)+'</div>' +
-      '<div class="avis-contenu">'+esc(a.content||'—')+'</div>' +
-      (a.reply?'<div class="avis-reponse"><strong style="color:var(--or)">Réponse Nahira :</strong> '+esc(a.reply)+'</div>':'') +
+      '<div class="avis-contenu">'+esc(a.comment||'—')+'</div>' +
       '<div class="avis-actions">' +
-        (!a.is_approved?'<button class="btn btn-sm btn-rose" onclick="approuverAvis(\''+esc(a.id)+'\')">✓ Approuver</button>':'') +
-        (a.is_approved?'<button class="btn btn-sm btn-sec" onclick="masquerAvis(\''+esc(a.id)+'\')">Masquer</button>':'') +
-        '<button class="btn btn-sm btn-sec" onclick="ouvrirReponseAvis(\''+esc(a.id)+'\')">Répondre</button>' +
+        (a.status!=='approved'?'<button class="btn btn-sm btn-rose" onclick="approuverAvis(\''+esc(a.id)+'\')">✓ Approuver</button>':'') +
+        (a.status==='approved'?'<button class="btn btn-sm btn-sec" onclick="masquerAvis(\''+esc(a.id)+'\')">Masquer</button>':'') +
         '<button class="btn btn-sm btn-danger" onclick="supprimerAvis(\''+esc(a.id)+'\')">Supprimer</button>' +
-      '</div>' +
-      '<div id="rep-form-'+esc(a.id)+'" style="display:none;margin-top:10px">' +
-        '<textarea class="prod-input" id="rep-txt-'+esc(a.id)+'" rows="2" placeholder="Votre réponse publique…" style="margin-bottom:6px;width:100%"></textarea>' +
-        '<div style="display:flex;gap:8px">' +
-          '<button class="btn btn-sm btn-rose" onclick="envoyerReponseAvis(\''+esc(a.id)+'\')">Publier</button>' +
-          '<button class="btn btn-sm btn-sec" onclick="document.getElementById(\'rep-form-'+esc(a.id)+'\').style.display=\'none\'">Annuler</button>' +
-        '</div>' +
       '</div>' +
     '</div>';
   }).join('');
@@ -3319,20 +3280,20 @@ function renderAvis() {
 
 async function approuverAvis(id) {
   try {
-    var r = await NAHIRA.sb.from('reviews').update({is_approved:true}).eq('id',id);
+    var r = await NAHIRA.sb.from('reviews').update({status:'approved'}).eq('id',id);
     if (r.error) throw r.error;
     var a = S_AVIS.data.find(function(x){ return x.id===id; });
-    if (a) a.is_approved = true;
+    if (a) a.status = 'approved';
     renderAvis(); toast('Avis approuvé.');
   } catch(e) { alert('Erreur : '+(e.message||e)); }
 }
 
 async function masquerAvis(id) {
   try {
-    var r = await NAHIRA.sb.from('reviews').update({is_approved:false}).eq('id',id);
+    var r = await NAHIRA.sb.from('reviews').update({status:'pending'}).eq('id',id);
     if (r.error) throw r.error;
     var a = S_AVIS.data.find(function(x){ return x.id===id; });
-    if (a) a.is_approved = false;
+    if (a) a.status = 'pending';
     renderAvis(); toast('Avis masqué.');
   } catch(e) { alert('Erreur : '+(e.message||e)); }
 }
@@ -3347,22 +3308,6 @@ async function supprimerAvis(id) {
   } catch(e) { alert('Erreur : '+(e.message||e)); }
 }
 
-function ouvrirReponseAvis(id) {
-  var form = document.getElementById('rep-form-'+id);
-  if (form) form.style.display = form.style.display==='none'?'':'none';
-}
-
-async function envoyerReponseAvis(id) {
-  var txt = (document.getElementById('rep-txt-'+id).value||'').trim();
-  if (!txt) return;
-  try {
-    var r = await NAHIRA.sb.from('reviews').update({reply:txt}).eq('id',id);
-    if (r.error) throw r.error;
-    var a = S_AVIS.data.find(function(x){ return x.id===id; });
-    if (a) a.reply = txt;
-    renderAvis(); toast('Réponse publiée.');
-  } catch(e) { alert('Erreur : '+(e.message||e)); }
-}
 
 /* ====== IMPORT CSV ====== */
 var S_IMPORT = { rows: [], headers: [], mapping: {} };
