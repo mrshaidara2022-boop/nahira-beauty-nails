@@ -489,6 +489,7 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
       <button class="nav-item" data-nav="commandes" onclick="goTo('commandes')"><span class="nav-ico">◻</span>Commandes</button>
       <button class="nav-item" data-nav="reassort" onclick="goTo('reassort')"><span class="nav-ico">🔔</span>Réassort</button>
       <button class="nav-item" data-nav="clients" onclick="goTo('clients')"><span class="nav-ico">◉</span>Clientes</button>
+      <button class="nav-item" data-nav="paniers" onclick="goTo('paniers')"><span class="nav-ico">⊡</span>Paniers</button>
       <button class="nav-item" data-nav="collections" onclick="goTo('collections')"><span class="nav-ico">▦</span>Collections</button>
       <button class="nav-item" data-nav="moods" onclick="goTo('moods')"><span class="nav-ico">✦</span>Moods</button>
       <button class="nav-item" data-nav="cms" onclick="goTo('cms')"><span class="nav-ico">▩</span>Site CMS</button>
@@ -805,6 +806,24 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
             </div>
           </div>
 
+        </div>
+      </section>
+
+      <!-- PANIERS -->
+      <section class="section" id="s-paniers" style="display:none">
+        <div class="eyebrow">Analyse</div>
+        <h2 class="section-titre">Paniers</h2>
+        <div class="grille-kpi" id="pan-kpi" style="margin-bottom:20px"></div>
+        <div class="tabs" style="margin-bottom:16px">
+          <button class="tab actif" data-pan-tab="active"    onclick="switchPanTab('active')">Actifs</button>
+          <button class="tab"       data-pan-tab="abandoned" onclick="switchPanTab('abandoned')">Abandonnés</button>
+          <button class="tab"       data-pan-tab="converted" onclick="switchPanTab('converted')">Convertis</button>
+          <button class="tab"       data-pan-tab="cleared"   onclick="switchPanTab('cleared')">Vidés</button>
+        </div>
+        <div class="chargement" id="pan-loading">Chargement…</div>
+        <div id="pan-liste"></div>
+        <div id="pan-vide" class="etat-vide" style="display:none">
+          <div class="ico">⊡</div><p id="pan-vide-msg">Aucun panier.</p>
         </div>
       </section>
 
@@ -1674,7 +1693,7 @@ async function seDeconnecter() {
 /* ====== NAVIGATION ====== */
 var sectionLabels = {
   tableau:'Tableau de bord', produits:'Produits', images:'Images', stock:'Stock',
-  commandes:'Commandes', reassort:'Réassort', clients:'Clientes', 'clients-fiche':'Fiche cliente', collections:'Collections',
+  commandes:'Commandes', reassort:'Réassort', clients:'Clientes', 'clients-fiche':'Fiche cliente', paniers:'Paniers', collections:'Collections',
   moods:'Moods', cms:'Site CMS', promotions:'Promotions',
   avis:'Avis', import:'Import CSV', parametres:'Paramètres',
   'ac-formations':'Academy — Formations', 'ac-contenu':'Academy — Contenu',
@@ -1709,6 +1728,7 @@ function goTo(id) {
   else if (id === 'commandes') chargerCommandes();
   else if (id === 'reassort') chargerReassort();
   else if (id === 'clients') chargerClients();
+  else if (id === 'paniers') chargerPaniers();
   else if (id === 'collections') chargerCollections();
   else if (id === 'moods') chargerMoods();
   else if (id === 'cms') chargerCMS();
@@ -6750,6 +6770,130 @@ async function ouvrirFicheClient(userId) {
 
   document.getElementById('cl-fiche-loading').style.display = 'none';
   document.getElementById('cl-fiche-corps').style.display = '';
+}
+
+/* ====== PANIERS ====== */
+var _panTab = 'active';
+
+function switchPanTab(tab) {
+  _panTab = tab;
+  document.querySelectorAll('[data-pan-tab]').forEach(function(b) {
+    b.classList.toggle('actif', b.dataset.panTab === tab);
+  });
+  chargerPaniers();
+}
+
+async function chargerPaniers() {
+  var loading = document.getElementById('pan-loading');
+  var liste   = document.getElementById('pan-liste');
+  var vide    = document.getElementById('pan-vide');
+  var videMsg = document.getElementById('pan-vide-msg');
+  loading.style.display = ''; liste.innerHTML = ''; vide.style.display = 'none';
+
+  try {
+    await _chargerPaniersKpi();
+
+    var { data, error } = await sb.rpc('admin_get_carts', {
+      p_status: _panTab, p_limit: 100, p_offset: 0
+    });
+    if (error) throw error;
+
+    loading.style.display = 'none';
+    if (!data || data.length === 0) {
+      var labels = { active:'Aucun panier actif.', abandoned:'Aucun panier abandonné.', converted:'Aucun panier converti.', cleared:'Aucun panier vidé.' };
+      videMsg.textContent = labels[_panTab] || 'Aucun panier.';
+      vide.style.display = '';
+      return;
+    }
+    liste.innerHTML = renderPaniers(data);
+  } catch(e) {
+    loading.style.display = 'none';
+    liste.innerHTML = '<div class="erreur-msg">Erreur : ' + esc(e.message) + '</div>';
+  }
+}
+
+async function _chargerPaniersKpi() {
+  var kpiEl = document.getElementById('pan-kpi');
+  try {
+    var tabs = ['active','abandoned','converted','cleared'];
+    var counts = {};
+    var subtotals = {};
+    for (var i = 0; i < tabs.length; i++) {
+      var { data } = await sb.rpc('admin_get_carts', { p_status: tabs[i], p_limit: 1000, p_offset: 0 });
+      counts[tabs[i]] = (data || []).length;
+      subtotals[tabs[i]] = (data || []).reduce(function(s, c) { return s + (c.subtotal_cents || 0); }, 0);
+    }
+    kpiEl.innerHTML =
+      '<div class="kpi-tile"><div class="kpi-val">' + counts.active + '</div><div class="kpi-label">Actifs</div></div>'
+    + '<div class="kpi-tile"><div class="kpi-val">' + counts.abandoned + '</div><div class="kpi-label">Abandonnés</div></div>'
+    + '<div class="kpi-tile"><div class="kpi-val" style="color:var(--or-vif)">' + NAHIRA.eur(subtotals.abandoned) + '</div><div class="kpi-label">Valeur abandonnée</div></div>'
+    + '<div class="kpi-tile"><div class="kpi-val" style="color:var(--ok)">' + counts.converted + '</div><div class="kpi-label">Convertis</div></div>'
+    + '<div class="kpi-tile"><div class="kpi-val">' + counts.cleared + '</div><div class="kpi-label">Vidés</div></div>';
+  } catch(e) {
+    kpiEl.innerHTML = '';
+  }
+}
+
+function renderPaniers(carts) {
+  var h = '';
+  carts.forEach(function(c) {
+    var items = Array.isArray(c.items) ? c.items : [];
+    var thumbs = items.slice(0, 3).map(function(it) {
+      return it.image_url
+        ? '<img src="' + esc(it.image_url) + '" alt="" style="width:36px;height:36px;object-fit:cover;border-radius:6px;flex-shrink:0">'
+        : '<div style="width:36px;height:36px;border-radius:6px;background:var(--ligne);flex-shrink:0"></div>';
+    }).join('');
+    if (items.length > 3) thumbs += '<div style="width:36px;height:36px;border-radius:6px;background:var(--ligne);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--texte-doux);flex-shrink:0">+' + (items.length - 3) + '</div>';
+
+    var clientInfo = c.user_name
+      ? '<span style="font-weight:500;color:var(--blanc)">' + esc(c.user_name) + '</span>'
+        + (c.user_email ? '<br><span style="color:var(--texte-doux);font-size:11px">' + esc(c.user_email) + '</span>' : '')
+      : c.user_email
+        ? '<span style="color:var(--texte-doux);font-size:12px">' + esc(c.user_email) + '</span>'
+        : '<span style="color:var(--texte-faible);font-size:11px">Visiteur</span>';
+
+    var meta = [];
+    if (c.device)  meta.push('<span style="color:var(--texte-doux)">' + esc(c.device) + '</span>');
+    if (c.country) meta.push('<span style="color:var(--texte-doux)">' + esc(c.country) + '</span>');
+    meta.push('<span style="color:var(--texte-faible);font-size:11px">' + fmtD(c.updated_at) + '</span>');
+
+    var orderLink = c.order_number
+      ? '<button class="btn btn-sm btn-sec" style="padding:4px 10px;font-size:11px" onclick="goTo(\'commandes\')" title="Voir la commande">Cmd ' + esc(c.order_number) + ' ↗</button>'
+      : '';
+
+    var archiveBtn = (c.status === 'active' || c.status === 'abandoned')
+      ? '<button class="btn btn-sm btn-sec" style="padding:4px 10px;font-size:11px;margin-left:4px" onclick="archiverPanier(\'' + esc(c.id) + '\')" title="Archiver ce panier">Archiver</button>'
+      : '';
+
+    h += '<div class="carte" style="margin-bottom:10px;font-family:\'Montserrat\',sans-serif">'
+      + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">'
+        + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+          + '<div style="display:flex;gap:4px">' + thumbs + '</div>'
+          + '<div>'
+            + clientInfo
+            + '<div style="margin-top:4px;font-size:11px;display:flex;gap:8px;flex-wrap:wrap">' + meta.join(' · ') + '</div>'
+          + '</div>'
+        + '</div>'
+        + '<div style="text-align:right;flex-shrink:0">'
+          + '<div style="font-size:16px;font-weight:600;color:var(--or-vif);font-variant-numeric:tabular-nums">' + NAHIRA.eur(c.subtotal_cents || 0) + '</div>'
+          + '<div style="font-size:11px;color:var(--texte-doux);margin-top:2px">' + (c.item_count || 0) + ' article' + (c.item_count > 1 ? 's' : '') + '</div>'
+          + '<div style="margin-top:6px">' + orderLink + archiveBtn + '</div>'
+        + '</div>'
+      + '</div>'
+    + '</div>';
+  });
+  return h;
+}
+
+async function archiverPanier(cartId) {
+  if (!confirm('Archiver ce panier ? Il disparaîtra de la vue Actifs/Abandonnés.')) return;
+  try {
+    var { error } = await sb.rpc('admin_archive_cart', { p_cart_id: cartId });
+    if (error) throw error;
+    chargerPaniers();
+  } catch(e) {
+    alert('Erreur : ' + e.message);
+  }
 }
 
 /* ====== DÉMARRAGE ====== */
