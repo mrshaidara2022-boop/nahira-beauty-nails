@@ -57,6 +57,14 @@ const NAHIRA = (() => {
     return false;
   }
 
+  // Anti-doublon par onglet (sessionStorage) — une seule fois par produit par onglet
+  function _eventFired(type, id) {
+    try { return !!sessionStorage.getItem('nah_ev_' + type + '_' + id); } catch(e) { return false; }
+  }
+  function _markEvent(type, id) {
+    try { sessionStorage.setItem('nah_ev_' + type + '_' + id, '1'); } catch(e) {}
+  }
+
   async function _trackEvent(type, productId, extra) {
     try {
       const sid    = getSessionId();
