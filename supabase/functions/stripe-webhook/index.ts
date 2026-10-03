@@ -219,6 +219,26 @@ async function handleSessionCompleted(session: Stripe.Checkout.Session) {
   }
 
   console.log(`Order ${order.order_number} created for session ${sessionId}`);
+
+  // --- Mark cart as converted (non-blocking — order already committed) -------
+  const cartId = (meta.cart_id && meta.cart_id.length > 0) ? meta.cart_id : null;
+  if (cartId) {
+    try {
+      const { error: cartErr } = await supabase
+        .from("carts")
+        .update({ converted_at: new Date().toISOString(), order_id: order.id })
+        .eq("id", cartId)
+        .is("converted_at", null);
+      if (cartErr) {
+        console.error(`Cart conversion failed for ${cartId}:`, cartErr.message);
+      } else {
+        console.log(`Cart ${cartId} marked as converted`);
+      }
+    } catch (cartErr: any) {
+      console.error(`Cart conversion error for ${cartId}:`, cartErr.message);
+      // Do NOT re-throw — order already created
+    }
+  }
 }
 
 // ── checkout.session.expired ────────────────────────────────────────────────

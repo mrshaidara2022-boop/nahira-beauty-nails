@@ -7,12 +7,80 @@ const NAHIRA = (() => {
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14Ym1qdHpyZ2dhaGJ3YWh4bWtwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyMzc5NDQsImV4cCI6MjA5NjgxMzk0NH0.iTibkVCaTZYoMzQO4TQvddlKeZY40vNcfJ-kEgIHXpE";
   const CHECKOUT_URL    = SUPABASE_URL + "/functions/v1/create-checkout";
   const CART_KEY        = "nahira_cart";
+  const CART_ID_KEY     = "nahira_cart_id";
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  /* ─── ANALYTICS FOUNDATIONS ──────────────────────────────────────────────
+     session_id : UUID stable pour la durée de l'onglet (sessionStorage).
+     device     : mobile <768 / tablet <1024 / desktop ≥1024.
+     ADMIN_PATHS: jamais trackés — exclusion à la source.
+  ──────────────────────────────────────────────────────────────────────────── */
+  const ADMIN_PATHS = ['/admin.html', '/dashboard.html'];
+
+  function getSessionId() {
+    try {
+      let sid = sessionStorage.getItem('nah_sid');
+      if (!sid) {
+        sid = 'sid_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 9);
+        sessionStorage.setItem('nah_sid', sid);
+      }
+      return sid;
+    } catch { return null; }
+  }
+
+  function getDevice() {
+    const w = window.innerWidth || document.documentElement.clientWidth || 0;
+    if (w < 768)  return 'mobile';
+    if (w < 1024) return 'tablet';
+    return 'desktop';
+  }
+
+  // Anti-doublon technique : Map in-memory { 'type_productId' → lastFiredMs }.
+  // Bloque les déclenchements dans la fenêtre de debounce (double clic, double render,
+  // double exécution JS). Hors de cette fenêtre, chaque action réelle est enregistrée.
+  // product_view : mécanisme séparé via sessionStorage (une vue par produit par onglet).
+  const _DEBOUNCE = {
+    add_to_cart:          2000,
+    remove_from_cart:     2000,
+    begin_checkout:       5000,
+    add_to_wishlist:      2000,
+    remove_from_wishlist: 2000,
+  };
+  const _recentEvents = new Map();
+
+  function _debounced(type, productId) {
+    const key  = type + '_' + (productId || '');
+    const last = _recentEvents.get(key) || 0;
+    const ms   = _DEBOUNCE[type] || 2000;
+    if (Date.now() - last < ms) return true; // trop récent → doublon technique
+    _recentEvents.set(key, Date.now());
+    return false;
+  }
+
+  async function _trackEvent(type, productId, extra) {
+    try {
+      const sid    = getSessionId();
+      const device = getDevice();
+      const { data: { user } } = await sb.auth.getUser();
+      const payload = {
+        event_type: type,
+        session_id: sid,
+        product_id: productId || null,
+        user_id:    user?.id || null,
+        device,
+        properties: extra || {},
+      };
+      await sb.from('analytics_events').insert(payload);
+    } catch {}
+  }
 
   /* ─── PANIER ──────────────────────────────────────────────────────────────
      Format V2 : [{ product_id, slug, name, price_cents, image_url, quantity }]
      Rétrocompatible V1 : si un item a `size`/`custom`, il reste lisible.
+     Phase 4 : cart_id UUID stable (localStorage nahira_cart_id).
+               Sync Supabase non-bloquante — debounce 3s.
+               Vidage (clearCart / remove dernier article) → sync immédiate cleared_at.
   ──────────────────────────────────────────────────────────────────────────── */
   function getCart() {
     try { return JSON.parse(localStorage.getItem(CART_KEY) || "[]"); }
@@ -23,7 +91,71 @@ const NAHIRA = (() => {
     updateBadge();
   }
 
+  function _newCartId() {
+    try { return crypto.randomUUID(); }
+    catch { return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0;
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    }); }
+  }
+  function getCartId() {
+    let id = localStorage.getItem(CART_ID_KEY);
+    if (!id) { id = _newCartId(); localStorage.setItem(CART_ID_KEY, id); }
+    return id;
+  }
+
+  // Debounce timer for cart sync (3s)
+  let _syncTimer = null;
+  function _debouncedSyncCart() {
+    clearTimeout(_syncTimer);
+    _syncTimer = setTimeout(() => _syncCart(), 3000);
+  }
+
+  async function _syncCart() {
+    try {
+      const cart   = getCart();
+      const cartId = localStorage.getItem(CART_ID_KEY);
+      if (!cartId) return; // No cart to sync
+      const sid     = getSessionId();
+      const device  = getDevice();
+      const country = sessionStorage.getItem('nah_country') || null;
+      const subtotal = cartSubtotal();
+      const count   = cartCount();
+      await sb.rpc('sync_cart', {
+        p_cart_id:        cartId,
+        p_session_id:     sid,
+        p_items:          cart,
+        p_item_count:     count,
+        p_subtotal_cents: subtotal,
+        p_device:         device,
+        p_country:        country,
+        p_cleared:        false,
+      });
+    } catch (e) {}
+  }
+
+  async function _syncCartCleared(cartId) {
+    if (!cartId) return;
+    try {
+      const sid     = getSessionId();
+      const device  = getDevice();
+      const country = sessionStorage.getItem('nah_country') || null;
+      await sb.rpc('sync_cart', {
+        p_cart_id:        cartId,
+        p_session_id:     sid,
+        p_items:          [],
+        p_item_count:     0,
+        p_subtotal_cents: 0,
+        p_device:         device,
+        p_country:        country,
+        p_cleared:        true,
+      });
+    } catch (e) {}
+  }
+
   function addToCart({ product_id, slug, name, price_cents, image_url, quantity = 1 }) {
+    // Ensure cart_id exists before first item
+    getCartId();
     const c = getCart();
     const existing = c.find(it => it.product_id === product_id);
     if (existing) {
@@ -32,6 +164,12 @@ const NAHIRA = (() => {
       c.push({ product_id, slug, name, price_cents, image_url, quantity });
     }
     saveCart(c);
+    _debouncedSyncCart();
+    // add_to_cart : debounce 2s — bloque double-clic/double-render,
+    // autorise une véritable re-action après la fenêtre
+    if (!_debounced('add_to_cart', product_id)) {
+      _trackEvent('add_to_cart', product_id, { slug, name, price_cents, quantity });
+    }
   }
 
   function updateCartQuantity(productId, qty) {
@@ -40,13 +178,40 @@ const NAHIRA = (() => {
     if (idx < 0) return;
     if (qty <= 0) { c.splice(idx, 1); } else { c[idx].quantity = qty; }
     saveCart(c);
+    if (c.length === 0 || (qty <= 0 && getCart().length === 0)) {
+      // Cart is now empty — treat as cleared
+      const oldId = localStorage.getItem(CART_ID_KEY);
+      localStorage.removeItem(CART_ID_KEY);
+      _syncCartCleared(oldId);
+    } else {
+      _debouncedSyncCart();
+    }
   }
 
   function removeFromCart(productId) {
-    saveCart(getCart().filter(it => it.product_id !== productId));
+    const before = getCart();
+    const after  = before.filter(it => it.product_id !== productId);
+    saveCart(after);
+    if (after.length === 0) {
+      // Last item removed — treat as cleared
+      const oldId = localStorage.getItem(CART_ID_KEY);
+      localStorage.removeItem(CART_ID_KEY);
+      _syncCartCleared(oldId);
+    } else {
+      _debouncedSyncCart();
+    }
+    // remove_from_cart : debounce 2s — empêche double-déclenchement technique
+    if (!_debounced('remove_from_cart', productId)) {
+      _trackEvent('remove_from_cart', productId, {});
+    }
   }
 
-  function clearCart() { saveCart([]); }
+  function clearCart() {
+    const oldId = localStorage.getItem(CART_ID_KEY);
+    saveCart([]);
+    localStorage.removeItem(CART_ID_KEY);
+    _syncCartCleared(oldId);
+  }
 
   // Nombre total d'articles (somme des quantités)
   function cartCount() {
@@ -77,12 +242,11 @@ const NAHIRA = (() => {
     return Math.max(0, Number(data));
   }
 
-  // Label + classe CSS selon le stock et le seuil low-stock
+  // Label + classe CSS selon le stock — jamais de quantité exacte en public
   function stockLabel(availableStock, lowStockThreshold = 3) {
-    if (availableStock <= 0)                  return { text: "Épuisé",          cls: "stock-epuise",  color: "#f0a3a3" };
-    if (availableStock === 1)                 return { text: "Dernier ✦",       cls: "stock-dernier", color: "#e8c97a" };
-    if (availableStock <= lowStockThreshold)  return { text: "Bientôt épuisé",  cls: "stock-low",     color: "#d4a76a" };
-    return                                           { text: "En stock",         cls: "stock-dispo",   color: "#8ac98a" };
+    if (availableStock <= 0)                return { text: "Épuisé",       cls: "stock-epuise", color: "#f0a3a3" };
+    if (availableStock <= lowStockThreshold) return { text: "Stock limité", cls: "stock-low",    color: "#e8c27a" };
+    return                                         { text: "En stock",     cls: "stock-dispo",  color: "#8ac98a" };
   }
 
   /* ─── PRODUITS ───────────────────────────────────────────────────────────── */
@@ -101,6 +265,7 @@ const NAHIRA = (() => {
       `)
       .eq("slug", slug)
       .eq("is_visible", true)
+      .is("deleted_at", null)
       .maybeSingle();
     if (!data) return null;
     // Normalise la galerie : product_images en priorité, fallback image_url V1
@@ -122,6 +287,7 @@ const NAHIRA = (() => {
         product_images ( url, position )
       `)
       .eq("is_visible", true)
+      .is("deleted_at", null)
       .order("sort_order", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: false })
       .limit(limit);
@@ -166,6 +332,7 @@ const NAHIRA = (() => {
     const { data } = await sb.from("products")
       .select("id, name, slug, price_cents, stock, image_url, product_images(url, position)")
       .eq("is_visible", true)
+      .is("deleted_at", null)
       .neq("id", productId)
       .or(orClause || "id.neq.00000000-0000-0000-0000-000000000000")
       .limit(limit);
@@ -201,6 +368,28 @@ const NAHIRA = (() => {
     return data || [];
   }
 
+  // Liens produit → collections (pour filtrage client-side)
+  async function getProductCollectionLinks(productIds) {
+    if (!productIds?.length) return [];
+    const { data } = await sb.from("product_collections")
+      .select("product_id, collection_id, collections(slug)")
+      .in("product_id", productIds);
+    return (data || []).map(r => ({
+      product_id: r.product_id,
+      collection_id: r.collection_id,
+      collection_slug: r.collections?.slug || null,
+    }));
+  }
+
+  // Liens produit → moods (pour filtrage client-side)
+  async function getProductMoodLinks(productIds) {
+    if (!productIds?.length) return [];
+    const { data } = await sb.from("product_moods")
+      .select("product_id, mood_id")
+      .in("product_id", productIds);
+    return data || [];
+  }
+
   /* ─── FAVORIS ─────────────────────────────────────────────────────────────
      Requiert auth. Si non connecté → retourne { needsAuth: true }.
   ──────────────────────────────────────────────────────────────────────────── */
@@ -219,9 +408,17 @@ const NAHIRA = (() => {
       .select("id").eq("user_id", user.id).eq("product_id", productId).maybeSingle();
     if (existing) {
       await sb.from("favorites").delete().eq("id", existing.id);
+      // remove_from_wishlist : debounce 2s — le toggle est l'action, pas le re-render
+      if (!_debounced('remove_from_wishlist', productId)) {
+        _trackEvent('remove_from_wishlist', productId, {});
+      }
       return { liked: false };
     }
     await sb.from("favorites").insert({ user_id: user.id, product_id: productId });
+    // add_to_wishlist : debounce 2s
+    if (!_debounced('add_to_wishlist', productId)) {
+      _trackEvent('add_to_wishlist', productId, {});
+    }
     return { liked: true };
   }
 
@@ -289,13 +486,28 @@ const NAHIRA = (() => {
         quantity:   Math.max(1, Math.floor(Number(it.quantity) || 1)),
       }));
     if (validItems.length === 0) throw new Error("Votre panier est vide.");
+
+    // Sync cart immediately before checkout (bypass the 3s debounce)
+    clearTimeout(_syncTimer);
+    await _syncCart();
+
+    const cartId = localStorage.getItem(CART_ID_KEY) || null;
     const payload = {
       items: validItems,
       email:       user?.email || null,
       user_id:     user?.id   || null,
+      cart_id:     cartId,
       success_url: location.origin + "/merci.html",
       cancel_url:  location.origin + "/panier.html",
     };
+    // begin_checkout : debounce 5s — empêche double-clic sur le bouton Payer,
+    // autorise un véritable nouvel essai après échec ou retour au panier
+    if (!_debounced('begin_checkout', '')) {
+      await _trackEvent('begin_checkout', null, {
+        item_count: validItems.reduce((s, i) => s + i.quantity, 0),
+        item_ids:   validItems.map(i => i.product_id),
+      });
+    }
     const res = await fetch(CHECKOUT_URL, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
@@ -329,20 +541,45 @@ const NAHIRA = (() => {
   function trackView() {
     try {
       const path = location.pathname + location.search;
+      // Exclusion à la source : pages admin/back-office jamais trackées
+      if (ADMIN_PATHS.some(p => location.pathname === p || location.pathname.endsWith(p))) return;
       const key  = "nv_" + path;
       if (sessionStorage.getItem(key)) return;
       sessionStorage.setItem(key, "1");
+      const sid    = getSessionId();
+      const device = getDevice();
       let done = false;
       const insert = (country) => {
         if (done) return; done = true;
-        sb.from("page_views").insert({ path, ref: document.referrer || null, country: country || null }).then(() => {});
+        sb.from("page_views").insert({
+          path,
+          ref:        document.referrer || null,
+          country:    country || null,
+          session_id: sid,
+          device,
+        }).then(() => {});
       };
       setTimeout(() => insert(null), 2500);
       fetch("https://ipapi.co/country_name/").then(r => r.ok ? r.text() : null).then(c => {
         const v = c && c.trim();
-        insert(v && v.length < 60 && !v.includes("{") && !v.includes("<") ? v : null);
+        const safe = v && v.length < 60 && !v.includes("{") && !v.includes("<") ? v : null;
+        if (safe) {
+          try { sessionStorage.setItem('nah_country', safe); } catch (e) {}
+        }
+        insert(safe);
       }).catch(() => insert(null));
     } catch (e) {}
+  }
+
+  /* ─── PRODUCT VIEW ─────────────────────────────────────────────────────────
+     Appelé depuis produit.html une fois le produit chargé.
+     Anti-doublon : un seul product_view par produit par onglet.
+  ──────────────────────────────────────────────────────────────────────────── */
+  function trackProductView(productId, extra) {
+    if (!productId) return;
+    if (_eventFired('product_view', productId)) return;
+    _markEvent('product_view', productId);
+    _trackEvent('product_view', productId, extra || {});
   }
 
   /* ─── HELPERS ─────────────────────────────────────────────────────────────── */
@@ -423,12 +660,12 @@ const NAHIRA = (() => {
     sb,
     // Panier
     getCart, saveCart, addToCart, updateCartQuantity, removeFromCart, clearCart,
-    cartCount, cartSubtotal, updateBadge,
+    cartCount, cartSubtotal, updateBadge, getCartId,
     // Stock
     getAvailableStock, stockLabel,
     // Produits
     getProduct, getProducts, getRecommendations, getProductImages,
-    getCollections, getMoods,
+    getCollections, getMoods, getProductCollectionLinks, getProductMoodLinks,
     // Favoris
     isFavorite, toggleFavorite,
     // Alertes réassort
@@ -441,6 +678,8 @@ const NAHIRA = (() => {
     getSettings,
     // Admin / Auth
     isAdmin,
+    // Analytics
+    trackProductView,
     // Helpers
     eur, etoiles,
     // Rétrocompat V1

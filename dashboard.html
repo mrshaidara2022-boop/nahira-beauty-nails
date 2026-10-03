@@ -21,7 +21,7 @@
   --sb:env(safe-area-inset-bottom,0px);--st:env(safe-area-inset-top,0px);
   --cote-w:228px;
 }
-html{background:var(--noir)}
+html{background:var(--noir);overflow-x:hidden;max-width:100%}
 body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',serif;font-weight:400;line-height:1.55;min-height:100dvh;overflow-x:hidden}
 .fond{position:fixed;inset:0;z-index:0;pointer-events:none;
   background:radial-gradient(ellipse 80% 50% at 80% -10%,rgba(240,111,167,.10),transparent 60%),
@@ -32,8 +32,16 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
 .auth-carte{background:var(--carte);border:1px solid var(--bordure);border-radius:24px;padding:40px 32px;max-width:380px;width:100%;text-align:center}
 .auth-marque{font-family:'Parisienne',cursive;font-size:34px;color:var(--rose);margin-bottom:4px}
 .auth-sub{font-family:'Montserrat',sans-serif;font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--texte-faible);margin-bottom:24px}
-.auth-msg{font-size:17px;color:var(--texte-doux);margin-bottom:28px;line-height:1.55}
-.auth-btn{display:inline-block;text-decoration:none;background:linear-gradient(120deg,var(--rose),var(--or));color:#1a0f14;font-family:'Montserrat',sans-serif;font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;padding:12px 26px;border-radius:12px}
+.auth-msg{font-size:17px;color:var(--texte-doux);margin-bottom:20px;line-height:1.55}
+.auth-btn{display:block;width:100%;text-align:center;text-decoration:none;background:linear-gradient(120deg,var(--rose),var(--or));color:#1a0f14;font-family:'Montserrat',sans-serif;font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;padding:13px 26px;border-radius:12px;border:none;cursor:pointer}
+.auth-btn:disabled{opacity:.5;cursor:default}
+.auth-btn.sec{background:var(--carte-2);color:var(--texte-doux);border:1px solid var(--bordure)}
+.auth-champ{margin-bottom:12px;text-align:left}
+.auth-input{width:100%;background:rgba(255,247,250,.06);border:1px solid var(--bordure);border-radius:11px;padding:12px 14px;font-family:'Montserrat',sans-serif;font-size:13px;color:var(--texte);outline:none;transition:border-color .18s}
+.auth-input:focus{border-color:rgba(240,111,167,.5)}
+.auth-input::placeholder{color:var(--texte-faible);font-size:12px}
+.auth-err{font-family:'Montserrat',sans-serif;font-size:11px;color:var(--alerte);margin-bottom:14px;text-align:center;line-height:1.45}
+.auth-step-txt{font-size:10px;letter-spacing:1px;color:var(--texte-faible);margin-top:8px;font-family:monospace;text-align:center}
 
 /* APP */
 #app{position:relative;z-index:1;display:flex;min-height:100dvh}
@@ -336,36 +344,128 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
 @media(min-width:600px){.grille-kpi{grid-template-columns:repeat(4,1fr)}}
 @media(max-width:520px){
   .form-grille{grid-template-columns:1fr}
-  .prod-droite{display:none}
+  .prod-actions{display:none}
   .stock-actions{width:100%}
 }
 
-/* ── Contenu : éditeur visuel plein écran ──────────────────────────── */
-#ac-vis-editor{
-  display:none;
-  position:fixed;
-  top:0;left:0;right:0;bottom:0;
-  z-index:40;
-  flex-direction:column;
-  background:var(--noir);
-}
-#ac-vis-editor.open{display:flex}
-@media(min-width:769px){
-  #ac-vis-editor{left:var(--cote-w)}
-}
-#ac-vis-iframe{flex:1;width:100%;border:none;display:block;min-height:0}
+/* ── Contenu : aperçu élève dans la section ───────────────────────── */
+#main.ac-editor-in{max-width:100%;padding:0;overflow:hidden}
+#s-ac-contenu.editor-on{padding:0;display:flex!important;flex-direction:column}
+#ac-preview-bar{display:none;flex:none;align-items:center;justify-content:space-between;
+  gap:12px;padding:10px 16px;background:var(--carte);border-bottom:1px solid var(--ligne);flex-wrap:wrap}
+#s-ac-contenu.editor-on #ac-preview-bar{display:flex}
+.ac-preview-select-wrap{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.ac-preview-tabs{display:flex;gap:4px;flex-wrap:wrap}
+.ac-tab{font-family:'Montserrat',sans-serif;font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;
+  padding:6px 13px;border-radius:99px;border:1px solid var(--ligne);background:transparent;
+  color:var(--texte-doux);cursor:pointer;transition:all .2s;white-space:nowrap}
+.ac-tab:hover{border-color:var(--or-vif);color:var(--texte)}
+.ac-tab.actif{background:var(--or-pale);border-color:var(--or-vif);color:var(--texte);font-weight:600}
+.ac-preview-badge{font-family:'Montserrat',sans-serif;font-size:.58rem;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--texte-pale);white-space:nowrap;padding:4px 10px;
+  border:1px solid var(--ligne);border-radius:99px;flex:none}
+#ac-contenu-iframe{display:none;width:100%;border:none;flex:1}
+#s-ac-contenu.editor-on #ac-contenu-iframe{display:block}
+/* BOTTOM SHEET MOBILE ACTIONS PRODUIT */
+.prod-menu-btn{display:flex;background:var(--carte);border:1px solid var(--bordure);border-radius:10px;color:var(--texte-doux);font-size:18px;padding:0;cursor:pointer;flex:none;align-items:center;justify-content:center;width:44px;height:44px;line-height:1;-webkit-tap-highlight-color:transparent}
+.prod-menu-btn:active{background:var(--carte-2)}
+@media(min-width:521px){.prod-menu-btn{display:none}}
+.bsheet-voile{position:fixed;inset:0;z-index:290;background:rgba(6,4,6,.72);display:none}
+.bsheet-voile.actif{display:block}
+.bsheet{position:fixed;bottom:0;left:0;right:0;z-index:291;background:var(--carte);border-top:1px solid var(--bordure);border-radius:22px 22px 0 0;padding-bottom:calc(60px + var(--sb));transform:translateY(100%);transition:transform .28s cubic-bezier(.32,1,.68,1);max-height:72vh;overflow-y:auto}
+.bsheet.actif{transform:translateY(0)}
+.bsheet-handle{width:36px;height:4px;background:var(--bordure);border-radius:2px;margin:12px auto 4px}
+.bsheet-titre{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--blanc);padding:8px 20px 14px;border-bottom:1px solid var(--bordure);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bsheet-btn{display:flex;align-items:center;gap:14px;padding:0 20px;border:none;border-bottom:1px solid rgba(240,111,167,.06);cursor:pointer;color:var(--texte-doux);background:none;width:100%;text-align:left;font-family:'Montserrat',sans-serif;font-size:13px;min-height:52px;transition:background .15s;-webkit-tap-highlight-color:transparent}
+.bsheet-btn:last-child{border-bottom:none}
+.bsheet-btn:active{background:var(--carte-2)}
+.bsheet-btn.danger{color:var(--alerte)}
+.bsheet-ico{font-size:18px;width:26px;text-align:center;flex:none}
 </style>
 </head>
 <body>
 <div class="fond"></div>
+<div class="bsheet-voile" id="bsheet-voile" onclick="bsheetFermer()"></div>
+<div class="bsheet" id="bsheet" role="dialog" aria-modal="true">
+  <div class="bsheet-handle"></div>
+  <div class="bsheet-titre" id="bsheet-titre"></div>
+  <div id="bsheet-corps"></div>
+</div>
 
 <!-- AUTH GATE -->
 <div id="auth-gate" class="auth-gate">
   <div class="auth-carte">
     <div class="auth-marque">Nahira</div>
     <div class="auth-sub">Atelier — Administration</div>
-    <p class="auth-msg" id="auth-msg">Vérification des accès…</p>
-    <a href="compte.html" class="auth-btn" id="auth-btn" style="display:none">Se connecter</a>
+
+    <!-- Vue : vérification en cours -->
+    <div id="gate-checking">
+      <p class="auth-msg">Vérification…</p>
+      <p class="auth-step-txt" id="auth-step">Chargement…</p>
+    </div>
+
+    <!-- Vue : formulaire de connexion admin -->
+    <div id="gate-form" style="display:none">
+      <p class="auth-msg">Connexion Atelier</p>
+      <div class="auth-champ">
+        <input type="email" id="login-email" class="auth-input" placeholder="Email administrateur"
+               autocomplete="username email" inputmode="email" />
+      </div>
+      <div class="auth-champ">
+        <input type="password" id="login-pwd" class="auth-input" placeholder="Mot de passe"
+               autocomplete="current-password"
+               onkeydown="if(event.key==='Enter')adminLogin()" />
+      </div>
+      <p class="auth-err" id="login-err" style="display:none"></p>
+      <button class="auth-btn" id="login-btn" onclick="adminLogin()">Se connecter</button>
+      <button onclick="motDePasseOublie()" style="background:none;border:none;cursor:pointer;font-family:'Montserrat',sans-serif;font-size:11px;color:var(--texte-faible);margin-top:14px;letter-spacing:.5px;text-decoration:underline">Mot de passe oublié ?</button>
+    </div>
+
+    <!-- Vue : demande de réinitialisation par email -->
+    <div id="gate-reset-req" style="display:none">
+      <p class="auth-msg">Réinitialisation du mot de passe</p>
+      <p style="font-family:'Montserrat',sans-serif;font-size:11px;color:var(--texte-doux);margin-bottom:18px;line-height:1.6">Un lien de réinitialisation sera envoyé à l'adresse email de l'administrateur.</p>
+      <div class="auth-champ">
+        <input type="email" id="reset-req-email" class="auth-input" placeholder="Email administrateur"
+               autocomplete="email" inputmode="email" />
+      </div>
+      <p class="auth-err" id="reset-req-err" style="display:none"></p>
+      <p id="reset-req-ok" style="display:none;font-family:'Montserrat',sans-serif;font-size:11px;color:var(--ok);margin-bottom:14px;line-height:1.5">Email de réinitialisation envoyé. Vérifiez votre boîte et cliquez sur le lien.</p>
+      <button class="auth-btn" id="reset-req-btn" onclick="envoyerReset()">Envoyer le lien</button>
+      <button onclick="gateVue('form')" style="background:none;border:none;cursor:pointer;font-family:'Montserrat',sans-serif;font-size:11px;color:var(--texte-faible);margin-top:14px;letter-spacing:.5px;text-decoration:underline">Retour à la connexion</button>
+    </div>
+
+    <!-- Vue : définir un nouveau mot de passe (après clic sur le lien email) -->
+    <div id="gate-reset-pwd" style="display:none">
+      <p class="auth-msg">Nouveau mot de passe</p>
+      <p style="font-family:'Montserrat',sans-serif;font-size:11px;color:var(--texte-doux);margin-bottom:18px;line-height:1.6">Saisissez votre nouveau mot de passe Atelier (8 caractères minimum).</p>
+      <div class="auth-champ">
+        <input type="password" id="reset-pwd" class="auth-input" placeholder="Nouveau mot de passe"
+               autocomplete="new-password" />
+      </div>
+      <div class="auth-champ">
+        <input type="password" id="reset-pwd2" class="auth-input" placeholder="Confirmer le mot de passe"
+               autocomplete="new-password"
+               onkeydown="if(event.key==='Enter')validerNouveauMdp()" />
+      </div>
+      <p class="auth-err" id="reset-err" style="display:none"></p>
+      <button class="auth-btn" id="reset-btn" onclick="validerNouveauMdp()">Valider le mot de passe</button>
+    </div>
+
+    <!-- Vue : erreur réseau / technique -->
+    <div id="gate-error" style="display:none">
+      <p class="auth-msg" id="gate-error-msg">Erreur de connexion.</p>
+      <p class="auth-step-txt" id="gate-error-step"></p>
+      <button class="auth-btn" onclick="authRetry()" style="margin-top:18px">Réessayer</button>
+    </div>
+
+    <!-- Vue : accès refusé (utilisateur Auth valide mais absent de admins) -->
+    <div id="gate-denied" style="display:none">
+      <p class="auth-msg">Ce compte n'est pas autorisé à accéder à l'Atelier Nahira.</p>
+      <button class="auth-btn sec" onclick="authRefusDeconn()" style="margin-top:4px">Déconnexion</button>
+    </div>
+
+    <p style="font-size:9px;color:var(--texte-faible,rgba(255,247,250,.18));margin-top:22px;font-family:monospace;letter-spacing:.5px">BUILD 2026-10-01-V2</p>
   </div>
 </div>
 
@@ -388,6 +488,8 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
       <li class="cote-label">Phase 2</li>
       <button class="nav-item" data-nav="commandes" onclick="goTo('commandes')"><span class="nav-ico">◻</span>Commandes</button>
       <button class="nav-item" data-nav="reassort" onclick="goTo('reassort')"><span class="nav-ico">🔔</span>Réassort</button>
+      <button class="nav-item" data-nav="clients" onclick="goTo('clients')"><span class="nav-ico">◉</span>Clientes</button>
+      <button class="nav-item" data-nav="paniers" onclick="goTo('paniers')"><span class="nav-ico">⊡</span>Paniers</button>
       <button class="nav-item" data-nav="collections" onclick="goTo('collections')"><span class="nav-ico">▦</span>Collections</button>
       <button class="nav-item" data-nav="moods" onclick="goTo('moods')"><span class="nav-ico">✦</span>Moods</button>
       <button class="nav-item" data-nav="cms" onclick="goTo('cms')"><span class="nav-ico">▩</span>Site CMS</button>
@@ -489,6 +591,11 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
             <option value="oui">Visibles</option>
             <option value="non">Masqués</option>
           </select>
+          <select class="filtre-select" id="filtre-archive" onchange="prodFiltrer()">
+            <option value="">Actifs</option>
+            <option value="archived">Archivés</option>
+            <option value="all">Tous</option>
+          </select>
         </div>
         <div class="chargement" id="p-loading">Chargement…</div>
         <div id="p-liste" class="liste-produits" style="display:none"></div>
@@ -562,12 +669,6 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
             <option value="delivered">Livrée</option>
             <option value="cancelled">Annulée</option>
           </select>
-          <select class="filtre-input" id="cmd-paiement" onchange="renderCommandes()" style="min-width:130px">
-            <option value="">Tout paiement</option>
-            <option value="paid">Payée</option>
-            <option value="pending">En attente</option>
-            <option value="failed">Échouée</option>
-          </select>
         </div>
         <div class="chargement" id="cmd-loading">Chargement…</div>
         <div id="cmd-liste" class="cmd-liste" style="display:none"></div>
@@ -590,25 +691,15 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
             </div>
             <!-- Édition statut + suivi + notes -->
             <div style="margin-top:16px;border-top:1px solid var(--bordure);padding-top:14px">
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin-bottom:10px">
-                <div>
-                  <label class="prod-label">Statut préparation</label>
-                  <select class="prod-input" id="edit-statut">
-                    <option value="pending">En attente</option>
-                    <option value="confirmed">Confirmée</option>
-                    <option value="shipped">Expédiée</option>
-                    <option value="delivered">Livrée</option>
-                    <option value="cancelled">Annulée</option>
-                  </select>
-                </div>
-                <div>
-                  <label class="prod-label">Statut paiement</label>
-                  <select class="prod-input" id="edit-paiement">
-                    <option value="pending">En attente</option>
-                    <option value="paid">Payée</option>
-                    <option value="failed">Échouée</option>
-                  </select>
-                </div>
+              <div style="margin-bottom:10px">
+                <label class="prod-label">Statut</label>
+                <select class="prod-input" id="edit-statut">
+                  <option value="pending">En attente</option>
+                  <option value="confirmed">Confirmée</option>
+                  <option value="shipped">Expédiée</option>
+                  <option value="delivered">Livrée</option>
+                  <option value="cancelled">Annulée</option>
+                </select>
               </div>
               <div style="margin-bottom:10px">
                 <label class="prod-label">Numéro de suivi</label>
@@ -644,6 +735,103 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
         <div id="rs-liste" style="display:none"></div>
         <div id="rs-vide" class="etat-vide" style="display:none"><div class="ico">🔔</div><p>Aucune demande de réassort en attente.</p></div>
       </section>
+
+      <!-- CLIENTES -->
+      <section class="section" id="s-clients" style="display:none">
+        <div class="eyebrow">Administration</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap">
+          <h2 class="section-titre" style="margin-bottom:0">Clientes <em>inscrites</em></h2>
+          <button class="btn btn-sm btn-sec" onclick="chargerClients(true)">↻ Actualiser</button>
+        </div>
+        <div style="margin-bottom:14px">
+          <input type="search" class="filtre-input" id="cl-recherche" placeholder="Rechercher par nom ou email…"
+                 oninput="filtrerClients()" style="width:100%;max-width:380px">
+        </div>
+        <div class="chargement" id="cl-loading">Chargement…</div>
+        <div id="cl-liste" style="display:none"></div>
+        <div id="cl-vide" class="etat-vide" style="display:none">
+          <div class="ico">◉</div>
+          <p>Aucune cliente inscrite pour l'instant.</p>
+          <p style="font-size:12px;color:var(--texte-faible);margin-top:6px">Les comptes apparaîtront ici dès la première inscription.</p>
+        </div>
+        <div id="cl-vide-filtre" class="etat-vide" style="display:none">
+          <div class="ico">◉</div><p>Aucune cliente ne correspond à cette recherche.</p>
+        </div>
+      </section>
+
+      <!-- FICHE CLIENTE -->
+      <section class="section" id="s-clients-fiche" style="display:none">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-sec" onclick="goTo('clients')" style="flex-shrink:0">← Clientes</button>
+          <h2 class="section-titre" id="cl-fiche-titre" style="margin-bottom:0">Fiche cliente</h2>
+        </div>
+        <div class="chargement" id="cl-fiche-loading">Chargement…</div>
+        <div id="cl-fiche-corps" style="display:none">
+
+          <!-- KPI rapides -->
+          <div class="grille-kpi" id="cl-fiche-kpi" style="margin-bottom:20px"></div>
+
+          <!-- Profil -->
+          <div class="carte" style="margin-bottom:14px">
+            <div class="eyebrow" style="margin-bottom:8px">Profil</div>
+            <div id="cl-fiche-profil" class="meta" style="line-height:2"></div>
+          </div>
+
+          <!-- Commandes -->
+          <div class="carte" style="margin-bottom:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">
+              <div class="eyebrow" style="margin-bottom:0">Commandes</div>
+            </div>
+            <div id="cl-fiche-cmds"></div>
+            <div id="cl-fiche-cmds-vide" class="etat-vide" style="display:none;padding:14px 0">
+              <p style="font-size:13px">Aucune commande.</p>
+            </div>
+          </div>
+
+          <!-- Favoris -->
+          <div class="carte" style="margin-bottom:14px">
+            <div class="eyebrow" style="margin-bottom:10px">Favoris actuels</div>
+            <div id="cl-fiche-favs" style="display:flex;flex-wrap:wrap;gap:10px"></div>
+            <div id="cl-fiche-favs-vide" class="etat-vide" style="display:none;padding:14px 0">
+              <p style="font-size:13px">Aucun favori enregistré.</p>
+            </div>
+          </div>
+
+          <!-- Alertes réassort -->
+          <div class="carte" style="margin-bottom:14px">
+            <div class="eyebrow" style="margin-bottom:10px">Alertes réassort</div>
+            <div id="cl-fiche-alerts"></div>
+            <div id="cl-fiche-alerts-vide" class="etat-vide" style="display:none;padding:14px 0">
+              <p style="font-size:13px">Aucune alerte réassort.</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- PANIERS -->
+      <section class="section" id="s-paniers" style="display:none">
+        <div class="eyebrow">Analyse</div>
+        <h2 class="section-titre">Paniers</h2>
+
+        <!-- KPIs -->
+        <div class="grille-kpi" id="pan-kpi" style="margin-bottom:20px"></div>
+
+        <!-- Tabs -->
+        <div class="tabs" style="margin-bottom:16px">
+          <button class="tab actif" data-pan-tab="active"    onclick="switchPanTab('active')">Actifs</button>
+          <button class="tab"       data-pan-tab="abandoned" onclick="switchPanTab('abandoned')">Abandonnés</button>
+          <button class="tab"       data-pan-tab="converted" onclick="switchPanTab('converted')">Convertis</button>
+          <button class="tab"       data-pan-tab="cleared"   onclick="switchPanTab('cleared')">Vidés</button>
+        </div>
+
+        <div class="chargement" id="pan-loading">Chargement…</div>
+        <div id="pan-liste"></div>
+        <div id="pan-vide" class="etat-vide" style="display:none">
+          <div class="ico">⊡</div><p id="pan-vide-msg">Aucun panier.</p>
+        </div>
+      </section>
+
       <!-- COLLECTIONS -->
       <section class="section" id="s-collections" style="display:none">
         <div class="eyebrow">Administration</div>
@@ -687,12 +875,10 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
           <div class="carte">
             <h3 id="mood-form-titre" style="margin-bottom:14px;font-family:'Cormorant Garamond',serif;font-size:20px">Nouveau mood</h3>
             <div class="form-grille" style="margin-bottom:10px">
-              <div><label class="prod-label">Nom <span style="color:var(--rose)">*</span></label><input class="prod-input" id="mood-nom" type="text" placeholder="Ex: Minimaliste chic" oninput="autoSlugMood()"></div>
-              <div><label class="prod-label">Slug</label><input class="prod-input" id="mood-slug" type="text" placeholder="minimaliste-chic"></div>
+              <div><label class="prod-label">Nom <span style="color:var(--rose)">*</span></label><input class="prod-input" id="mood-nom" type="text" placeholder="Ex: Minimaliste chic"></div>
+              <div><label class="prod-label">Emoji</label><input class="prod-input" id="mood-emoji" type="text" placeholder="Ex: 🌸" maxlength="4"></div>
             </div>
-            <div style="margin-bottom:10px"><label class="prod-label">Description</label><textarea class="prod-input" id="mood-desc" rows="3" style="resize:vertical" placeholder="Ambiance, esthétique…"></textarea></div>
-            <div style="margin-bottom:10px"><label class="prod-label">URL image de couverture</label><input class="prod-input" id="mood-img" type="url" placeholder="https://…"></div>
-            <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px"><input type="checkbox" id="mood-visible" checked style="accent-color:var(--rose);width:16px;height:16px"><label for="mood-visible" style="font-size:14px;color:var(--texte-doux);cursor:pointer">Visible sur le site</label></div>
+            <div style="margin-bottom:14px"><label class="prod-label">Couleur</label><input class="prod-input" id="mood-color" type="text" placeholder="Ex: #F06FA7" style="max-width:200px"></div>
             <div style="display:flex;gap:8px">
               <button class="btn btn-rose" onclick="sauvegarderMood()">Enregistrer</button>
               <button class="btn btn-sec" onclick="fermerFormulaireMood()">Annuler</button>
@@ -877,15 +1063,23 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
 
       <!-- ═══ ACADEMY : CONTENU ════════════════════════════════════════════════ -->
       <section class="section" id="s-ac-contenu" style="display:none">
-        <div class="eyebrow">Academy</div>
-        <h2 class="section-titre">Contenu <em>de la formation</em></h2>
-        <div class="carte" style="max-width:480px">
-          <p style="font-family:'Montserrat',sans-serif;font-size:13px;color:var(--texte-doux);margin-bottom:14px">Sélectionnez une formation pour ouvrir l'éditeur visuel complet.</p>
-          <select class="filtre-select" id="ac-contenu-select" onchange="acContenuCharger(this.value)" style="width:100%">
-            <option value="">— Choisir une formation —</option>
-          </select>
-          <div id="ac-contenu-corps" style="margin-top:8px"></div>
+        <div id="ac-preview-bar">
+          <div class="ac-preview-select-wrap">
+            <select class="filtre-select" id="ac-contenu-select" onchange="acContenuCharger(this.value)" style="max-width:220px">
+              <option value="">— Formation —</option>
+            </select>
+            <div class="ac-preview-tabs">
+              <button class="ac-tab actif" data-tab="accueil" onclick="acPreviewTab('accueil')">Accueil</button>
+              <button class="ac-tab" data-tab="lecons" onclick="acPreviewTab('lecons')">Leçons</button>
+              <button class="ac-tab" data-tab="quiz" onclick="acPreviewTab('quiz')">Quiz</button>
+              <button class="ac-tab" data-tab="certificat" onclick="acPreviewTab('certificat')">Certificat</button>
+            </div>
+          </div>
+          <div class="ac-preview-badge">Aperçu élève</div>
         </div>
+        <iframe id="ac-contenu-iframe" src="about:blank"
+          allow="clipboard-write; picture-in-picture; fullscreen"
+          title="Aperçu élève — Nahira Academy"></iframe>
       </section>
 
       <!-- ═══ ACADEMY : QUIZ ═══════════════════════════════════════════════════ -->
@@ -1102,12 +1296,6 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
 
     </div><!-- /#main -->
 
-    <!-- Contenu — éditeur visuel plein écran (overlay) -->
-    <div id="ac-vis-editor">
-      <iframe id="ac-vis-iframe" src="about:blank"
-        allow="clipboard-write; picture-in-picture; fullscreen"
-        title="Éditeur visuel Nahira Academy"></iframe>
-    </div>
 
   </div><!-- /.app-main -->
 
@@ -1156,8 +1344,26 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="boutique.js"></script>
 <script>
+window.__ATELIER_BUILD__ = '2026-10-01-V2';
+console.log('[ATELIER] BUILD 2026-10-01-V2 — script principal chargé');
 /* ====== ÉTAT ====== */
 const S = { user: null, section: null, prodsData: [], stockData: [] };
+
+/* ====== DÉTECTION RECOVERY (dès le chargement du script, avant DOMContentLoaded) ======
+ * Supabase v2 avec PKCE : le client démarre l'échange code↔session de façon async
+ * dès la création (boutique.js). L'événement PASSWORD_RECOVERY peut donc se déclencher
+ * AVANT ou PENDANT init(). On enregistre ici le listener au plus tôt pour ne pas le rater.
+ * init() consultera _recoveryMode après l'await getSession().
+ */
+var _recoveryMode = false;
+if (typeof NAHIRA !== 'undefined' && NAHIRA.sb) {
+  NAHIRA.sb.auth.onAuthStateChange(function(event) {
+    console.log('[AUTH-GLOBAL] event:', event);
+    if (event === 'PASSWORD_RECOVERY') {
+      _recoveryMode = true;
+    }
+  });
+}
 
 /* ====== TOAST ====== */
 let _toastT;
@@ -1183,44 +1389,316 @@ function modalFermer() {
   document.getElementById('modal').classList.remove('actif');
 }
 
-/* ====== AUTH ====== */
-async function init() {
+/* ====== AUTH ADMIN ====== */
+
+function gateVue(v) {
+  ['checking','form','error','denied','reset-req','reset-pwd'].forEach(function(n) {
+    var el = document.getElementById('gate-' + n);
+    if (el) el.style.display = (n === v) ? '' : 'none';
+  });
+}
+
+function gateErreur(msg, detail) {
+  var el = document.getElementById('gate-error-msg');
+  var st = document.getElementById('gate-error-step');
+  if (el) el.textContent = msg;
+  if (st) st.textContent = detail || '';
+  gateVue('error');
+}
+
+function gateStep(txt) {
+  var el = document.getElementById('auth-step');
+  if (el) el.textContent = txt;
+  console.log('[AUTH]', txt);
+}
+
+function authRetry() {
+  gateVue('checking');
+  gateStep('Nouvelle tentative…');
+  init();
+}
+
+async function authRefusDeconn() {
+  await NAHIRA.sb.auth.signOut().catch(function(){});
+  gateVue('form');
+}
+
+async function ouvrirAtelier() {
   try {
-    var r = await NAHIRA.sb.auth.getUser();
-    var user = r.data && r.data.user;
-    if (!user) { gateShow('Connectez-vous pour accéder à l\'Atelier Nahira.', true); return; }
-    var ok = await NAHIRA.isAdmin();
-    if (!ok) { gateShow('Accès réservé aux administratrices Nahira.', true); return; }
+    gateStep('Vérification de la session…');
+    var tp = new Promise(function(_, r) { setTimeout(function() { r(new Error('timeout')); }, 12000); });
+    var resp = await Promise.race([NAHIRA.sb.auth.getUser(), tp]);
+    var user = resp.data && resp.data.user;
+
+    if (!user) {
+      gateVue('form');
+      return;
+    }
+
+    gateStep('Vérification des droits admin…');
+    var tap = new Promise(function(_, r) { setTimeout(function() { r(new Error('timeout-admin')); }, 8000); });
+    var ok = await Promise.race([NAHIRA.isAdmin(), tap]);
+
+    if (!ok) {
+      gateVue('denied');
+      return;
+    }
+
+    // Succès : ouvrir l'Atelier
     S.user = user;
     document.getElementById('auth-gate').style.display = 'none';
     document.getElementById('app').style.display = '';
     document.getElementById('cote-email').textContent = user.email || '';
     document.getElementById('header-avatar').textContent = (user.email || 'A')[0].toUpperCase();
     NAHIRA.sb.auth.onAuthStateChange(function(event) {
-      if (event === 'SIGNED_OUT') location.href = 'compte.html';
+      if (event === 'SIGNED_OUT') {
+        S.user = null;
+        document.getElementById('auth-gate').style.display = 'flex';
+        document.getElementById('app').style.display = 'none';
+        gateVue('form');
+      }
     });
     goTo('tableau');
+
   } catch(e) {
-    console.error(e);
-    gateShow('Erreur de connexion. Réessayez.', true);
+    console.error('[AUTH] exception:', e.message, e);
+    if (e.message === 'timeout') {
+      gateErreur('Supabase ne répond pas. Vérifiez votre connexion.', 'timeout getUser() >12s');
+    } else if (e.message === 'timeout-admin') {
+      gateErreur('Vérification des droits échouée. Réessayez.', 'timeout isAdmin() >8s');
+    } else {
+      gateErreur('Erreur : ' + (e.message || 'inconnue'), 'Réessayez ou rechargez la page.');
+    }
   }
 }
 
-function gateShow(msg, btn) {
-  document.getElementById('auth-msg').textContent = msg;
-  document.getElementById('auth-btn').style.display = btn ? '' : 'none';
+async function adminLogin() {
+  var email = (document.getElementById('login-email').value || '').trim();
+  var pwd = document.getElementById('login-pwd').value || '';
+  var errEl = document.getElementById('login-err');
+  var btn = document.getElementById('login-btn');
+
+  errEl.style.display = 'none';
+  if (!email || !pwd) {
+    errEl.textContent = 'Remplissez votre email et votre mot de passe.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.textContent = 'Connexion…';
+  btn.disabled = true;
+
+  try {
+    var r = await NAHIRA.sb.auth.signInWithPassword({ email: email, password: pwd });
+    if (r.error) {
+      errEl.textContent = 'Email ou mot de passe incorrect.';
+      errEl.style.display = 'block';
+      btn.textContent = 'Se connecter';
+      btn.disabled = false;
+      return;
+    }
+    gateVue('checking');
+    gateStep('Connexion réussie, vérification des droits…');
+    await ouvrirAtelier();
+  } catch(e) {
+    errEl.textContent = 'Erreur : ' + (e.message || 'inconnue');
+    errEl.style.display = 'block';
+    btn.textContent = 'Se connecter';
+    btn.disabled = false;
+  }
+}
+
+function motDePasseOublie() {
+  var emailSaisi = (document.getElementById('login-email').value || '').trim();
+  var resetEmail = document.getElementById('reset-req-email');
+  if (resetEmail && emailSaisi) resetEmail.value = emailSaisi;
+  document.getElementById('reset-req-err').style.display = 'none';
+  document.getElementById('reset-req-ok').style.display = 'none';
+  var btn = document.getElementById('reset-req-btn');
+  if (btn) { btn.style.display = 'block'; btn.disabled = false; btn.textContent = 'Envoyer le lien'; }
+  gateVue('reset-req');
+}
+
+async function envoyerReset() {
+  var email = (document.getElementById('reset-req-email').value || '').trim();
+  var errEl = document.getElementById('reset-req-err');
+  var okEl = document.getElementById('reset-req-ok');
+  var btn = document.getElementById('reset-req-btn');
+
+  errEl.style.display = 'none';
+  okEl.style.display = 'none';
+
+  if (!email) {
+    errEl.textContent = 'Saisissez votre email administrateur.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.textContent = 'Envoi…';
+  btn.disabled = true;
+
+  try {
+    var r = await NAHIRA.sb.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://nahirabeautynails.fr/dashboard.html'
+    });
+    if (r.error) {
+      errEl.textContent = 'Erreur : ' + r.error.message;
+      errEl.style.display = 'block';
+      btn.textContent = 'Envoyer le lien';
+      btn.disabled = false;
+      return;
+    }
+    okEl.style.display = 'block';
+    btn.style.display = 'none';
+  } catch(e) {
+    errEl.textContent = 'Erreur : ' + (e.message || 'inconnue');
+    errEl.style.display = 'block';
+    btn.textContent = 'Envoyer le lien';
+    btn.disabled = false;
+  }
+}
+
+async function validerNouveauMdp() {
+  var pwd = document.getElementById('reset-pwd').value || '';
+  var pwd2 = document.getElementById('reset-pwd2').value || '';
+  var errEl = document.getElementById('reset-err');
+  var btn = document.getElementById('reset-btn');
+
+  errEl.style.display = 'none';
+
+  if (pwd.length < 8) {
+    errEl.textContent = 'Le mot de passe doit contenir au moins 8 caractères.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (pwd !== pwd2) {
+    errEl.textContent = 'Les mots de passe ne correspondent pas.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.textContent = 'Enregistrement…';
+  btn.disabled = true;
+
+  try {
+    var r = await NAHIRA.sb.auth.updateUser({ password: pwd });
+    if (r.error) {
+      errEl.textContent = 'Erreur : ' + r.error.message;
+      errEl.style.display = 'block';
+      btn.textContent = 'Valider le mot de passe';
+      btn.disabled = false;
+      return;
+    }
+    gateVue('checking');
+    gateStep('Mot de passe modifié — vérification des droits admin…');
+    await ouvrirAtelier();
+  } catch(e) {
+    errEl.textContent = 'Erreur : ' + (e.message || 'inconnue');
+    errEl.style.display = 'block';
+    btn.textContent = 'Valider le mot de passe';
+    btn.disabled = false;
+  }
+}
+
+async function init() {
+  gateVue('checking');
+  gateStep('Initialisation…');
+
+  if (typeof window.supabase === 'undefined') {
+    gateErreur('Supabase non chargé (CDN indisponible). Vérifiez votre connexion.', 'window.supabase undefined');
+    return;
+  }
+  if (typeof NAHIRA === 'undefined' || !NAHIRA.sb) {
+    gateErreur('Erreur initialisation (boutique.js). Rechargez la page.', 'NAHIRA.sb undefined');
+    return;
+  }
+
+  // Détecter un lien email Supabase :
+  //   - Flow PKCE (Supabase v2 par défaut)  : ?code= dans la query string
+  //   - Flow implicite legacy               : #type=recovery dans le hash
+  var fromEmailLink = new URLSearchParams(window.location.search).has('code') ||
+                      new URLSearchParams(window.location.hash.replace(/^#/, '')).get('type') === 'recovery';
+
+  if (fromEmailLink) {
+    gateStep('Traitement du lien email…');
+    try {
+      // getSession() déclenche l'échange PKCE si pas encore fait
+      // L'événement PASSWORD_RECOVERY est capturé par le listener global (_recoveryMode)
+      await NAHIRA.sb.auth.getSession();
+      // flush : laisser les callbacks onAuthStateChange (setTimeout 0 interne) s'exécuter
+      await new Promise(function(r) { setTimeout(r, 80); });
+
+      // Nettoyer l'URL (supprimer ?code= et le hash)
+      history.replaceState(null, '', window.location.pathname);
+
+      if (_recoveryMode) {
+        // Afficher obligatoirement le formulaire de nouveau mot de passe
+        document.getElementById('reset-pwd').value = '';
+        document.getElementById('reset-pwd2').value = '';
+        document.getElementById('reset-err').style.display = 'none';
+        var resetBtn = document.getElementById('reset-btn');
+        if (resetBtn) { resetBtn.textContent = 'Valider le mot de passe'; resetBtn.disabled = false; }
+        gateVue('reset-pwd');
+        return; // L'Atelier ne s'ouvre PAS — mot de passe à définir d'abord
+      }
+
+      // Autre événement (SIGNED_IN depuis un magic link ou confirmation email) → Atelier
+      await ouvrirAtelier();
+    } catch(e) {
+      gateErreur('Erreur traitement du lien : ' + (e.message || 'inconnue'), 'Lien invalide ou expiré ?');
+    }
+    return;
+  }
+
+  // Parcours normal — vérification de la session existante (localStorage)
+  gateStep('Vérification de la session locale…');
+  var sessResp = await NAHIRA.sb.auth.getSession().catch(function(e) { return { error: e }; });
+  if (sessResp.error) {
+    gateErreur('Erreur lecture session : ' + sessResp.error.message, 'getSession() exception');
+    return;
+  }
+  var session = sessResp.data && sessResp.data.session;
+
+  if (!session) {
+    gateVue('form');
+    return;
+  }
+
+  gateStep('Session trouvée, vérification des droits…');
+  await ouvrirAtelier();
 }
 
 async function seDeconnecter() {
   if (!confirm('Se déconnecter de l\'Atelier ?')) return;
-  await NAHIRA.sb.auth.signOut();
-  location.href = 'compte.html';
+
+  // scope:'global' révoque aussi le refresh token côté serveur
+  var signOutErr = null;
+  try {
+    var r = await NAHIRA.sb.auth.signOut({ scope: 'global' });
+    if (r.error) signOutErr = r.error.message;
+  } catch(e) {
+    signOutErr = e.message;
+  }
+  if (signOutErr) console.warn('[AUTH] signOut error:', signOutErr);
+
+  // Nettoyage de sécurité : supprimer la clé de session Supabase du localStorage
+  // même si signOut() a échoué (ex: perte réseau)
+  try {
+    localStorage.removeItem('sb-mxbmjtzrggahbwahxmkp-auth-token');
+    localStorage.removeItem('sb-mxbmjtzrggahbwahxmkp-auth-token-code-verifier');
+  } catch(e) {}
+
+  _recoveryMode = false;
+  S.user = null;
+  document.getElementById('auth-gate').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  gateVue('form');
 }
 
 /* ====== NAVIGATION ====== */
 var sectionLabels = {
   tableau:'Tableau de bord', produits:'Produits', images:'Images', stock:'Stock',
-  commandes:'Commandes', reassort:'Réassort', collections:'Collections',
+  commandes:'Commandes', reassort:'Réassort', clients:'Clientes', 'clients-fiche':'Fiche cliente', paniers:'Paniers', collections:'Collections',
   moods:'Moods', cms:'Site CMS', promotions:'Promotions',
   avis:'Avis', import:'Import CSV', parametres:'Paramètres',
   'ac-formations':'Academy — Formations', 'ac-contenu':'Academy — Contenu',
@@ -1254,6 +1732,8 @@ function goTo(id) {
   else if (id === 'stock') chargerStock();
   else if (id === 'commandes') chargerCommandes();
   else if (id === 'reassort') chargerReassort();
+  else if (id === 'clients') chargerClients();
+  else if (id === 'paniers') chargerPaniers();
   else if (id === 'collections') chargerCollections();
   else if (id === 'moods') chargerMoods();
   else if (id === 'cms') chargerCMS();
@@ -1304,9 +1784,15 @@ function badgeStock(stock, seuil) {
   return '<span class="badge badge-dispo">' + stock + ' en stock</span>';
 }
 
+// Commande comptabilisée dans le CA — règle commune à tous les KPI de l'Atelier.
+// pending / cancelled / refunded sont exclus ; toute autre valeur confirmée compte.
+var STATUTS_VENTE = ['paid','confirmed','preparing','shipped','delivered'];
+function isVente(o) { return STATUTS_VENTE.indexOf(o.status) !== -1; }
+
 function badgeStatut(st) {
-  var m = {pending:['En attente','st-pending'],confirmed:['Confirmée','st-confirmed'],
-    shipped:['Expédiée','st-shipped'],delivered:['Livrée','st-delivered'],cancelled:['Annulée','st-cancelled']};
+  var m = {pending:['En attente','st-pending'],paid:['Payée','st-confirmed'],confirmed:['Confirmée','st-confirmed'],
+    preparing:['En préparation','st-confirmed'],shipped:['Expédiée','st-shipped'],
+    delivered:['Livrée','st-delivered'],cancelled:['Annulée','st-cancelled'],refunded:['Remboursée','st-cancelled']};
   var x = m[st] || [st,'st-pending'];
   return '<span class="statut ' + x[1] + '">' + x[0] + '</span>';
 }
@@ -1335,7 +1821,7 @@ async function chargerTableau() {
 
     var now = new Date();
     var debut = new Date(now.getFullYear(), now.getMonth(), 1);
-    var ceMois = orders.filter(function(o){ return o.status !== 'cancelled' && new Date(o.created_at) >= debut; });
+    var ceMois = orders.filter(function(o){ return isVente(o) && new Date(o.created_at) >= debut; });
     var ca = ceMois.reduce(function(s,o){ return s + (o.total_cents||0); }, 0);
     var nb = ceMois.length;
     var panier = nb ? Math.round(ca/nb) : 0;
@@ -1378,7 +1864,7 @@ function renderChart(orders) {
   var data = days.map(function(d) {
     var s=new Date(d); s.setHours(0,0,0,0);
     var f=new Date(d); f.setHours(23,59,59,999);
-    var ca = orders.filter(function(o){ return o.status!=='cancelled'&&new Date(o.created_at)>=s&&new Date(o.created_at)<=f; })
+    var ca = orders.filter(function(o){ return isVente(o)&&new Date(o.created_at)>=s&&new Date(o.created_at)<=f; })
       .reduce(function(sum,o){ return sum+(o.total_cents||0); },0);
     return { label: d.toLocaleDateString('fr-FR',{weekday:'short'}), ca: ca };
   });
@@ -1401,16 +1887,22 @@ function renderChart(orders) {
 }
 
 /* ====== PRODUITS ====== */
-var prodFiltre = { search:'', shape:'', finish:'', visible:'' };
+var prodFiltre = { search:'', shape:'', finish:'', visible:'', archive:'' };
 
 async function chargerProduits() {
   document.getElementById('p-loading').style.display = '';
   document.getElementById('p-liste').style.display = 'none';
   S.prodsData = [];
   try {
-    var r = await NAHIRA.sb.from('products').select(
-      'id,name,slug,sku,price_cents,compare_at_cents,stock,low_stock_threshold,shape,finish,length_mm,nail_count,description_short,description,is_visible,is_new,is_bestseller,is_lazy_pick,is_featured,image_url,sort_order,product_images(id,url,position,alt_text)'
-    ).order('sort_order',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false});
+    var baseQ = NAHIRA.sb.from('products').select(
+      'id,name,slug,sku,tagline,price_cents,compare_at_cents,stock,low_stock_threshold,shape,finish,length_mm,nail_count,description_short,description,is_visible,is_new,is_bestseller,is_lazy_pick,is_featured,image_url,sort_order,deleted_at,product_images(id,url,position,alt_text)'
+    );
+    var filtQ = prodFiltre.archive === 'archived'
+      ? baseQ.not('deleted_at','is',null)
+      : prodFiltre.archive === 'all'
+        ? baseQ
+        : baseQ.is('deleted_at',null);
+    var r = await filtQ.order('sort_order',{ascending:true,nullsFirst:false}).order('created_at',{ascending:false});
     if (r.error) throw r.error;
     S.prodsData = (r.data||[]).map(function(p) {
       var imgs = (p.product_images||[]).slice().sort(function(a,b){ return a.position-b.position; });
@@ -1428,11 +1920,17 @@ async function chargerProduits() {
 function rafraichirProduits() { chargerProduits(); }
 
 function prodFiltrer() {
+  var oldArchive = prodFiltre.archive;
   prodFiltre.search = document.getElementById('filtre-search').value.toLowerCase();
   prodFiltre.shape = document.getElementById('filtre-shape').value;
   prodFiltre.finish = document.getElementById('filtre-finish').value;
   prodFiltre.visible = document.getElementById('filtre-visible').value;
-  renderProduits();
+  prodFiltre.archive = document.getElementById('filtre-archive').value;
+  if (prodFiltre.archive !== oldArchive) {
+    chargerProduits(); // re-fetch depuis le serveur avec le bon filtre deleted_at
+  } else {
+    renderProduits();
+  }
 }
 
 function renderProduits() {
@@ -1463,41 +1961,104 @@ function prodLigne(p) {
   var visH = p.is_visible
     ? '<span class="badge badge-dispo">Visible</span>'
     : '<span class="badge badge-masque">Masqué</span>';
+  var archBadge = p.deleted_at
+    ? '<span class="badge" style="background:#7a4a4a;color:#ffd;font-size:9px;letter-spacing:.8px">ARCHIVÉ</span>'
+    : '';
   var id = esc(p.id);
-  return '<div class="prod-ligne'+(p.is_visible?'':' masque')+'" id="prod-'+id+'">' +
+  var actions = p.deleted_at
+    ? '<button class="btn btn-sm btn-sec" style="font-size:11px;padding:3px 10px" onclick="restaurerProduit(\''+id+'\')">↩ Restaurer</button>'
+    : '<button class="btn btn-sm btn-sec btn-ico" title="Modifier" onclick="prodModifier(\''+id+'\')">✏️</button>' +
+      '<button class="btn btn-sm btn-sec btn-ico" title="Images" onclick="goImages(\''+id+'\')">🖼️</button>' +
+      '<button class="btn btn-sm btn-sec btn-ico" title="Dupliquer" onclick="prodDupliquer(\''+id+'\')">⧉</button>' +
+      '<button class="btn btn-sm btn-danger btn-ico" title="Supprimer" onclick="prodSupprimer(\''+id+'\')">🗑️</button>';
+  return '<div class="prod-ligne'+(p.is_visible?'':' masque')+(p.deleted_at?' archive':'')+'" id="prod-'+id+'">' +
+    '<div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;cursor:pointer" onclick="prodModifier(\''+id+'\')" role="button" tabindex="0">' +
     img +
     '<div class="prod-info">' +
       '<div class="prod-nom">'+esc(p.name)+'</div>' +
       '<div class="prod-sku">'+(p.sku||'—')+'</div>' +
       '<div class="prod-prix">'+prix+'</div>' +
     '</div>' +
+    '</div>' +
     '<div class="prod-droite">' +
-      '<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">'+stockH+' '+visH+'</div>' +
-      '<div class="prod-actions">' +
-        '<button class="btn btn-sm btn-sec btn-ico" title="Modifier" onclick="prodModifier(\''+id+'\')">✏️</button>' +
-        '<button class="btn btn-sm btn-sec btn-ico" title="Images" onclick="goImages(\''+id+'\')">🖼️</button>' +
-        '<button class="btn btn-sm btn-sec btn-ico" title="Dupliquer" onclick="prodDupliquer(\''+id+'\')">⧉</button>' +
-        '<button class="btn btn-sm btn-danger btn-ico" title="Supprimer" onclick="prodSupprimer(\''+id+'\')">🗑️</button>' +
-      '</div>' +
-    '</div></div>';
+      '<div class="prod-droite-badges" style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end">'+archBadge+' '+stockH+' '+visH+'</div>' +
+      '<div class="prod-actions">'+actions+'</div>' +
+      '<button class="prod-menu-btn" data-id="'+id+'" data-nom="'+esc(p.name)+'" data-archive="'+(p.deleted_at?'true':'false')+'" onclick="event.stopPropagation();bsheetOuvrir(this)" aria-label="Actions">⋯</button>' +
+    '</div>' +
+    '</div>';
 }
 
-function prodFormHTML(p) {
+function bsheetOuvrir(btn) {
+  var id = btn.dataset.id;
+  var nom = btn.dataset.nom;
+  var estArchive = btn.dataset.archive === 'true';
+  document.getElementById('bsheet-titre').textContent = nom;
+  var corps = document.getElementById('bsheet-corps');
+  if (estArchive) {
+    corps.innerHTML =
+      '<button class="bsheet-btn" onclick="bsheetFermer();setTimeout(function(){restaurerProduit(\''+id+'\')},120)">' +
+      '<span class="bsheet-ico">↩</span>Restaurer</button>';
+  } else {
+    corps.innerHTML =
+      '<button class="bsheet-btn" onclick="bsheetFermer();setTimeout(function(){prodModifier(\''+id+'\')},120)">' +
+      '<span class="bsheet-ico">✏️</span>Modifier</button>' +
+      '<button class="bsheet-btn" onclick="bsheetFermer();setTimeout(function(){goImages(\''+id+'\')},120)">' +
+      '<span class="bsheet-ico">🖼️</span>Gérer les images</button>' +
+      '<button class="bsheet-btn" onclick="bsheetFermer();setTimeout(function(){prodDupliquer(\''+id+'\')},120)">' +
+      '<span class="bsheet-ico">⧉</span>Dupliquer</button>' +
+      '<button class="bsheet-btn danger" onclick="bsheetFermer();setTimeout(function(){prodSupprimer(\''+id+'\')},120)">' +
+      '<span class="bsheet-ico">🗑️</span>Supprimer / Archiver</button>';
+  }
+  document.getElementById('bsheet-voile').classList.add('actif');
+  document.getElementById('bsheet').classList.add('actif');
+}
+function bsheetFermer() {
+  document.getElementById('bsheet-voile').classList.remove('actif');
+  document.getElementById('bsheet').classList.remove('actif');
+}
+
+function prodFormHTML(p, collections, currentColIds) {
   function v(k,d){ return p ? (p[k]!=null?p[k]:d) : d; }
   function chk(k){ return (p&&p[k])?'checked':''; }
   var shapes = ['carré','amande','coffin','stiletto','rond'];
   var finishes = ['brillant','mat','velours','holographique','miroir','nacré'];
+  var colSet = new Set(currentColIds||[]);
+
+  var colHtml = '';
+  if (collections && collections.length) {
+    colHtml = '<div class="form-sep"></div><div class="form-legend">Collection</div>' +
+      '<div class="flags form-plein">' +
+      (collections||[]).map(function(c) {
+        return '<label class="flag"><input type="checkbox" class="fp-col-chk" value="'+esc(c.id)+'"'+(colSet.has(c.id)?' checked':'')+'>'+esc(c.name)+'</label>';
+      }).join('') + '</div>';
+  }
+
+  var photoHtml = '';
+  if (p && p.id) {
+    var nbPhotos = (p.product_images||[]).length;
+    photoHtml = '<div class="champ form-plein" style="display:flex;align-items:center;gap:10px">' +
+      '<label style="flex:none;margin-bottom:0">Photos</label>' +
+      '<button type="button" class="btn btn-sec btn-sm" onclick="modalFermer();setTimeout(function(){goImages(\''+esc(p.id)+'\')},120)">📷 Gérer les photos'+(nbPhotos?' ('+nbPhotos+')':'')+'</button>' +
+      '</div>';
+  } else {
+    photoHtml = '<div class="champ form-plein" style="font-family:Montserrat,sans-serif;font-size:11px;color:var(--texte-doux)">' +
+      '📷 Les photos s\'ajoutent après la création du produit (bouton 🖼️ dans la liste).</div>';
+  }
+
   return '<div class="form-grille">' +
     '<div class="champ form-plein"><label>Nom du produit *</label><input id="fp-name" type="text" value="'+esc(v('name',''))+'"></div>' +
+    '<div class="champ form-plein"><label>Tagline <span style="font-weight:400;font-size:11px">(phrase affichée sur la page produit)</span></label>' +
+      '<input id="fp-tagline" type="text" placeholder="ex : La manucure parfaite en 10 minutes…" value="'+esc(v('tagline',''))+'"></div>' +
     '<div class="champ form-plein"><label>Slug (URL) *</label><input id="fp-slug" type="text" value="'+esc(v('slug',''))+'"></div>' +
-    '<div class="champ"><label>SKU / Référence</label><input id="fp-sku" type="text" value="'+esc(v('sku',''))+'"></div>' +
+    '<div class="champ"><label>SKU / Référence fournisseur</label><input id="fp-sku" type="text" value="'+esc(v('sku',''))+'"></div>' +
     '<div class="champ"><label>Ordre affichage</label><input id="fp-sort" type="number" min="0" value="'+esc(v('sort_order',''))+'"></div>' +
     '<div class="form-sep"></div><div class="form-legend">Tarification</div>' +
-    '<div class="champ"><label>Prix (€) *</label><input id="fp-prix" type="number" step="0.01" min="0" value="'+(p&&p.price_cents?(p.price_cents/100).toFixed(2):'')+'"></div>' +
-    '<div class="champ"><label>Prix barré (€)</label><input id="fp-compare" type="number" step="0.01" min="0" value="'+(p&&p.compare_at_cents?(p.compare_at_cents/100).toFixed(2):'')+'"></div>' +
+    '<div class="champ"><label>Prix de vente (€) *</label><input id="fp-prix" type="number" step="0.01" min="0" value="'+(p&&p.price_cents?(p.price_cents/100).toFixed(2):'')+'"></div>' +
+    '<div class="champ"><label>Prix barré / comparaison (€) <span style="font-weight:400;font-size:11px">0 = aucun</span></label>' +
+      '<input id="fp-compare" type="number" step="0.01" min="0" placeholder="0" value="'+(p&&p.compare_at_cents?(p.compare_at_cents/100).toFixed(2):'')+'"></div>' +
     '<div class="form-sep"></div><div class="form-legend">Stock</div>' +
     '<div class="champ"><label>Stock actuel *</label><input id="fp-stock" type="number" min="0" value="'+v('stock',0)+'"></div>' +
-    '<div class="champ"><label>Seuil alerte</label><input id="fp-seuil" type="number" min="0" value="'+v('low_stock_threshold',3)+'"></div>' +
+    '<div class="champ"><label>Seuil alerte stock</label><input id="fp-seuil" type="number" min="0" value="'+v('low_stock_threshold',3)+'"></div>' +
     '<div class="form-sep"></div><div class="form-legend">Caractéristiques</div>' +
     '<div class="champ"><label>Forme</label><select id="fp-shape"><option value="">— Sélectionner —</option>'+
       shapes.map(function(s){ return '<option'+(v('shape','')==s?' selected':'')+'>'+s+'</option>'; }).join('') +
@@ -1505,13 +2066,15 @@ function prodFormHTML(p) {
     '<div class="champ"><label>Finition</label><select id="fp-finish"><option value="">— Sélectionner —</option>'+
       finishes.map(function(s){ return '<option'+(v('finish','')==s?' selected':'')+'>'+s+'</option>'; }).join('') +
     '</select></div>' +
-    '<div class="champ"><label>Longueur (mm)</label><input id="fp-length" type="number" min="0" value="'+esc(v('length_mm',''))+'"></div>' +
+    '<div class="champ"><label>Longueur (mm)</label><input id="fp-length" type="text" placeholder="ex : 26" value="'+esc(v('length_mm',''))+'"></div>' +
     '<div class="champ"><label>Nombre de capsules</label><input id="fp-nails" type="number" min="1" placeholder="24" value="'+esc(v('nail_count',24))+'"></div>' +
     '<div class="form-sep"></div><div class="form-legend">Descriptions</div>' +
-    '<div class="champ form-plein"><label>Description courte</label><textarea id="fp-desc-s" rows="2">'+esc(v('description_short',''))+'</textarea></div>' +
+    '<div class="champ form-plein"><label>Description courte <span style="font-weight:400;font-size:11px">(sous le titre sur la page produit)</span></label>' +
+      '<textarea id="fp-desc-s" rows="2">'+esc(v('description_short',''))+'</textarea></div>' +
     '<div class="champ form-plein"><label>Description complète</label><textarea id="fp-desc" rows="4">'+esc(v('description',''))+'</textarea></div>' +
-    '<div class="champ form-plein"><label>Image URL (legacy)</label><input id="fp-img" type="url" value="'+esc(v('image_url',''))+'"></div>' +
-    '<div class="form-sep"></div><div class="form-legend">Visibilité & flags</div>' +
+    colHtml +
+    '<div class="form-sep"></div>' + photoHtml +
+    '<div class="form-sep"></div><div class="form-legend">Visibilité & badges</div>' +
     '<div class="flags form-plein">' +
       '<label class="flag"><input type="checkbox" id="fp-vis" '+chk('is_visible')+'> Visible</label>' +
       '<label class="flag"><input type="checkbox" id="fp-new" '+chk('is_new')+'> Nouveau</label>' +
@@ -1523,10 +2086,18 @@ function prodFormHTML(p) {
     '</div>';
 }
 
-function prodNouveauModal() {
-  modalOuvrir('Nouveau produit', prodFormHTML(null),
+async function _loadCollections() {
+  if (S.collectionsList) return S.collectionsList;
+  var r = await NAHIRA.sb.from('collections').select('id,name').eq('is_active',true).order('sort_order');
+  S.collectionsList = r.data || [];
+  return S.collectionsList;
+}
+
+async function prodNouveauModal() {
+  var cols = await _loadCollections();
+  modalOuvrir('Nouveau produit', prodFormHTML(null, cols, []),
     '<button class="btn btn-sec" onclick="modalFermer()">Annuler</button>' +
-    '<button class="btn btn-primaire" onclick="prodEnregistrer()">Créer le produit</button>');
+    '<button class="btn btn-primaire" id="btn-sauv-prod" onclick="prodEnregistrer()">Créer le produit</button>');
   document.getElementById('fp-name').addEventListener('input', function() {
     var sl = document.getElementById('fp-slug');
     if (!sl._edited) sl.value = slugify(this.value);
@@ -1534,12 +2105,15 @@ function prodNouveauModal() {
   document.getElementById('fp-slug').addEventListener('input', function(){ this._edited = true; });
 }
 
-function prodModifier(id) {
+async function prodModifier(id) {
   var p = S.prodsData.find(function(x){ return x.id===id; });
   if (!p) return;
-  modalOuvrir('Modifier — '+p.name, prodFormHTML(p),
+  var cols = await _loadCollections();
+  var rPC = await NAHIRA.sb.from('product_collections').select('collection_id').eq('product_id', id);
+  var curColIds = (rPC.data||[]).map(function(x){ return x.collection_id; });
+  modalOuvrir('Modifier — '+p.name, prodFormHTML(p, cols, curColIds),
     '<button class="btn btn-sec" onclick="modalFermer()">Annuler</button>' +
-    '<button class="btn btn-primaire" onclick="prodEnregistrer()">Enregistrer</button>');
+    '<button class="btn btn-primaire" id="btn-sauv-prod" onclick="prodEnregistrer()">Enregistrer</button>');
   document.getElementById('fp-slug')._edited = true;
 }
 
@@ -1549,39 +2123,74 @@ async function prodEnregistrer() {
   var slug = document.getElementById('fp-slug').value.trim();
   var prixV = parseFloat(document.getElementById('fp-prix').value)||0;
   if (!name||!slug||prixV<=0) { toast('Nom, slug et prix sont obligatoires.','err'); return; }
+
+  // État de chargement — empêche le double-clic
+  var btn = document.getElementById('btn-sauv-prod');
+  var origLabel = btn ? btn.textContent : '';
+  if (btn) { btn.disabled = true; btn.textContent = 'Enregistrement…'; }
+
+  var compareV = parseFloat(document.getElementById('fp-compare').value)||0;
+  var sortRaw = document.getElementById('fp-sort').value.trim();
+  var stockRaw = document.getElementById('fp-stock').value.trim();
+  var seuilRaw = document.getElementById('fp-seuil').value.trim();
+  var existingProd = id ? (S.prodsData||[]).find(function(p){ return p.id === id; }) : null;
   var payload = {
-    name:name, slug:slug,
+    name: name,
+    slug: slug,
+    tagline: document.getElementById('fp-tagline').value.trim()||null,
     sku: document.getElementById('fp-sku').value.trim()||null,
     price_cents: Math.round(prixV*100),
-    compare_at_cents: (parseFloat(document.getElementById('fp-compare').value)||0)>0 ? Math.round(parseFloat(document.getElementById('fp-compare').value)*100) : null,
-    stock: parseInt(document.getElementById('fp-stock').value)||0,
-    low_stock_threshold: parseInt(document.getElementById('fp-seuil').value)||3,
+    compare_at_cents: compareV>0 ? Math.round(compareV*100) : null,
+    stock: stockRaw !== '' ? parseInt(stockRaw) : (existingProd ? (existingProd.stock||0) : 0),
+    low_stock_threshold: seuilRaw !== '' ? parseInt(seuilRaw) : (existingProd ? (existingProd.low_stock_threshold||3) : 3),
     shape: document.getElementById('fp-shape').value||null,
     finish: document.getElementById('fp-finish').value||null,
-    length_mm: parseInt(document.getElementById('fp-length').value)||null,
+    length_mm: document.getElementById('fp-length').value.trim()||null,
     nail_count: parseInt(document.getElementById('fp-nails').value)||24,
     description_short: document.getElementById('fp-desc-s').value.trim()||null,
     description: document.getElementById('fp-desc').value.trim()||null,
-    image_url: document.getElementById('fp-img').value.trim()||null,
-    sort_order: parseInt(document.getElementById('fp-sort').value)||null,
+    sort_order: sortRaw !== '' ? parseInt(sortRaw) : (existingProd ? (existingProd.sort_order !== null ? existingProd.sort_order : 0) : 0),
     is_visible: document.getElementById('fp-vis').checked,
     is_new: document.getElementById('fp-new').checked,
     is_bestseller: document.getElementById('fp-best').checked,
     is_lazy_pick: document.getElementById('fp-lazy').checked,
     is_featured: document.getElementById('fp-feat').checked,
   };
+  var selectedCols = Array.from(document.querySelectorAll('.fp-col-chk:checked')).map(function(el){ return el.value; });
   try {
     var r = id
       ? await NAHIRA.sb.from('products').update(payload).eq('id',id)
-      : await NAHIRA.sb.from('products').insert(payload);
+      : await NAHIRA.sb.from('products').insert(payload).select('id').single();
     if (r.error) throw r.error;
+    var savedId = id || r.data.id;
+    // Sync collections: delete existing then insert selected
+    var rDel = await NAHIRA.sb.from('product_collections').delete().eq('product_id', savedId);
+    if (rDel.error) console.warn('collections delete:', rDel.error.message);
+    if (selectedCols.length) {
+      var rows = selectedCols.map(function(cid){ return {product_id: savedId, collection_id: cid}; });
+      var rIns = await NAHIRA.sb.from('product_collections').insert(rows);
+      if (rIns.error) console.warn('collections insert:', rIns.error.message);
+    }
     modalFermer();
-    toast(id ? 'Produit enregistré.' : 'Produit créé !', 'ok');
+    toast(id ? 'Produit enregistré ✓' : 'Produit créé ✓', 'ok');
     chargerProduits();
     tableauCharge = false;
   } catch(e) {
-    console.error(e);
-    toast('Erreur : '+(e.message||''),'err');
+    console.error('[prodEnregistrer]', e);
+    // Réactiver le bouton + afficher l'erreur dans le modal (ne jamais afficher "enregistré" si erreur)
+    if (btn) { btn.disabled = false; btn.textContent = origLabel; }
+    var msg = e.message || 'Erreur inconnue';
+    // Afficher l'erreur en rouge dans le modal ET en toast
+    var errEl = document.getElementById('fp-erreur');
+    if (!errEl) {
+      errEl = document.createElement('div');
+      errEl.id = 'fp-erreur';
+      errEl.style.cssText = 'color:#E0315A;font-family:Montserrat,sans-serif;font-size:11px;padding:8px 12px;background:rgba(224,49,90,.1);border-radius:6px;margin-top:8px;border:1px solid rgba(224,49,90,.3)';
+      var modal = document.querySelector('#modal .modal-corps');
+      if (modal) modal.appendChild(errEl);
+    }
+    errEl.textContent = '⚠ Erreur : ' + msg;
+    toast('Erreur : ' + msg, 'err');
   }
 }
 
@@ -1590,13 +2199,13 @@ async function prodDupliquer(id) {
   if (!p) return;
   var payload = {
     name:p.name+' (Copie)', slug:p.slug+'-'+Date.now().toString(36),
-    sku:p.sku?p.sku+'-C':null,
+    tagline:p.tagline||null, sku:p.sku?p.sku+'-C':null,
     price_cents:p.price_cents, compare_at_cents:p.compare_at_cents||null,
     stock:0, low_stock_threshold:p.low_stock_threshold||3,
     shape:p.shape||null, finish:p.finish||null,
     length_mm:p.length_mm||null, nail_count:p.nail_count||null,
     description_short:p.description_short||null, description:p.description||null,
-    image_url:p.image_url||null, sort_order:p.sort_order||null,
+    image_url:p.image_url||null, sort_order:p.sort_order!=null?p.sort_order:0,
     is_visible:false, is_new:false, is_bestseller:false, is_lazy_pick:false, is_featured:false,
   };
   try {
@@ -1607,23 +2216,80 @@ async function prodDupliquer(id) {
   } catch(e) { toast('Erreur duplication : '+(e.message||''),'err'); }
 }
 
-function prodSupprimer(id) {
+async function prodSupprimer(id) {
   var p = S.prodsData.find(function(x){ return x.id===id; });
   if (!p) return;
-  modalOuvrir('Confirmer la suppression',
-    '<p style="color:var(--texte-doux);font-size:17px;margin-bottom:12px">Supprimer définitivement <strong style="color:var(--blanc)">'+esc(p.name)+'</strong> ?</p>' +
-    '<p style="color:var(--alerte);font-family:Montserrat,sans-serif;font-size:10px;letter-spacing:1px">⚠️ Action irréversible. Les images Storage ne seront pas supprimées automatiquement.</p>',
+  var chk = await NAHIRA.sb.from('order_items').select('id').eq('product_id',id).limit(1);
+  var hasOrders = chk.data && chk.data.length > 0;
+  var infoMsg = hasOrders
+    ? '<p style="color:var(--alerte);font-family:Montserrat,sans-serif;font-size:11px;letter-spacing:.5px;margin-top:8px">Ce produit est lié à des commandes. Il sera <strong>archivé</strong> (retiré du catalogue, historique préservé).</p>'
+    : '<p style="color:var(--alerte);font-family:Montserrat,sans-serif;font-size:11px;letter-spacing:.5px;margin-top:8px">Aucune commande liée. Le produit sera <strong>supprimé définitivement</strong>.</p>';
+  modalOuvrir('Retirer du catalogue',
+    '<p style="color:var(--texte-doux);font-size:17px;margin-bottom:4px">Retirer <strong style="color:var(--blanc)">'+esc(p.name)+'</strong> ?</p>' + infoMsg,
     '<button class="btn btn-sec" onclick="modalFermer()">Annuler</button>' +
-    '<button class="btn btn-danger" onclick="confirmerSuppr(\''+esc(id)+'\')">Supprimer définitivement</button>');
+    '<button class="btn btn-danger" id="btn-suppr-prod" onclick="confirmerSuppr(\''+esc(id)+'\')">Confirmer</button>');
 }
 
 async function confirmerSuppr(id) {
+  var btn = document.getElementById('btn-suppr-prod');
+  if (btn) { btn.disabled = true; btn.textContent = 'Traitement…'; }
   try {
-    var r = await NAHIRA.sb.from('products').delete().eq('id',id);
-    if (r.error) throw r.error;
-    modalFermer(); toast('Produit supprimé.','ok');
+    var chk = await NAHIRA.sb.from('order_items').select('id').eq('product_id',id).limit(1);
+    var hasOrders = chk.data && chk.data.length > 0;
+    if (hasOrders) {
+      // Archivage : rendre invisible uniquement, TOUT préserver (images, collections, données)
+      var r = await NAHIRA.sb.from('products')
+        .update({ deleted_at: new Date().toISOString(), is_visible: false })
+        .eq('id',id);
+      if (r.error) throw r.error;
+      modalFermer(); toast('Produit archivé — données et historique préservés.','ok');
+    } else {
+      // Suppression physique : tenter de supprimer les fichiers Storage associés
+      var imgR = await NAHIRA.sb.from('product_images').select('url').eq('product_id',id);
+      if (imgR.data && imgR.data.length) {
+        var paths = imgR.data.map(function(img){
+          var m = (img.url||'').match(/\/storage\/v1\/object\/public\/products\/(.+)$/);
+          return m ? m[1] : null;
+        }).filter(Boolean);
+        if (paths.length) {
+          try { await NAHIRA.sb.storage.from('products').remove(paths); } catch(se) {}
+        }
+      }
+      // CASCADE supprime automatiquement product_images, product_collections, favorites, etc.
+      var r = await NAHIRA.sb.from('products').delete().eq('id',id);
+      if (r.error) throw r.error;
+      modalFermer(); toast('Produit supprimé.','ok');
+    }
     chargerProduits();
-  } catch(e) { toast('Erreur : '+(e.message||''),'err'); }
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Confirmer'; }
+    toast('Erreur : '+(e.message||''),'err');
+  }
+}
+
+async function restaurerProduit(id) {
+  var p = S.prodsData.find(function(x){ return x.id===id; });
+  if (!p) return;
+  modalOuvrir('Restaurer ' + esc(p.name),
+    '<p style="color:var(--texte-doux);font-size:16px;margin-bottom:8px">Restaurer <strong style="color:var(--blanc)">'+esc(p.name)+'</strong> dans la liste des produits actifs ?</p>' +
+    '<p style="color:var(--alerte);font-family:Montserrat,sans-serif;font-size:10px;letter-spacing:.5px">Le produit restera masqué (is_visible=false) — publie-le manuellement quand tu es prête.</p>',
+    '<button class="btn btn-sec" onclick="modalFermer()">Annuler</button>' +
+    '<button class="btn btn-primaire" id="btn-restaurer" onclick="confirmerRestaurer(\''+esc(id)+'\')">Restaurer</button>');
+}
+
+async function confirmerRestaurer(id) {
+  var btn = document.getElementById('btn-restaurer');
+  if (btn) { btn.disabled = true; btn.textContent = 'Restauration…'; }
+  try {
+    var r = await NAHIRA.sb.from('products').update({ deleted_at: null }).eq('id',id);
+    if (r.error) throw r.error;
+    modalFermer();
+    toast('Produit restauré. Pense à le rendre visible manuellement.','ok');
+    chargerProduits();
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Restaurer'; }
+    toast('Erreur : '+(e.message||''),'err');
+  }
 }
 
 function goImages(productId) {
@@ -1635,7 +2301,7 @@ function goImages(productId) {
 async function chargerImages() {
   var sel = document.getElementById('sel-prod-images');
   if (sel.children.length <= 1) {
-    var r = await NAHIRA.sb.from('products').select('id,name,is_visible').order('name');
+    var r = await NAHIRA.sb.from('products').select('id,name,is_visible').is('deleted_at',null).order('name');
     var prods = r.data || [];
     sel.innerHTML = '<option value="">— Choisir un produit —</option>' +
       prods.map(function(p){ return '<option value="'+esc(p.id)+'">'+esc(p.name)+(p.is_visible?'':' (masqué)')+'</option>'; }).join('');
@@ -1952,7 +2618,7 @@ async function chargerCommandes() {
   document.getElementById('cmd-detail').style.display = 'none';
   try {
     var r = await NAHIRA.sb.from('orders')
-      .select('id,status,payment_status,total_cents,shipping_cents,customer_email,shipping_name,shipping_address,shipping_city,shipping_zip,shipping_country,tracking_number,admin_notes,created_at')
+      .select('id,status,total_cents,shipping_cents,email,shipping_name,shipping_address,shipping_city,shipping_postal_code,shipping_country,tracking_number,notes,created_at')
       .order('created_at', {ascending: false})
       .limit(200);
     if (r.error) throw r.error;
@@ -1972,13 +2638,11 @@ function cmdRef(id) {
 function renderCommandes() {
   var q = (document.getElementById('cmd-search').value||'').toLowerCase().trim();
   var fs = document.getElementById('cmd-statut').value;
-  var fp = document.getElementById('cmd-paiement').value;
   var liste = S_CMDS.data.filter(function(c) {
     if (fs && c.status !== fs) return false;
-    if (fp && c.payment_status !== fp) return false;
     if (q) {
       var ref = cmdRef(c.id).toLowerCase();
-      var email = (c.customer_email||'').toLowerCase();
+      var email = (c.email||'').toLowerCase();
       var nom = (c.shipping_name||'').toLowerCase();
       if (!ref.includes(q) && !email.includes(q) && !nom.includes(q)) return false;
     }
@@ -1999,10 +2663,9 @@ function cmdLigne(c) {
     '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">' +
       '<span style="font-family:\'Cormorant Garamond\',serif;font-size:16px;font-weight:600;color:var(--blanc)">' + esc(ref) + '</span>' +
       badgeStatut(c.status) +
-      (c.payment_status === 'paid' ? '<span class="badge badge-dispo">Payée</span>' : c.payment_status === 'failed' ? '<span class="badge badge-epuise">Échouée</span>' : '<span class="badge badge-low">Paiement en attente</span>') +
     '</div>' +
     '<div style="display:flex;align-items:center;gap:12px;justify-content:space-between;margin-top:6px;flex-wrap:wrap">' +
-      '<span style="font-size:13px;color:var(--texte-doux)">' + esc(c.customer_email||'—') + '</span>' +
+      '<span style="font-size:13px;color:var(--texte-doux)">' + esc(c.email||'—') + '</span>' +
       '<span style="font-family:\'Cormorant Garamond\',serif;font-size:18px;font-weight:600;color:var(--or)">' + total + '</span>' +
     '</div>' +
     '<div style="font-size:11px;color:var(--texte-faible);margin-top:4px">' + fmtDH(c.created_at) + '</div>' +
@@ -2022,19 +2685,18 @@ async function voirCommande(id) {
   document.getElementById('cmd-total-shipping').textContent = shipping;
 
   var info = [
-    {l:'Cliente', v: esc(c.customer_email||'—')},
+    {l:'Cliente', v: esc(c.email||'—')},
     {l:'Date', v: fmtDH(c.created_at)},
     {l:'Destinataire', v: esc(c.shipping_name||'—')},
-    {l:'Adresse', v: esc([c.shipping_address,c.shipping_zip,c.shipping_city,c.shipping_country].filter(Boolean).join(', ')||'—')},
+    {l:'Adresse', v: esc([c.shipping_address,c.shipping_postal_code,c.shipping_city,c.shipping_country].filter(Boolean).join(', ')||'—')},
   ];
   document.getElementById('cmd-detail-info').innerHTML = info.map(function(x){
     return '<div class="cmd-info-item"><span class="lbl">'+x.l+'</span><span class="val">'+x.v+'</span></div>';
   }).join('');
 
   document.getElementById('edit-statut').value = c.status || 'pending';
-  document.getElementById('edit-paiement').value = c.payment_status || 'pending';
   document.getElementById('edit-tracking').value = c.tracking_number || '';
-  document.getElementById('edit-notes').value = c.admin_notes || '';
+  document.getElementById('edit-notes').value = c.notes || '';
   document.getElementById('cmd-save-msg').style.display = 'none';
 
   var itemsEl = document.getElementById('cmd-detail-items');
@@ -2079,9 +2741,8 @@ async function enregistrerCommande() {
   msg.style.display = 'none';
   var updates = {
     status: document.getElementById('edit-statut').value,
-    payment_status: document.getElementById('edit-paiement').value,
     tracking_number: document.getElementById('edit-tracking').value || null,
-    admin_notes: document.getElementById('edit-notes').value || null,
+    notes: document.getElementById('edit-notes').value || null,
   };
   try {
     var r = await NAHIRA.sb.from('orders').update(updates).eq('id', id);
@@ -2108,15 +2769,15 @@ function fermerDetail() {
 function exportCmdCSV() {
   var data = S_CMDS.data;
   if (!data.length) { alert('Aucune commande à exporter.'); return; }
-  var entetes = ['Référence','Date','Email','Nom','Adresse','Ville','CP','Pays','Statut','Paiement','Suivi','Total €','Livraison €','Notes'];
+  var entetes = ['Référence','Date','Email','Nom','Adresse','Ville','CP','Pays','Statut','Suivi','Total €','Livraison €','Notes'];
   var lignes = data.map(function(c) {
     return [
       cmdRef(c.id), fmtD(c.created_at),
-      c.customer_email||'', c.shipping_name||'',
-      c.shipping_address||'', c.shipping_city||'', c.shipping_zip||'', c.shipping_country||'',
-      c.status||'', c.payment_status||'', c.tracking_number||'',
+      c.email||'', c.shipping_name||'',
+      c.shipping_address||'', c.shipping_city||'', c.shipping_postal_code||'', c.shipping_country||'',
+      c.status||'', c.tracking_number||'',
       ((c.total_cents||0)/100).toFixed(2), ((c.shipping_cents||0)/100).toFixed(2),
-      (c.admin_notes||'').replace(/"/g,'""')
+      (c.notes||'').replace(/"/g,'""')
     ].map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join(',');
   });
   var csv = '﻿' + [entetes.join(',')].concat(lignes).join('\n');
@@ -2254,7 +2915,7 @@ async function chargerCollections() {
   fermerFormulaireCollection();
   try {
     var r = await NAHIRA.sb.from('collections')
-      .select('id,name,slug,description,cover_image_url,is_visible,sort_order,created_at')
+      .select('id,name,slug,description,cover_url,is_active,sort_order,created_at')
       .order('sort_order',{ascending:true});
     if (r.error) throw r.error;
     S_COLL.data = r.data || [];
@@ -2272,14 +2933,14 @@ function renderCollections() {
   if (!S_COLL.data.length) { vide.style.display = ''; el.style.display = 'none'; return; }
   vide.style.display = 'none';
   el.innerHTML = S_COLL.data.map(function(c) {
-    var imgHtml = c.cover_image_url
-      ? '<img src="'+esc(c.cover_image_url)+'" alt="">'
+    var imgHtml = c.cover_url
+      ? '<img src="'+esc(c.cover_url)+'" alt="">'
       : '<span style="font-size:32px">▦</span>';
     return '<div class="coll-carte">' +
       '<div class="coll-cover">'+imgHtml+'</div>' +
       '<div class="coll-corps">' +
         '<div class="coll-nom">'+esc(c.name)+'</div>' +
-        '<div class="coll-meta">'+(c.is_visible?'<span style="color:var(--ok)">● Visible</span>':'<span style="color:var(--texte-faible)">● Masquée</span>')+
+        '<div class="coll-meta">'+(c.is_active?'<span style="color:var(--ok)">● Visible</span>':'<span style="color:var(--texte-faible)">● Masquée</span>')+
           (c.description?' · '+esc(c.description).slice(0,40):'')+'</div>' +
         '<div class="coll-actions">' +
           '<button class="btn btn-sm btn-sec" onclick="editerCollection(\''+esc(c.id)+'\')">Modifier</button>' +
@@ -2302,8 +2963,8 @@ function ouvrirFormulaireCollection(id) {
     document.getElementById('coll-nom').value = c.name||'';
     document.getElementById('coll-slug').value = c.slug||'';
     document.getElementById('coll-desc').value = c.description||'';
-    document.getElementById('coll-img').value = c.cover_image_url||'';
-    document.getElementById('coll-visible').checked = !!c.is_visible;
+    document.getElementById('coll-img').value = c.cover_url||'';
+    document.getElementById('coll-visible').checked = !!c.is_active;
   } else {
     S_COLL.editing = null;
     document.getElementById('coll-form-titre').textContent = 'Nouvelle collection';
@@ -2336,8 +2997,8 @@ async function sauvegarderCollection() {
     name: nom,
     slug: document.getElementById('coll-slug').value || slugify(nom),
     description: document.getElementById('coll-desc').value.trim()||null,
-    cover_image_url: document.getElementById('coll-img').value.trim()||null,
-    is_visible: document.getElementById('coll-visible').checked,
+    cover_url: document.getElementById('coll-img').value.trim()||null,
+    is_active: document.getElementById('coll-visible').checked,
   };
   try {
     var r;
@@ -2381,7 +3042,7 @@ async function chargerMoods() {
   fermerFormulaireMood();
   try {
     var r = await NAHIRA.sb.from('moods')
-      .select('id,name,slug,description,cover_image_url,is_visible,sort_order,created_at')
+      .select('id,name,emoji,color,sort_order,created_at')
       .order('sort_order',{ascending:true});
     if (r.error) throw r.error;
     S_MOOD.data = r.data || [];
@@ -2399,15 +3060,17 @@ function renderMoods() {
   if (!S_MOOD.data.length) { vide.style.display = ''; el.style.display = 'none'; return; }
   vide.style.display = 'none';
   el.innerHTML = S_MOOD.data.map(function(m) {
-    var imgHtml = m.cover_image_url
-      ? '<img src="'+esc(m.cover_image_url)+'" alt="">'
+    var emojiHtml = m.emoji
+      ? '<span style="font-size:32px">'+esc(m.emoji)+'</span>'
       : '<span style="font-size:32px">✦</span>';
+    var colorDot = m.color
+      ? '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+esc(m.color)+';margin-right:5px;vertical-align:middle;flex:none"></span>'
+      : '';
     return '<div class="coll-carte">' +
-      '<div class="coll-cover">'+imgHtml+'</div>' +
+      '<div class="coll-cover" style="display:flex;align-items:center;justify-content:center;background:var(--carte-2)">'+emojiHtml+'</div>' +
       '<div class="coll-corps">' +
         '<div class="coll-nom">'+esc(m.name)+'</div>' +
-        '<div class="coll-meta">'+(m.is_visible?'<span style="color:var(--ok)">● Visible</span>':'<span style="color:var(--texte-faible)">● Masqué</span>')+
-          (m.description?' · '+esc(m.description).slice(0,40):'')+'</div>' +
+        '<div class="coll-meta" style="display:flex;align-items:center">'+colorDot+(m.color||'—')+'</div>' +
         '<div class="coll-actions">' +
           '<button class="btn btn-sm btn-sec" onclick="editerMood(\''+esc(m.id)+'\')">Modifier</button>' +
           '<button class="btn btn-sm btn-danger" onclick="supprimerMood(\''+esc(m.id)+'\',\''+esc(m.name)+'\')">Supprimer</button>' +
@@ -2427,18 +3090,14 @@ function ouvrirFormulaireMood(id) {
     S_MOOD.editing = id;
     document.getElementById('mood-form-titre').textContent = 'Modifier le mood';
     document.getElementById('mood-nom').value = m.name||'';
-    document.getElementById('mood-slug').value = m.slug||'';
-    document.getElementById('mood-desc').value = m.description||'';
-    document.getElementById('mood-img').value = m.cover_image_url||'';
-    document.getElementById('mood-visible').checked = !!m.is_visible;
+    document.getElementById('mood-emoji').value = m.emoji||'';
+    document.getElementById('mood-color').value = m.color||'';
   } else {
     S_MOOD.editing = null;
     document.getElementById('mood-form-titre').textContent = 'Nouveau mood';
     document.getElementById('mood-nom').value = '';
-    document.getElementById('mood-slug').value = '';
-    document.getElementById('mood-desc').value = '';
-    document.getElementById('mood-img').value = '';
-    document.getElementById('mood-visible').checked = true;
+    document.getElementById('mood-emoji').value = '';
+    document.getElementById('mood-color').value = '';
   }
   wrap.style.display = '';
   wrap.scrollIntoView({behavior:'smooth',block:'start'});
@@ -2451,20 +3110,15 @@ function fermerFormulaireMood() {
 
 function editerMood(id) { ouvrirFormulaireMood(id); }
 
-function autoSlugMood() {
-  var slug = document.getElementById('mood-slug');
-  if (!slug.dataset.manual) slug.value = slugify(document.getElementById('mood-nom').value);
-}
+function autoSlugMood() {}
 
 async function sauvegarderMood() {
   var nom = (document.getElementById('mood-nom').value||'').trim();
   if (!nom) { afficherMsgMood('Le nom est requis.','err'); return; }
   var data = {
     name: nom,
-    slug: document.getElementById('mood-slug').value || slugify(nom),
-    description: document.getElementById('mood-desc').value.trim()||null,
-    cover_image_url: document.getElementById('mood-img').value.trim()||null,
-    is_visible: document.getElementById('mood-visible').checked,
+    emoji: document.getElementById('mood-emoji').value.trim()||null,
+    color: document.getElementById('mood-color').value.trim()||null,
   };
   try {
     var r;
@@ -2684,7 +3338,7 @@ async function chargerAvis() {
   document.getElementById('avis-vide').style.display = 'none';
   try {
     var r = await NAHIRA.sb.from('reviews')
-      .select('id,author_name,email,rating,content,is_approved,reply,created_at,product_id,products(name)')
+      .select('id,author_name,email,rating,comment,status,created_at,product_id,products(name)')
       .order('created_at',{ascending:false})
       .limit(100);
     if (r.error) throw r.error;
@@ -2700,8 +3354,8 @@ async function chargerAvis() {
 function renderAvis() {
   var filtre = document.getElementById('avis-filtre').value;
   var liste = S_AVIS.data.filter(function(a) {
-    if (filtre==='pending') return !a.is_approved;
-    if (filtre==='approved') return a.is_approved;
+    if (filtre==='pending') return a.status !== 'approved';
+    if (filtre==='approved') return a.status === 'approved';
     return true;
   });
   var el = document.getElementById('avis-liste');
@@ -2717,23 +3371,14 @@ function renderAvis() {
           '<div class="avis-auteur">'+esc(a.author_name||'Anonyme')+'</div>' +
           '<div class="avis-etoiles">'+etoiles+'</div>' +
         '</div>' +
-        '<div style="text-align:right;font-size:12px;color:var(--texte-faible)">'+fmtD(a.created_at)+'<br>'+(a.is_approved?'<span style="color:var(--ok)">Approuvé</span>':'<span style="color:var(--attente)">En attente</span>')+'</div>' +
+        '<div style="text-align:right;font-size:12px;color:var(--texte-faible)">'+fmtD(a.created_at)+'<br>'+(a.status==='approved'?'<span style="color:var(--ok)">Approuvé</span>':'<span style="color:var(--attente)">En attente</span>')+'</div>' +
       '</div>' +
       '<div class="avis-produit">'+esc(prodNom)+'</div>' +
-      '<div class="avis-contenu">'+esc(a.content||'—')+'</div>' +
-      (a.reply?'<div class="avis-reponse"><strong style="color:var(--or)">Réponse Nahira :</strong> '+esc(a.reply)+'</div>':'') +
+      '<div class="avis-contenu">'+esc(a.comment||'—')+'</div>' +
       '<div class="avis-actions">' +
-        (!a.is_approved?'<button class="btn btn-sm btn-rose" onclick="approuverAvis(\''+esc(a.id)+'\')">✓ Approuver</button>':'') +
-        (a.is_approved?'<button class="btn btn-sm btn-sec" onclick="masquerAvis(\''+esc(a.id)+'\')">Masquer</button>':'') +
-        '<button class="btn btn-sm btn-sec" onclick="ouvrirReponseAvis(\''+esc(a.id)+'\')">Répondre</button>' +
+        (a.status!=='approved'?'<button class="btn btn-sm btn-rose" onclick="approuverAvis(\''+esc(a.id)+'\')">✓ Approuver</button>':'') +
+        (a.status==='approved'?'<button class="btn btn-sm btn-sec" onclick="masquerAvis(\''+esc(a.id)+'\')">Masquer</button>':'') +
         '<button class="btn btn-sm btn-danger" onclick="supprimerAvis(\''+esc(a.id)+'\')">Supprimer</button>' +
-      '</div>' +
-      '<div id="rep-form-'+esc(a.id)+'" style="display:none;margin-top:10px">' +
-        '<textarea class="prod-input" id="rep-txt-'+esc(a.id)+'" rows="2" placeholder="Votre réponse publique…" style="margin-bottom:6px;width:100%"></textarea>' +
-        '<div style="display:flex;gap:8px">' +
-          '<button class="btn btn-sm btn-rose" onclick="envoyerReponseAvis(\''+esc(a.id)+'\')">Publier</button>' +
-          '<button class="btn btn-sm btn-sec" onclick="document.getElementById(\'rep-form-'+esc(a.id)+'\').style.display=\'none\'">Annuler</button>' +
-        '</div>' +
       '</div>' +
     '</div>';
   }).join('');
@@ -2742,20 +3387,20 @@ function renderAvis() {
 
 async function approuverAvis(id) {
   try {
-    var r = await NAHIRA.sb.from('reviews').update({is_approved:true}).eq('id',id);
+    var r = await NAHIRA.sb.from('reviews').update({status:'approved'}).eq('id',id);
     if (r.error) throw r.error;
     var a = S_AVIS.data.find(function(x){ return x.id===id; });
-    if (a) a.is_approved = true;
+    if (a) a.status = 'approved';
     renderAvis(); toast('Avis approuvé.');
   } catch(e) { alert('Erreur : '+(e.message||e)); }
 }
 
 async function masquerAvis(id) {
   try {
-    var r = await NAHIRA.sb.from('reviews').update({is_approved:false}).eq('id',id);
+    var r = await NAHIRA.sb.from('reviews').update({status:'pending'}).eq('id',id);
     if (r.error) throw r.error;
     var a = S_AVIS.data.find(function(x){ return x.id===id; });
-    if (a) a.is_approved = false;
+    if (a) a.status = 'pending';
     renderAvis(); toast('Avis masqué.');
   } catch(e) { alert('Erreur : '+(e.message||e)); }
 }
@@ -2770,22 +3415,6 @@ async function supprimerAvis(id) {
   } catch(e) { alert('Erreur : '+(e.message||e)); }
 }
 
-function ouvrirReponseAvis(id) {
-  var form = document.getElementById('rep-form-'+id);
-  if (form) form.style.display = form.style.display==='none'?'':'none';
-}
-
-async function envoyerReponseAvis(id) {
-  var txt = (document.getElementById('rep-txt-'+id).value||'').trim();
-  if (!txt) return;
-  try {
-    var r = await NAHIRA.sb.from('reviews').update({reply:txt}).eq('id',id);
-    if (r.error) throw r.error;
-    var a = S_AVIS.data.find(function(x){ return x.id===id; });
-    if (a) a.reply = txt;
-    renderAvis(); toast('Réponse publiée.');
-  } catch(e) { alert('Erreur : '+(e.message||e)); }
-}
 
 /* ====== IMPORT CSV ====== */
 var S_IMPORT = { rows: [], headers: [], mapping: {} };
@@ -3285,45 +3914,83 @@ async function acFormSupprimer(id, titre) {
 /* ════════════════════════════════════════════════════════════════════════
    CONTENU — modules & leçons
    ══════════════════════════════════════════════════════════════════════ */
+var AC_PREVIEW_TAB = 'accueil';
+
 async function acContenuInit() {
   await acChargerCours();
   acPopulateSelects();
-  // If a course was already selected, reopen the visual editor
-  if (AC.coursId) {
+  var nonArchives = (AC.cours || []).filter(function(c) { return !c.is_archived; });
+  if (nonArchives.length === 1) {
+    acContenuCharger(nonArchives[0].id);
+  } else if (AC.coursId) {
     var sel = document.getElementById('ac-contenu-select');
     if (sel) sel.value = AC.coursId;
     acContenuCharger(AC.coursId);
   }
 }
 
+function acPreviewTab(tab) {
+  AC_PREVIEW_TAB = tab;
+  document.querySelectorAll('.ac-tab').forEach(function(b) {
+    b.classList.toggle('actif', b.dataset.tab === tab);
+  });
+  if (AC.coursId) acVisEditorOpen(AC.coursId);
+}
+
 async function acContenuCharger(coursId) {
-  if (!coursId) {
-    acVisEditorClose();
-    return;
-  }
+  if (!coursId) { acVisEditorClose(); return; }
   AC.coursId = coursId;
   acVisEditorOpen(coursId);
 }
 
 function acVisEditorOpen(coursId) {
-  var overlay = document.getElementById('ac-vis-editor');
-  var iframe  = document.getElementById('ac-vis-iframe');
-  // Position overlay below the sticky header
-  var hdr = document.querySelector('.app-header');
-  var hdrH = hdr ? Math.round(hdr.getBoundingClientRect().bottom) : 0;
-  overlay.style.top = hdrH + 'px';
-  // Only reload iframe when course changes (preserve unsaved draft)
-  if (iframe.dataset.coursId !== coursId) {
-    iframe.src = 'editeur.html?course=' + encodeURIComponent(coursId);
-    iframe.dataset.coursId = coursId;
+  var cours  = (AC.cours || []).find(function(c) { return c.id === coursId; });
+  var slug   = cours ? cours.slug   : coursId;
+  var title  = cours ? cours.title  : '';
+  var iframe = document.getElementById('ac-contenu-iframe');
+  var sec    = document.getElementById('s-ac-contenu');
+  var main   = document.getElementById('main');
+
+  main.classList.add('ac-editor-in');
+  sec.classList.add('editor-on');
+
+  var tab = AC_PREVIEW_TAB;
+  var url;
+  if (tab === 'accueil') {
+    url = 'formation.html?slug=' + encodeURIComponent(slug) + '&preview=1';
+  } else if (tab === 'lecons') {
+    url = 'lecon.html?course=' + encodeURIComponent(slug) + '&preview=1';
+  } else if (tab === 'quiz') {
+    url = 'lecon.html?course=' + encodeURIComponent(slug) + '&quiz=1&preview=1';
+  } else {
+    url = 'certificat.html?preview=1&student=Aminata+Ndiaye&score=18&total=20'
+        + '&course_title=' + encodeURIComponent(title);
   }
-  overlay.classList.add('open');
+
+  if (iframe.dataset.loadedUrl !== url) {
+    iframe.src = url;
+    iframe.dataset.loadedUrl = url;
+  }
+  acEditorSetHeight();
 }
 
 function acVisEditorClose() {
-  var overlay = document.getElementById('ac-vis-editor');
-  if (overlay) overlay.classList.remove('open');
+  var sec  = document.getElementById('s-ac-contenu');
+  var main = document.getElementById('main');
+  sec.classList.remove('editor-on');
+  main.classList.remove('ac-editor-in');
 }
+
+function acEditorSetHeight() {
+  var iframe = document.getElementById('ac-contenu-iframe');
+  if (!iframe) return;
+  var hdr = document.querySelector('.app-header');
+  var bar = document.getElementById('ac-preview-bar');
+  var hdrBottom = hdr ? hdr.getBoundingClientRect().bottom : 59;
+  var barH = (bar && bar.offsetParent) ? bar.getBoundingClientRect().height : 0;
+  iframe.style.height = Math.max(300, Math.round(window.innerHeight - hdrBottom - barH)) + 'px';
+}
+window.addEventListener('resize', acEditorSetHeight);
 
 function acModuleNouveau() {
   if (!AC.coursId) return;
@@ -5905,6 +6572,334 @@ async function acTableauCharger() {
       '<div class="kpi"><div class="v" style="color:var(--ok)">' + nbPassed + '</div><div class="l">Quiz réussi' + (nbPassed>1?'s':'') + '</div></div>' +
       '<div class="kpi"><div class="v" style="color:' + (nbPlaceholders>0?'var(--alerte)':'var(--ok)') + '">' + nbPlaceholders + '</div><div class="l">Placeholder' + (nbPlaceholders>1?'s':'') + ' (médias manquants)</div></div>' +
     '</div>';
+}
+
+/* ====== CLIENTES ====== */
+var _clData = [];         // cache liste complète
+var _clCharge = false;    // chargé au moins une fois
+
+async function chargerClients(force) {
+  if (_clCharge && !force) return renderClients();
+  _clCharge = false;
+  document.getElementById('cl-loading').style.display = '';
+  document.getElementById('cl-liste').style.display = 'none';
+  document.getElementById('cl-vide').style.display = 'none';
+  document.getElementById('cl-vide-filtre').style.display = 'none';
+
+  var { data, error } = await NAHIRA.sb.rpc('admin_get_clients_list');
+  if (error) {
+    document.getElementById('cl-loading').textContent = 'Erreur : ' + error.message;
+    return;
+  }
+  _clData = data || [];
+  _clCharge = true;
+  document.getElementById('cl-loading').style.display = 'none';
+  renderClients();
+}
+
+function filtrerClients() {
+  renderClients(document.getElementById('cl-recherche').value.trim().toLowerCase());
+}
+
+function renderClients(q) {
+  var liste = _clData;
+  if (q) {
+    liste = liste.filter(function(c) {
+      return (c.email||'').toLowerCase().includes(q)
+          || (c.full_name||'').toLowerCase().includes(q)
+          || (c.display_name||'').toLowerCase().includes(q);
+    });
+  }
+
+  var el = document.getElementById('cl-liste');
+  var vide = document.getElementById('cl-vide');
+  var videF = document.getElementById('cl-vide-filtre');
+
+  if (_clData.length === 0) {
+    el.style.display = 'none'; vide.style.display = ''; videF.style.display = 'none'; return;
+  }
+  if (liste.length === 0) {
+    el.style.display = 'none'; vide.style.display = 'none'; videF.style.display = ''; return;
+  }
+
+  vide.style.display = 'none'; videF.style.display = 'none';
+
+  var html = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-family:\'Montserrat\',sans-serif;font-size:12px">'
+    + '<thead><tr style="border-bottom:1px solid var(--ligne);color:var(--texte-doux);letter-spacing:.08em;text-transform:uppercase">'
+    + '<th style="padding:8px 10px 8px 0;text-align:left;font-weight:500">Cliente</th>'
+    + '<th style="padding:8px 10px;text-align:left;font-weight:500;white-space:nowrap">Inscrite le</th>'
+    + '<th style="padding:8px 10px;text-align:center;font-weight:500">Cmds</th>'
+    + '<th style="padding:8px 10px;text-align:right;font-weight:500;white-space:nowrap">CA total</th>'
+    + '<th style="padding:8px 10px;text-align:center;font-weight:500">Favoris</th>'
+    + '<th style="padding:8px 10px;text-align:left;font-weight:500">Taille</th>'
+    + '</tr></thead><tbody>';
+
+  liste.forEach(function(c) {
+    var nom = c.display_name || c.full_name || '—';
+    var ca  = NAHIRA.eur(c.total_spent_cents || 0);
+    html += '<tr style="border-bottom:1px solid var(--ligne);cursor:pointer" onclick="ouvrirFicheClient(\'' + c.user_id + '\')">'
+      + '<td style="padding:10px 10px 10px 0">'
+      +   '<div style="font-weight:500;color:var(--blanc)">' + esc(nom) + '</div>'
+      +   '<div style="color:var(--texte-doux);font-size:11px;margin-top:2px">' + esc(c.email) + '</div>'
+      + '</td>'
+      + '<td style="padding:10px;color:var(--texte-doux);white-space:nowrap">' + fmtD(c.created_at) + '</td>'
+      + '<td style="padding:10px;text-align:center;color:var(--blanc)">' + (c.order_count || 0) + '</td>'
+      + '<td style="padding:10px;text-align:right;color:var(--or-vif);font-variant-numeric:tabular-nums">' + ca + '</td>'
+      + '<td style="padding:10px;text-align:center;color:var(--texte-doux)">' + (c.favorite_count || 0) + '</td>'
+      + '<td style="padding:10px;color:var(--texte-doux)">' + esc(c.preferred_size || '—') + '</td>'
+      + '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
+  el.style.display = '';
+}
+
+async function ouvrirFicheClient(userId) {
+  goTo('clients-fiche');
+  document.getElementById('cl-fiche-titre').textContent = 'Chargement…';
+  document.getElementById('cl-fiche-loading').style.display = '';
+  document.getElementById('cl-fiche-corps').style.display = 'none';
+
+  var { data: raw, error } = await NAHIRA.sb.rpc('admin_get_client_detail', { p_user_id: userId });
+  if (error || !raw) {
+    document.getElementById('cl-fiche-loading').textContent = 'Erreur : ' + (error ? error.message : 'Données introuvables');
+    return;
+  }
+
+  var d = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  var p = d.profile || {};
+  var orders = d.orders || [];
+  var favs = d.favorites || [];
+  var alerts = d.restock_alerts || [];
+
+  var nom = p.display_name || p.full_name || p.email || 'Cliente';
+  document.getElementById('cl-fiche-titre').textContent = nom;
+
+  // KPI
+  var validOrders = orders.filter(isVente);
+  var caTotal = validOrders.reduce(function(s, o){ return s + (o.total_cents || 0); }, 0);
+  var panier  = validOrders.length > 0 ? Math.round(caTotal / validOrders.length) : 0;
+  var derniere = orders.length > 0 ? fmtD(orders[0].created_at) : '—';
+  document.getElementById('cl-fiche-kpi').innerHTML =
+    '<div class="kpi"><div class="v">' + orders.length + '</div><div class="l">Commandes</div></div>'
+  + '<div class="kpi"><div class="v" style="color:var(--or-vif)">' + NAHIRA.eur(caTotal) + '</div><div class="l">CA total</div></div>'
+  + '<div class="kpi"><div class="v">' + NAHIRA.eur(panier) + '</div><div class="l">Panier moyen</div></div>'
+  + '<div class="kpi"><div class="v" style="color:var(--texte-doux)">' + derniere + '</div><div class="l">Dernière commande</div></div>'
+  + '<div class="kpi"><div class="v">' + favs.length + '</div><div class="l">Favoris</div></div>';
+
+  // Profil
+  var mesures = '';
+  if (p.measurements && typeof p.measurements === 'object' && Object.keys(p.measurements).length > 0) {
+    mesures = '<br><strong>Mesures :</strong> ' + Object.entries(p.measurements).map(function(kv){ return esc(kv[0]) + ' ' + esc(kv[1]); }).join(', ');
+  }
+  document.getElementById('cl-fiche-profil').innerHTML =
+    '<strong>Email :</strong> ' + esc(p.email || '—') + '<br>'
+  + '<strong>Inscrite le :</strong> ' + fmtD(p.created_at) + '<br>'
+  + '<strong>Dernière connexion :</strong> ' + (p.last_sign_in_at ? fmtDH(p.last_sign_in_at) : '—') + '<br>'
+  + '<strong>Taille préférée :</strong> ' + esc(p.preferred_size || '—') + mesures;
+
+  // Commandes
+  var elCmds = document.getElementById('cl-fiche-cmds');
+  var elCmdsV = document.getElementById('cl-fiche-cmds-vide');
+  if (orders.length === 0) {
+    elCmds.innerHTML = ''; elCmdsV.style.display = '';
+  } else {
+    elCmdsV.style.display = 'none';
+    var h = '';
+    orders.forEach(function(o) {
+      h += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;'
+        + 'padding:10px 0;border-bottom:1px solid var(--ligne);flex-wrap:wrap;font-family:\'Montserrat\',sans-serif;font-size:12px">'
+        + '<div>'
+        +   '<span style="font-weight:500;color:var(--blanc)">' + esc(o.order_number || o.id.slice(0,8)) + '</span>'
+        +   '<span style="margin-left:8px;color:var(--texte-doux)">' + fmtD(o.created_at) + '</span>'
+        + '</div>'
+        + '<div style="display:flex;align-items:center;gap:8px">'
+        +   badgeStatut(o.status)
+        +   '<span style="color:var(--or-vif);font-variant-numeric:tabular-nums">' + NAHIRA.eur(o.total_cents) + '</span>'
+        +   '<button class="btn btn-sm btn-sec" style="padding:5px 10px" onclick="goTo(\'commandes\')" title="Voir dans Commandes">↗</button>'
+        + '</div>'
+        + '</div>';
+    });
+    elCmds.innerHTML = h;
+  }
+
+  // Favoris
+  var elFavs = document.getElementById('cl-fiche-favs');
+  var elFavsV = document.getElementById('cl-fiche-favs-vide');
+  if (favs.length === 0) {
+    elFavs.innerHTML = ''; elFavsV.style.display = '';
+  } else {
+    elFavsV.style.display = 'none';
+    var hf = '';
+    favs.forEach(function(f) {
+      var img = f.image_url
+        ? '<img src="' + esc(f.image_url) + '" alt="" style="width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0">'
+        : '<div style="width:52px;height:52px;border-radius:8px;background:var(--ligne);flex-shrink:0"></div>';
+      hf += '<div style="display:flex;align-items:center;gap:10px;background:var(--carte);border:1px solid var(--ligne);'
+          + 'border-radius:10px;padding:8px 12px 8px 8px;cursor:pointer" onclick="goTo(\'produits\')" title="Voir dans Produits">'
+          + img
+          + '<div style="font-family:\'Montserrat\',sans-serif;font-size:11px">'
+          +   '<div style="font-weight:500;color:var(--blanc);margin-bottom:2px">' + esc(f.name) + '</div>'
+          +   '<div style="color:var(--or-vif)">' + NAHIRA.eur(f.price_cents) + '</div>'
+          + '</div></div>';
+    });
+    elFavs.innerHTML = hf;
+  }
+
+  // Alertes réassort
+  var elAl = document.getElementById('cl-fiche-alerts');
+  var elAlV = document.getElementById('cl-fiche-alerts-vide');
+  if (alerts.length === 0) {
+    elAl.innerHTML = ''; elAlV.style.display = '';
+  } else {
+    elAlV.style.display = 'none';
+    var ha = '';
+    alerts.forEach(function(a) {
+      var statut = a.notified_at
+        ? '<span style="color:var(--ok);font-size:11px">Notifiée ' + fmtD(a.notified_at) + '</span>'
+        : a.active
+          ? '<span style="color:var(--alerte);font-size:11px">En attente</span>'
+          : '<span style="color:var(--texte-faible);font-size:11px">Inactive</span>';
+      ha += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;'
+          + 'padding:9px 0;border-bottom:1px solid var(--ligne);flex-wrap:wrap;font-family:\'Montserrat\',sans-serif;font-size:12px">'
+          + '<div>'
+          +   '<span style="font-weight:500;color:var(--blanc)">' + esc(a.product_name) + '</span>'
+          +   '<span style="margin-left:8px;color:var(--texte-doux)">' + fmtD(a.created_at) + '</span>'
+          + '</div>'
+          + statut
+          + '</div>';
+    });
+    elAl.innerHTML = ha;
+  }
+
+  document.getElementById('cl-fiche-loading').style.display = 'none';
+  document.getElementById('cl-fiche-corps').style.display = '';
+}
+
+/* ====== PANIERS ====== */
+var _panTab = 'active';
+
+function switchPanTab(tab) {
+  _panTab = tab;
+  document.querySelectorAll('[data-pan-tab]').forEach(function(b) {
+    b.classList.toggle('actif', b.dataset.panTab === tab);
+  });
+  chargerPaniers();
+}
+
+async function chargerPaniers() {
+  var loading = document.getElementById('pan-loading');
+  var liste   = document.getElementById('pan-liste');
+  var vide    = document.getElementById('pan-vide');
+  var videMsg = document.getElementById('pan-vide-msg');
+  loading.style.display = ''; liste.innerHTML = ''; vide.style.display = 'none';
+
+  try {
+    // Load KPIs (all statuses) on first load or tab switch
+    await _chargerPaniersKpi();
+
+    var { data, error } = await sb.rpc('admin_get_carts', {
+      p_status: _panTab, p_limit: 100, p_offset: 0
+    });
+    if (error) throw error;
+
+    loading.style.display = 'none';
+    if (!data || data.length === 0) {
+      var labels = { active:'Aucun panier actif.', abandoned:'Aucun panier abandonné.', converted:'Aucun panier converti.', cleared:'Aucun panier vidé.' };
+      videMsg.textContent = labels[_panTab] || 'Aucun panier.';
+      vide.style.display = '';
+      return;
+    }
+    liste.innerHTML = renderPaniers(data);
+  } catch(e) {
+    loading.style.display = 'none';
+    liste.innerHTML = '<div class="erreur-msg">Erreur : ' + esc(e.message) + '</div>';
+  }
+}
+
+async function _chargerPaniersKpi() {
+  var kpiEl = document.getElementById('pan-kpi');
+  try {
+    var tabs = ['active','abandoned','converted','cleared'];
+    var counts = {};
+    var subtotals = {};
+    for (var i = 0; i < tabs.length; i++) {
+      var { data } = await sb.rpc('admin_get_carts', { p_status: tabs[i], p_limit: 1000, p_offset: 0 });
+      counts[tabs[i]] = (data || []).length;
+      subtotals[tabs[i]] = (data || []).reduce(function(s, c) { return s + (c.subtotal_cents || 0); }, 0);
+    }
+    kpiEl.innerHTML =
+      '<div class="kpi-tile"><div class="kpi-val">' + counts.active + '</div><div class="kpi-label">Actifs</div></div>'
+    + '<div class="kpi-tile"><div class="kpi-val">' + counts.abandoned + '</div><div class="kpi-label">Abandonnés</div></div>'
+    + '<div class="kpi-tile"><div class="kpi-val" style="color:var(--or-vif)">' + NAHIRA.eur(subtotals.abandoned) + '</div><div class="kpi-label">Valeur abandonnée</div></div>'
+    + '<div class="kpi-tile"><div class="kpi-val" style="color:var(--ok)">' + counts.converted + '</div><div class="kpi-label">Convertis</div></div>'
+    + '<div class="kpi-tile"><div class="kpi-val">' + counts.cleared + '</div><div class="kpi-label">Vidés</div></div>';
+  } catch(e) {
+    kpiEl.innerHTML = '';
+  }
+}
+
+function renderPaniers(carts) {
+  var h = '';
+  carts.forEach(function(c) {
+    var items = Array.isArray(c.items) ? c.items : [];
+    var thumbs = items.slice(0, 3).map(function(it) {
+      return it.image_url
+        ? '<img src="' + esc(it.image_url) + '" alt="" style="width:36px;height:36px;object-fit:cover;border-radius:6px;flex-shrink:0">'
+        : '<div style="width:36px;height:36px;border-radius:6px;background:var(--ligne);flex-shrink:0"></div>';
+    }).join('');
+    if (items.length > 3) thumbs += '<div style="width:36px;height:36px;border-radius:6px;background:var(--ligne);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--texte-doux);flex-shrink:0">+' + (items.length - 3) + '</div>';
+
+    var clientInfo = c.user_name
+      ? '<span style="font-weight:500;color:var(--blanc)">' + esc(c.user_name) + '</span>'
+        + (c.user_email ? '<br><span style="color:var(--texte-doux);font-size:11px">' + esc(c.user_email) + '</span>' : '')
+      : c.user_email
+        ? '<span style="color:var(--texte-doux);font-size:12px">' + esc(c.user_email) + '</span>'
+        : '<span style="color:var(--texte-faible);font-size:11px">Visiteur</span>';
+
+    var meta = [];
+    if (c.device)  meta.push('<span style="color:var(--texte-doux)">' + esc(c.device) + '</span>');
+    if (c.country) meta.push('<span style="color:var(--texte-doux)">' + esc(c.country) + '</span>');
+    meta.push('<span style="color:var(--texte-faible);font-size:11px">' + fmtD(c.updated_at) + '</span>');
+
+    var orderLink = c.order_number
+      ? '<button class="btn btn-sm btn-sec" style="padding:4px 10px;font-size:11px" onclick="goTo(\'commandes\')" title="Voir la commande ' + esc(c.order_number) + '">Cmd ' + esc(c.order_number) + ' ↗</button>'
+      : '';
+
+    var archiveBtn = (c.status === 'active' || c.status === 'abandoned')
+      ? '<button class="btn btn-sm btn-sec" style="padding:4px 10px;font-size:11px;margin-left:4px" onclick="archiverPanier(\'' + esc(c.id) + '\')" title="Archiver ce panier">Archiver</button>'
+      : '';
+
+    h += '<div class="carte" style="margin-bottom:10px;font-family:\'Montserrat\',sans-serif">'
+      + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">'
+        + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">'
+          + '<div style="display:flex;gap:4px">' + thumbs + '</div>'
+          + '<div>'
+            + clientInfo
+            + '<div style="margin-top:4px;font-size:11px;display:flex;gap:8px;flex-wrap:wrap">' + meta.join(' · ') + '</div>'
+          + '</div>'
+        + '</div>'
+        + '<div style="text-align:right;flex-shrink:0">'
+          + '<div style="font-size:16px;font-weight:600;color:var(--or-vif);font-variant-numeric:tabular-nums">' + NAHIRA.eur(c.subtotal_cents || 0) + '</div>'
+          + '<div style="font-size:11px;color:var(--texte-doux);margin-top:2px">' + (c.item_count || 0) + ' article' + (c.item_count > 1 ? 's' : '') + '</div>'
+          + '<div style="margin-top:6px">' + orderLink + archiveBtn + '</div>'
+        + '</div>'
+      + '</div>'
+    + '</div>';
+  });
+  return h;
+}
+
+async function archiverPanier(cartId) {
+  if (!confirm('Archiver ce panier ? Il disparaîtra de la vue Actifs/Abandonnés.')) return;
+  try {
+    var { error } = await sb.rpc('admin_archive_cart', { p_cart_id: cartId });
+    if (error) throw error;
+    chargerPaniers();
+  } catch(e) {
+    alert('Erreur : ' + e.message);
+  }
 }
 
 /* ====== DÉMARRAGE ====== */

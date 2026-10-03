@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { items, email, user_id, success_url, cancel_url } = body;
+    const { items, email, user_id, cart_id, success_url, cancel_url } = body;
 
     // --- Validate input -------------------------------------------------------
     if (!Array.isArray(items) || items.length === 0) {
@@ -233,6 +233,7 @@ Deno.serve(async (req) => {
       metadata: {
         user_id:         user_id || "",
         temp_session_id: tempSessionId,
+        cart_id:         (cart_id && typeof cart_id === 'string' && cart_id.length < 100) ? cart_id : "",
         items_json:      JSON.stringify(
           validatedItems.map(({ product, quantity }) => ({
             product_id:       product.id,
