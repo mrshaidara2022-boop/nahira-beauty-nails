@@ -6646,7 +6646,7 @@ async function ouvrirFicheClient(userId) {
   document.getElementById('cl-fiche-titre').textContent = nom;
 
   // KPI
-  var validOrders = orders.filter(function(o){ return o.status !== 'cancelled' && o.status !== 'refunded'; });
+  var validOrders = orders.filter(function(o){ return o.status !== 'pending' && o.status !== 'cancelled' && o.status !== 'refunded'; });
   var caTotal = validOrders.reduce(function(s, o){ return s + (o.total_cents || 0); }, 0);
   var panier  = validOrders.length > 0 ? Math.round(caTotal / validOrders.length) : 0;
   var derniere = orders.length > 0 ? fmtD(orders[0].created_at) : '—';
