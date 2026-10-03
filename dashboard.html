@@ -488,6 +488,7 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
       <li class="cote-label">Phase 2</li>
       <button class="nav-item" data-nav="commandes" onclick="goTo('commandes')"><span class="nav-ico">◻</span>Commandes</button>
       <button class="nav-item" data-nav="reassort" onclick="goTo('reassort')"><span class="nav-ico">🔔</span>Réassort</button>
+      <button class="nav-item" data-nav="clients" onclick="goTo('clients')"><span class="nav-ico">◉</span>Clientes</button>
       <button class="nav-item" data-nav="collections" onclick="goTo('collections')"><span class="nav-ico">▦</span>Collections</button>
       <button class="nav-item" data-nav="moods" onclick="goTo('moods')"><span class="nav-ico">✦</span>Moods</button>
       <button class="nav-item" data-nav="cms" onclick="goTo('cms')"><span class="nav-ico">▩</span>Site CMS</button>
@@ -733,6 +734,80 @@ body{background:var(--noir);color:var(--texte);font-family:'Cormorant Garamond',
         <div id="rs-liste" style="display:none"></div>
         <div id="rs-vide" class="etat-vide" style="display:none"><div class="ico">🔔</div><p>Aucune demande de réassort en attente.</p></div>
       </section>
+
+      <!-- CLIENTES -->
+      <section class="section" id="s-clients" style="display:none">
+        <div class="eyebrow">Administration</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap">
+          <h2 class="section-titre" style="margin-bottom:0">Clientes <em>inscrites</em></h2>
+          <button class="btn btn-sm btn-sec" onclick="chargerClients(true)">↻ Actualiser</button>
+        </div>
+        <div style="margin-bottom:14px">
+          <input type="search" class="filtre-input" id="cl-recherche" placeholder="Rechercher par nom ou email…"
+                 oninput="filtrerClients()" style="width:100%;max-width:380px">
+        </div>
+        <div class="chargement" id="cl-loading">Chargement…</div>
+        <div id="cl-liste" style="display:none"></div>
+        <div id="cl-vide" class="etat-vide" style="display:none">
+          <div class="ico">◉</div>
+          <p>Aucune cliente inscrite pour l'instant.</p>
+          <p style="font-size:12px;color:var(--texte-faible);margin-top:6px">Les comptes apparaîtront ici dès la première inscription.</p>
+        </div>
+        <div id="cl-vide-filtre" class="etat-vide" style="display:none">
+          <div class="ico">◉</div><p>Aucune cliente ne correspond à cette recherche.</p>
+        </div>
+      </section>
+
+      <!-- FICHE CLIENTE -->
+      <section class="section" id="s-clients-fiche" style="display:none">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-sec" onclick="goTo('clients')" style="flex-shrink:0">← Clientes</button>
+          <h2 class="section-titre" id="cl-fiche-titre" style="margin-bottom:0">Fiche cliente</h2>
+        </div>
+        <div class="chargement" id="cl-fiche-loading">Chargement…</div>
+        <div id="cl-fiche-corps" style="display:none">
+
+          <!-- KPI rapides -->
+          <div class="grille-kpi" id="cl-fiche-kpi" style="margin-bottom:20px"></div>
+
+          <!-- Profil -->
+          <div class="carte" style="margin-bottom:14px">
+            <div class="eyebrow" style="margin-bottom:8px">Profil</div>
+            <div id="cl-fiche-profil" class="meta" style="line-height:2"></div>
+          </div>
+
+          <!-- Commandes -->
+          <div class="carte" style="margin-bottom:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px">
+              <div class="eyebrow" style="margin-bottom:0">Commandes</div>
+            </div>
+            <div id="cl-fiche-cmds"></div>
+            <div id="cl-fiche-cmds-vide" class="etat-vide" style="display:none;padding:14px 0">
+              <p style="font-size:13px">Aucune commande.</p>
+            </div>
+          </div>
+
+          <!-- Favoris -->
+          <div class="carte" style="margin-bottom:14px">
+            <div class="eyebrow" style="margin-bottom:10px">Favoris actuels</div>
+            <div id="cl-fiche-favs" style="display:flex;flex-wrap:wrap;gap:10px"></div>
+            <div id="cl-fiche-favs-vide" class="etat-vide" style="display:none;padding:14px 0">
+              <p style="font-size:13px">Aucun favori enregistré.</p>
+            </div>
+          </div>
+
+          <!-- Alertes réassort -->
+          <div class="carte" style="margin-bottom:14px">
+            <div class="eyebrow" style="margin-bottom:10px">Alertes réassort</div>
+            <div id="cl-fiche-alerts"></div>
+            <div id="cl-fiche-alerts-vide" class="etat-vide" style="display:none;padding:14px 0">
+              <p style="font-size:13px">Aucune alerte réassort.</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
       <!-- COLLECTIONS -->
       <section class="section" id="s-collections" style="display:none">
         <div class="eyebrow">Administration</div>
@@ -1599,7 +1674,7 @@ async function seDeconnecter() {
 /* ====== NAVIGATION ====== */
 var sectionLabels = {
   tableau:'Tableau de bord', produits:'Produits', images:'Images', stock:'Stock',
-  commandes:'Commandes', reassort:'Réassort', collections:'Collections',
+  commandes:'Commandes', reassort:'Réassort', clients:'Clientes', 'clients-fiche':'Fiche cliente', collections:'Collections',
   moods:'Moods', cms:'Site CMS', promotions:'Promotions',
   avis:'Avis', import:'Import CSV', parametres:'Paramètres',
   'ac-formations':'Academy — Formations', 'ac-contenu':'Academy — Contenu',
@@ -1633,6 +1708,7 @@ function goTo(id) {
   else if (id === 'stock') chargerStock();
   else if (id === 'commandes') chargerCommandes();
   else if (id === 'reassort') chargerReassort();
+  else if (id === 'clients') chargerClients();
   else if (id === 'collections') chargerCollections();
   else if (id === 'moods') chargerMoods();
   else if (id === 'cms') chargerCMS();
@@ -6465,6 +6541,209 @@ async function acTableauCharger() {
       '<div class="kpi"><div class="v" style="color:var(--ok)">' + nbPassed + '</div><div class="l">Quiz réussi' + (nbPassed>1?'s':'') + '</div></div>' +
       '<div class="kpi"><div class="v" style="color:' + (nbPlaceholders>0?'var(--alerte)':'var(--ok)') + '">' + nbPlaceholders + '</div><div class="l">Placeholder' + (nbPlaceholders>1?'s':'') + ' (médias manquants)</div></div>' +
     '</div>';
+}
+
+/* ====== CLIENTES ====== */
+var _clData = [];         // cache liste complète
+var _clCharge = false;    // chargé au moins une fois
+
+async function chargerClients(force) {
+  if (_clCharge && !force) return renderClients();
+  _clCharge = false;
+  document.getElementById('cl-loading').style.display = '';
+  document.getElementById('cl-liste').style.display = 'none';
+  document.getElementById('cl-vide').style.display = 'none';
+  document.getElementById('cl-vide-filtre').style.display = 'none';
+
+  var { data, error } = await NAHIRA.sb.rpc('admin_get_clients_list');
+  if (error) {
+    document.getElementById('cl-loading').textContent = 'Erreur : ' + error.message;
+    return;
+  }
+  _clData = data || [];
+  _clCharge = true;
+  document.getElementById('cl-loading').style.display = 'none';
+  renderClients();
+}
+
+function filtrerClients() {
+  renderClients(document.getElementById('cl-recherche').value.trim().toLowerCase());
+}
+
+function renderClients(q) {
+  var liste = _clData;
+  if (q) {
+    liste = liste.filter(function(c) {
+      return (c.email||'').toLowerCase().includes(q)
+          || (c.full_name||'').toLowerCase().includes(q)
+          || (c.display_name||'').toLowerCase().includes(q);
+    });
+  }
+
+  var el = document.getElementById('cl-liste');
+  var vide = document.getElementById('cl-vide');
+  var videF = document.getElementById('cl-vide-filtre');
+
+  if (_clData.length === 0) {
+    el.style.display = 'none'; vide.style.display = ''; videF.style.display = 'none'; return;
+  }
+  if (liste.length === 0) {
+    el.style.display = 'none'; vide.style.display = 'none'; videF.style.display = ''; return;
+  }
+
+  vide.style.display = 'none'; videF.style.display = 'none';
+
+  var html = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-family:\'Montserrat\',sans-serif;font-size:12px">'
+    + '<thead><tr style="border-bottom:1px solid var(--ligne);color:var(--texte-doux);letter-spacing:.08em;text-transform:uppercase">'
+    + '<th style="padding:8px 10px 8px 0;text-align:left;font-weight:500">Cliente</th>'
+    + '<th style="padding:8px 10px;text-align:left;font-weight:500;white-space:nowrap">Inscrite le</th>'
+    + '<th style="padding:8px 10px;text-align:center;font-weight:500">Cmds</th>'
+    + '<th style="padding:8px 10px;text-align:right;font-weight:500;white-space:nowrap">CA total</th>'
+    + '<th style="padding:8px 10px;text-align:center;font-weight:500">Favoris</th>'
+    + '<th style="padding:8px 10px;text-align:left;font-weight:500">Taille</th>'
+    + '</tr></thead><tbody>';
+
+  liste.forEach(function(c) {
+    var nom = c.display_name || c.full_name || '—';
+    var ca  = NAHIRA.eur(c.total_spent_cents || 0);
+    html += '<tr style="border-bottom:1px solid var(--ligne);cursor:pointer" onclick="ouvrirFicheClient(\'' + c.user_id + '\')">'
+      + '<td style="padding:10px 10px 10px 0">'
+      +   '<div style="font-weight:500;color:var(--blanc)">' + esc(nom) + '</div>'
+      +   '<div style="color:var(--texte-doux);font-size:11px;margin-top:2px">' + esc(c.email) + '</div>'
+      + '</td>'
+      + '<td style="padding:10px;color:var(--texte-doux);white-space:nowrap">' + fmtD(c.created_at) + '</td>'
+      + '<td style="padding:10px;text-align:center;color:var(--blanc)">' + (c.order_count || 0) + '</td>'
+      + '<td style="padding:10px;text-align:right;color:var(--or-vif);font-variant-numeric:tabular-nums">' + ca + '</td>'
+      + '<td style="padding:10px;text-align:center;color:var(--texte-doux)">' + (c.favorite_count || 0) + '</td>'
+      + '<td style="padding:10px;color:var(--texte-doux)">' + esc(c.preferred_size || '—') + '</td>'
+      + '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
+  el.style.display = '';
+}
+
+async function ouvrirFicheClient(userId) {
+  goTo('clients-fiche');
+  document.getElementById('cl-fiche-titre').textContent = 'Chargement…';
+  document.getElementById('cl-fiche-loading').style.display = '';
+  document.getElementById('cl-fiche-corps').style.display = 'none';
+
+  var { data: raw, error } = await NAHIRA.sb.rpc('admin_get_client_detail', { p_user_id: userId });
+  if (error || !raw) {
+    document.getElementById('cl-fiche-loading').textContent = 'Erreur : ' + (error ? error.message : 'Données introuvables');
+    return;
+  }
+
+  var d = typeof raw === 'string' ? JSON.parse(raw) : raw;
+  var p = d.profile || {};
+  var orders = d.orders || [];
+  var favs = d.favorites || [];
+  var alerts = d.restock_alerts || [];
+
+  var nom = p.display_name || p.full_name || p.email || 'Cliente';
+  document.getElementById('cl-fiche-titre').textContent = nom;
+
+  // KPI
+  var validOrders = orders.filter(function(o){ return o.status !== 'cancelled' && o.status !== 'refunded'; });
+  var caTotal = validOrders.reduce(function(s, o){ return s + (o.total_cents || 0); }, 0);
+  var panier  = validOrders.length > 0 ? Math.round(caTotal / validOrders.length) : 0;
+  var derniere = orders.length > 0 ? fmtD(orders[0].created_at) : '—';
+  document.getElementById('cl-fiche-kpi').innerHTML =
+    '<div class="kpi"><div class="v">' + orders.length + '</div><div class="l">Commandes</div></div>'
+  + '<div class="kpi"><div class="v" style="color:var(--or-vif)">' + NAHIRA.eur(caTotal) + '</div><div class="l">CA total</div></div>'
+  + '<div class="kpi"><div class="v">' + NAHIRA.eur(panier) + '</div><div class="l">Panier moyen</div></div>'
+  + '<div class="kpi"><div class="v" style="color:var(--texte-doux)">' + derniere + '</div><div class="l">Dernière commande</div></div>'
+  + '<div class="kpi"><div class="v">' + favs.length + '</div><div class="l">Favoris</div></div>';
+
+  // Profil
+  var mesures = '';
+  if (p.measurements && typeof p.measurements === 'object' && Object.keys(p.measurements).length > 0) {
+    mesures = '<br><strong>Mesures :</strong> ' + Object.entries(p.measurements).map(function(kv){ return esc(kv[0]) + ' ' + esc(kv[1]); }).join(', ');
+  }
+  document.getElementById('cl-fiche-profil').innerHTML =
+    '<strong>Email :</strong> ' + esc(p.email || '—') + '<br>'
+  + '<strong>Inscrite le :</strong> ' + fmtD(p.created_at) + '<br>'
+  + '<strong>Dernière connexion :</strong> ' + (p.last_sign_in_at ? fmtDH(p.last_sign_in_at) : '—') + '<br>'
+  + '<strong>Taille préférée :</strong> ' + esc(p.preferred_size || '—') + mesures;
+
+  // Commandes
+  var elCmds = document.getElementById('cl-fiche-cmds');
+  var elCmdsV = document.getElementById('cl-fiche-cmds-vide');
+  if (orders.length === 0) {
+    elCmds.innerHTML = ''; elCmdsV.style.display = '';
+  } else {
+    elCmdsV.style.display = 'none';
+    var h = '';
+    orders.forEach(function(o) {
+      h += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;'
+        + 'padding:10px 0;border-bottom:1px solid var(--ligne);flex-wrap:wrap;font-family:\'Montserrat\',sans-serif;font-size:12px">'
+        + '<div>'
+        +   '<span style="font-weight:500;color:var(--blanc)">' + esc(o.order_number || o.id.slice(0,8)) + '</span>'
+        +   '<span style="margin-left:8px;color:var(--texte-doux)">' + fmtD(o.created_at) + '</span>'
+        + '</div>'
+        + '<div style="display:flex;align-items:center;gap:8px">'
+        +   badgeStatut(o.status)
+        +   '<span style="color:var(--or-vif);font-variant-numeric:tabular-nums">' + NAHIRA.eur(o.total_cents) + '</span>'
+        +   '<button class="btn btn-sm btn-sec" style="padding:5px 10px" onclick="goTo(\'commandes\')" title="Voir dans Commandes">↗</button>'
+        + '</div>'
+        + '</div>';
+    });
+    elCmds.innerHTML = h;
+  }
+
+  // Favoris
+  var elFavs = document.getElementById('cl-fiche-favs');
+  var elFavsV = document.getElementById('cl-fiche-favs-vide');
+  if (favs.length === 0) {
+    elFavs.innerHTML = ''; elFavsV.style.display = '';
+  } else {
+    elFavsV.style.display = 'none';
+    var hf = '';
+    favs.forEach(function(f) {
+      var img = f.image_url
+        ? '<img src="' + esc(f.image_url) + '" alt="" style="width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0">'
+        : '<div style="width:52px;height:52px;border-radius:8px;background:var(--ligne);flex-shrink:0"></div>';
+      hf += '<div style="display:flex;align-items:center;gap:10px;background:var(--carte);border:1px solid var(--ligne);'
+          + 'border-radius:10px;padding:8px 12px 8px 8px;cursor:pointer" onclick="goTo(\'produits\')" title="Voir dans Produits">'
+          + img
+          + '<div style="font-family:\'Montserrat\',sans-serif;font-size:11px">'
+          +   '<div style="font-weight:500;color:var(--blanc);margin-bottom:2px">' + esc(f.name) + '</div>'
+          +   '<div style="color:var(--or-vif)">' + NAHIRA.eur(f.price_cents) + '</div>'
+          + '</div></div>';
+    });
+    elFavs.innerHTML = hf;
+  }
+
+  // Alertes réassort
+  var elAl = document.getElementById('cl-fiche-alerts');
+  var elAlV = document.getElementById('cl-fiche-alerts-vide');
+  if (alerts.length === 0) {
+    elAl.innerHTML = ''; elAlV.style.display = '';
+  } else {
+    elAlV.style.display = 'none';
+    var ha = '';
+    alerts.forEach(function(a) {
+      var statut = a.notified_at
+        ? '<span style="color:var(--ok);font-size:11px">Notifiée ' + fmtD(a.notified_at) + '</span>'
+        : a.active
+          ? '<span style="color:var(--alerte);font-size:11px">En attente</span>'
+          : '<span style="color:var(--texte-faible);font-size:11px">Inactive</span>';
+      ha += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;'
+          + 'padding:9px 0;border-bottom:1px solid var(--ligne);flex-wrap:wrap;font-family:\'Montserrat\',sans-serif;font-size:12px">'
+          + '<div>'
+          +   '<span style="font-weight:500;color:var(--blanc)">' + esc(a.product_name) + '</span>'
+          +   '<span style="margin-left:8px;color:var(--texte-doux)">' + fmtD(a.created_at) + '</span>'
+          + '</div>'
+          + statut
+          + '</div>';
+    });
+    elAl.innerHTML = ha;
+  }
+
+  document.getElementById('cl-fiche-loading').style.display = 'none';
+  document.getElementById('cl-fiche-corps').style.display = '';
 }
 
 /* ====== DÉMARRAGE ====== */
